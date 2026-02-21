@@ -570,6 +570,7 @@
             .quiz-section { padding: 32px 20px; }
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -737,7 +738,7 @@
         </div>
 
         <div style="margin-top: 32px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-green" onclick="downloadCertificate()">下載證書（PNG）</button>
+            <button class="btn-green" onclick="downloadCertificate()">下載證書</button>
             <button class="btn-outline" onclick="location.href='index.html'">返回首頁</button>
         </div>
     </div>
@@ -1079,22 +1080,25 @@ function generateCertificate() {
 
 function downloadCertificate() {
     var cert = document.getElementById('certificate');
-    if (typeof html2canvas === 'undefined') {
-        var script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        script.onload = function() { captureAndDownload(cert); };
-        document.head.appendChild(script);
-    } else {
-        captureAndDownload(cert);
-    }
-}
-
-function captureAndDownload(el) {
-    html2canvas(el, { scale: 2, backgroundColor: '#f5f0e1', useCORS: true }).then(function(canvas) {
+    var btn = document.querySelector('.btn-green');
+    if (btn) { btn.textContent = '正在生成證書圖片...'; btn.disabled = true; }
+    html2canvas(cert, {
+        scale: 2,
+        backgroundColor: '#f5f0e1',
+        useCORS: true,
+        allowTaint: true,
+        logging: false
+    }).then(function(canvas) {
         var link = document.createElement('a');
         link.download = 'AI_Skill_認證證書.png';
         link.href = canvas.toDataURL('image/png');
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
+        if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
+    }).catch(function(err) {
+        alert('下載失敗，請嘗試使用截圖工具擷取證書。\n錯誤：' + err.message);
+        if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
     });
 }
 
