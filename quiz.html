@@ -187,7 +187,7 @@
         .form-group input::placeholder { color: rgba(255,255,255,0.25); }
 
         /* ============================
-           專 業 證 書 樣 式（重新設計）
+           專 業 證 書 樣 式（V4.0 豐富版）
            ============================ */
         .cert-display-section {
             padding: 40px 0; text-align: center;
@@ -198,22 +198,24 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.35);
         }
         .certificate {
-            width: 960px; height: 680px;
+            width: 960px; height: 740px;
             position: relative; overflow: hidden;
             background: #f5f0e1;
         }
 
-        /* ===== 防偽底紋 ===== */
+        /* ===== 防偽底紋（5 層疊加） ===== */
 
-        /* 底色：溫暖米黃 */
+        /* L1 底色：溫暖米黃 + 光暈 */
         .cert-bg-base {
             position: absolute; inset: 0;
             background:
+                radial-gradient(ellipse at 30% 25%, rgba(255,248,220,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 70%, rgba(255,245,210,0.3) 0%, transparent 45%),
                 radial-gradient(ellipse at 50% 40%, rgba(255,250,230,0.5) 0%, transparent 70%),
                 linear-gradient(180deg, #f7f2e4 0%, #efe8d4 50%, #f2ece0 100%);
         }
 
-        /* Guilloche 細線交織（加深版） */
+        /* L2 Guilloche 細線交織（加深版） */
         .cert-guilloche {
             position: absolute; inset: 0; pointer-events: none;
             background:
@@ -235,7 +237,7 @@
                     transparent 5.6px, transparent 10.6px);
         }
 
-        /* 同心圓漣漪（加深版） */
+        /* L3 同心圓漣漪（加深版） */
         .cert-rosette {
             position: absolute; inset: 0; pointer-events: none;
             background:
@@ -245,13 +247,27 @@
                     transparent 19px, transparent 37px);
         }
 
-        /* 微文字底紋 */
+        /* L4 菱形暗紋 */
+        .cert-diamond-pattern {
+            position: absolute; inset: 0; pointer-events: none;
+            background:
+                repeating-linear-gradient(45deg,
+                    transparent, transparent 28px,
+                    rgba(180,154,90,0.018) 28px, rgba(180,154,90,0.018) 29px,
+                    transparent 29px, transparent 57px),
+                repeating-linear-gradient(-45deg,
+                    transparent, transparent 28px,
+                    rgba(180,154,90,0.018) 28px, rgba(180,154,90,0.018) 29px,
+                    transparent 29px, transparent 57px);
+        }
+
+        /* L5 微文字底紋（三行交錯） */
         .cert-microtext {
             position: absolute; inset: 0; pointer-events: none; overflow: hidden;
         }
         .cert-microtext::before {
             content: 'CERTIFIED · 倉勳科技學院 · AI SKILL · VERIFIED · CERTIFIED · 倉勳科技學院 · AI SKILL · VERIFIED · CERTIFIED · 倉勳科技學院 · AI SKILL · VERIFIED · CERTIFIED · 倉勳科技學院 · AI SKILL · VERIFIED · CERTIFIED · 倉勳科技學院 · AI SKILL · VERIFIED · CERTIFIED · 倉勳科技學院 · AI SKILL · VERIFIED · ';
-            position: absolute; top: 48%; left: -30%; right: -30%;
+            position: absolute; top: 46%; left: -30%; right: -30%;
             transform: rotate(-22deg) translateY(-50%);
             font-size: 6.5px; letter-spacing: 4px;
             color: rgba(160,130,60,0.08);
@@ -260,15 +276,27 @@
         }
         .cert-microtext::after {
             content: 'CERTIFICATE · AI SKILL ACHIEVEMENT · 能力認證 · CERTIFICATE · AI SKILL ACHIEVEMENT · 能力認證 · CERTIFICATE · AI SKILL ACHIEVEMENT · 能力認證 · CERTIFICATE · AI SKILL ACHIEVEMENT · 能力認證 · CERTIFICATE · AI SKILL ACHIEVEMENT · 能力認證 · ';
-            position: absolute; top: 58%; left: -30%; right: -30%;
+            position: absolute; top: 56%; left: -30%; right: -30%;
             transform: rotate(-22deg) translateY(-50%);
             font-size: 6.5px; letter-spacing: 4px;
             color: rgba(160,130,60,0.07);
             white-space: nowrap; line-height: 24px;
             font-family: 'Courier New', monospace; font-weight: 700;
         }
+        .cert-microtext-extra {
+            position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+        }
+        .cert-microtext-extra::before {
+            content: 'PROFESSIONAL · SKILL MODULE · DEPLOY · AUTOMATION · PROFESSIONAL · SKILL MODULE · DEPLOY · AUTOMATION · PROFESSIONAL · SKILL MODULE · DEPLOY · AUTOMATION · PROFESSIONAL · SKILL MODULE · DEPLOY · AUTOMATION · ';
+            position: absolute; top: 36%; left: -30%; right: -30%;
+            transform: rotate(-22deg) translateY(-50%);
+            font-size: 6px; letter-spacing: 5px;
+            color: rgba(160,130,60,0.05);
+            white-space: nowrap; line-height: 24px;
+            font-family: 'Courier New', monospace; font-weight: 700;
+        }
 
-        /* ===== 多層邊框（仿示範圖） ===== */
+        /* ===== 多層邊框（5 層） ===== */
         .cert-border-outer {
             position: absolute; inset: 0;
             border: 10px solid #8c7440;
@@ -285,21 +313,26 @@
             position: absolute; inset: 24px;
             border: 1px solid rgba(180,154,90,0.3);
         }
+        /* 裝飾虛線邊框 */
+        .cert-border-deco {
+            position: absolute; inset: 28px;
+            border: 1px dashed rgba(180,154,90,0.15);
+        }
 
         /* 四角金色裝飾花紋 */
         .corner-ornament {
-            position: absolute; width: 120px; height: 120px; opacity: 0.5; z-index: 1;
+            position: absolute; width: 140px; height: 140px; opacity: 0.55; z-index: 1;
         }
         .corner-ornament svg { width: 100%; height: 100%; }
-        .corner-tl { top: 14px; left: 14px; }
-        .corner-tr { top: 14px; right: 14px; transform: scaleX(-1); }
-        .corner-bl { bottom: 14px; left: 14px; transform: scaleY(-1); }
-        .corner-br { bottom: 14px; right: 14px; transform: scale(-1,-1); }
+        .corner-tl { top: 10px; left: 10px; }
+        .corner-tr { top: 10px; right: 10px; transform: scaleX(-1); }
+        .corner-bl { bottom: 10px; left: 10px; transform: scaleY(-1); }
+        .corner-br { bottom: 10px; right: 10px; transform: scale(-1,-1); }
 
         /* ===== 證書主內容 ===== */
         .cert-content {
             position: relative; z-index: 2;
-            padding: 44px 80px 36px;
+            padding: 36px 80px 28px;
             height: 100%;
             display: flex; flex-direction: column;
             align-items: center;
@@ -333,23 +366,30 @@
         .stamp-label { font-size: 10px; color: #8b0000; font-weight: 700; letter-spacing: 1px; }
         .stamp-org { font-size: 8px; color: #8b0000; font-weight: 700; letter-spacing: 1px; margin-top: 1px; }
 
+        /* 頂部認證機構標示 */
+        .cert-institution {
+            font-size: 12px; letter-spacing: 6px;
+            color: #8c7440; font-weight: 600;
+            margin-bottom: 4px;
+        }
+
         /* 證書標題 */
-        .cert-title { text-align: center; margin-bottom: 2px; }
+        .cert-title { text-align: center; margin-bottom: 0; }
         .cert-title h1 {
-            font-size: 48px; font-weight: 300;
+            font-size: 44px; font-weight: 300;
             color: #3a3020;
             letter-spacing: 10px;
             font-family: Georgia, 'Times New Roman', 'Microsoft JhengHei', serif;
         }
         .cert-title-en {
-            font-size: 14px; letter-spacing: 6px;
+            font-size: 13px; letter-spacing: 6px;
             color: #8c7440; font-weight: 600;
         }
 
         /* 分隔裝飾線 */
         .cert-divider {
             display: flex; align-items: center; gap: 12px;
-            margin: 10px 0;
+            margin: 8px 0;
         }
         .cert-divider-line {
             width: 80px; height: 1px;
@@ -359,6 +399,19 @@
             width: 6px; height: 6px; border-radius: 50%;
             background: #b49a5a; opacity: 0.6;
         }
+        /* 長裝飾線（帶星號） */
+        .cert-divider-wide {
+            display: flex; align-items: center; gap: 16px;
+            margin: 10px 0 6px;
+            width: 80%;
+        }
+        .cert-divider-wide-line {
+            flex: 1; height: 1px;
+            background: linear-gradient(90deg, transparent, #b49a5a 30%, #b49a5a 70%, transparent);
+        }
+        .cert-divider-star {
+            color: #b49a5a; font-size: 12px; opacity: 0.7;
+        }
 
         /* 中間主體 */
         .cert-body {
@@ -367,58 +420,106 @@
             justify-content: center;
         }
         .cert-preamble {
-            font-size: 14px; color: #8c7440;
-            font-style: italic; margin-bottom: 6px;
+            font-size: 13px; color: #8c7440;
+            font-style: italic; margin-bottom: 4px;
             letter-spacing: 2px;
         }
         .cert-recipient {
-            font-size: 42px; font-weight: 700;
+            font-size: 40px; font-weight: 700;
             color: #2a2418;
-            margin: 4px 0;
+            margin: 2px 0;
             font-family: Georgia, 'Times New Roman', 'Microsoft JhengHei', serif;
             border-bottom: 2px solid #b49a5a;
             display: inline-block;
             padding-bottom: 4px;
         }
-        .cert-org-name { font-size: 14px; color: #999; margin: 6px 0 14px; }
+        .cert-org-name { font-size: 13px; color: #999; margin: 4px 0 8px; }
         .cert-congrats {
-            font-size: 13px; color: #666; line-height: 2;
-            max-width: 520px; margin: 0 auto;
+            font-size: 12.5px; color: #666; line-height: 1.9;
+            max-width: 560px; margin: 0 auto;
         }
+
+        /* 課程名稱膠囊 */
         .cert-course-badge {
-            display: inline-block; margin: 14px auto 0;
-            padding: 10px 32px;
+            display: inline-block; margin: 10px auto 0;
+            padding: 9px 30px;
             background: linear-gradient(135deg, #3a3020, #4a2040);
             color: #ffd700;
             border-radius: 30px;
-            font-size: 14px; font-weight: 700;
+            font-size: 13px; font-weight: 700;
             letter-spacing: 3px;
             border: 1px solid rgba(255,215,0,0.3);
         }
+
+        /* 認證能力列表 */
+        .cert-skills-section {
+            margin: 10px auto 0;
+            width: 100%; max-width: 640px;
+        }
+        .cert-skills-title {
+            font-size: 10px; color: #8c7440; letter-spacing: 4px;
+            font-weight: 600; margin-bottom: 6px;
+        }
+        .cert-skills-grid {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 4px 24px;
+        }
+        .cert-skill-item {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11px; color: #5a5040;
+            padding: 3px 0;
+        }
+        .cert-skill-check {
+            color: #8c7440; font-size: 11px; font-weight: 700;
+        }
+
         .cert-number {
             text-align: center; font-size: 10px; color: #aaa;
-            letter-spacing: 3px; margin-top: 10px;
+            letter-spacing: 3px; margin-top: 8px;
+        }
+
+        /* 底部安全條 */
+        .cert-security-strip {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 18px; z-index: 5;
+            background: linear-gradient(90deg, #8c7440, #b49a5a, #8c7440);
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .cert-security-text {
+            font-size: 6px; letter-spacing: 3px;
+            color: rgba(255,255,255,0.5);
+            font-family: 'Courier New', monospace; font-weight: 700;
+            white-space: nowrap;
         }
 
         /* ===== 底部：簽名區 + 金色徽章 ===== */
         .cert-footer {
             display: flex; justify-content: space-between;
             align-items: flex-end;
-            width: 100%; padding-top: 12px;
+            width: 100%; padding-top: 8px;
+            margin-bottom: 6px;
         }
-        .cert-footer-item { text-align: center; min-width: 140px; }
+        .cert-footer-item { text-align: center; min-width: 130px; }
         .cert-footer-value {
-            font-size: 14px; color: #3a3020;
+            font-size: 13px; color: #3a3020;
             font-weight: 600; margin-bottom: 4px;
         }
         .cert-footer-line {
-            width: 140px; height: 1px;
+            width: 130px; height: 1px;
             background: #8c7440;
             margin: 0 auto 4px;
         }
-        .cert-footer-label { font-size: 11px; color: #999; letter-spacing: 2px; }
+        .cert-footer-label { font-size: 10px; color: #999; letter-spacing: 2px; }
 
-        /* 金色浮雕徽章（底部中央） */
+        /* 金色浮雕徽章（底部中央 + 光芒） */
+        .cert-seal-wrapper {
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cert-seal-rays {
+            position: absolute; width: 130px; height: 130px;
+        }
         .cert-gold-seal {
             width: 90px; height: 90px;
             border-radius: 50%;
@@ -430,7 +531,7 @@
                 inset 0 -2px 4px rgba(0,0,0,0.2);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            position: relative;
+            position: relative; z-index: 1;
         }
         .cert-gold-seal::before {
             content: ''; position: absolute; inset: 4px;
@@ -443,7 +544,7 @@
             border-radius: 50%;
         }
         .gold-seal-icon {
-            font-size: 20px; color: #fff;
+            font-size: 18px; color: #fff;
             text-shadow: 0 1px 3px rgba(0,0,0,0.3);
             font-weight: 900;
         }
@@ -461,11 +562,11 @@
 
         /* ===== RWD ===== */
         @media (max-width: 1000px) {
-            .certificate { transform: scale(0.7); transform-origin: top center; }
+            .certificate { transform: scale(0.65); transform-origin: top center; }
             .main-container { padding-top: 70px; }
         }
         @media (max-width: 600px) {
-            .certificate { transform: scale(0.42); transform-origin: top center; }
+            .certificate { transform: scale(0.38); transform-origin: top center; }
             .quiz-section { padding: 32px 20px; }
         }
     </style>
@@ -519,23 +620,26 @@
     <div id="certDisplaySection" class="cert-display-section hidden">
         <div class="certificate-wrapper">
             <div id="certificate" class="certificate">
-                <!-- 防偽底紋 -->
+                <!-- 防偽底紋（5 層） -->
                 <div class="cert-bg-base"></div>
                 <div class="cert-guilloche"></div>
                 <div class="cert-rosette"></div>
+                <div class="cert-diamond-pattern"></div>
                 <div class="cert-microtext"></div>
+                <div class="cert-microtext-extra"></div>
 
-                <!-- 多層邊框 -->
+                <!-- 多層邊框（5 層） -->
                 <div class="cert-border-outer"></div>
                 <div class="cert-border-mid"></div>
                 <div class="cert-border-inner"></div>
                 <div class="cert-border-innermost"></div>
+                <div class="cert-border-deco"></div>
 
-                <!-- 四角裝飾花紋 -->
-                <div class="corner-ornament corner-tl"><svg viewBox="0 0 120 120"><path d="M8,60 Q8,8 60,8" fill="none" stroke="#8c7440" stroke-width="2"/><path d="M14,75 Q14,14 75,14" fill="none" stroke="#b49a5a" stroke-width="1.2" opacity="0.6"/><path d="M20,88 Q20,20 88,20" fill="none" stroke="#b49a5a" stroke-width="0.8" opacity="0.35"/><circle cx="10" cy="10" r="5" fill="none" stroke="#8c7440" stroke-width="1.2"/><circle cx="10" cy="10" r="2.5" fill="#8c7440" opacity="0.25"/><line x1="22" y1="8" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><line x1="8" y1="22" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><path d="M30,8 Q18,18 8,30" fill="none" stroke="#8c7440" stroke-width="0.5" opacity="0.3"/></svg></div>
-                <div class="corner-ornament corner-tr"><svg viewBox="0 0 120 120"><path d="M8,60 Q8,8 60,8" fill="none" stroke="#8c7440" stroke-width="2"/><path d="M14,75 Q14,14 75,14" fill="none" stroke="#b49a5a" stroke-width="1.2" opacity="0.6"/><path d="M20,88 Q20,20 88,20" fill="none" stroke="#b49a5a" stroke-width="0.8" opacity="0.35"/><circle cx="10" cy="10" r="5" fill="none" stroke="#8c7440" stroke-width="1.2"/><circle cx="10" cy="10" r="2.5" fill="#8c7440" opacity="0.25"/><line x1="22" y1="8" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><line x1="8" y1="22" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><path d="M30,8 Q18,18 8,30" fill="none" stroke="#8c7440" stroke-width="0.5" opacity="0.3"/></svg></div>
-                <div class="corner-ornament corner-bl"><svg viewBox="0 0 120 120"><path d="M8,60 Q8,8 60,8" fill="none" stroke="#8c7440" stroke-width="2"/><path d="M14,75 Q14,14 75,14" fill="none" stroke="#b49a5a" stroke-width="1.2" opacity="0.6"/><path d="M20,88 Q20,20 88,20" fill="none" stroke="#b49a5a" stroke-width="0.8" opacity="0.35"/><circle cx="10" cy="10" r="5" fill="none" stroke="#8c7440" stroke-width="1.2"/><circle cx="10" cy="10" r="2.5" fill="#8c7440" opacity="0.25"/><line x1="22" y1="8" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><line x1="8" y1="22" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><path d="M30,8 Q18,18 8,30" fill="none" stroke="#8c7440" stroke-width="0.5" opacity="0.3"/></svg></div>
-                <div class="corner-ornament corner-br"><svg viewBox="0 0 120 120"><path d="M8,60 Q8,8 60,8" fill="none" stroke="#8c7440" stroke-width="2"/><path d="M14,75 Q14,14 75,14" fill="none" stroke="#b49a5a" stroke-width="1.2" opacity="0.6"/><path d="M20,88 Q20,20 88,20" fill="none" stroke="#b49a5a" stroke-width="0.8" opacity="0.35"/><circle cx="10" cy="10" r="5" fill="none" stroke="#8c7440" stroke-width="1.2"/><circle cx="10" cy="10" r="2.5" fill="#8c7440" opacity="0.25"/><line x1="22" y1="8" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><line x1="8" y1="22" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><path d="M30,8 Q18,18 8,30" fill="none" stroke="#8c7440" stroke-width="0.5" opacity="0.3"/></svg></div>
+                <!-- 四角裝飾花紋（加大版） -->
+                <div class="corner-ornament corner-tl"><svg viewBox="0 0 140 140"><path d="M8,70 Q8,8 70,8" fill="none" stroke="#8c7440" stroke-width="2.2"/><path d="M12,85 Q12,12 85,12" fill="none" stroke="#b49a5a" stroke-width="1.5" opacity="0.6"/><path d="M18,100 Q18,18 100,18" fill="none" stroke="#b49a5a" stroke-width="1" opacity="0.35"/><path d="M24,112 Q24,24 112,24" fill="none" stroke="#c9b57a" stroke-width="0.6" opacity="0.2"/><circle cx="10" cy="10" r="6" fill="none" stroke="#8c7440" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#8c7440" opacity="0.2"/><line x1="24" y1="8" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><line x1="8" y1="24" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><path d="M35,8 Q20,20 8,35" fill="none" stroke="#8c7440" stroke-width="0.6" opacity="0.3"/><circle cx="35" cy="35" r="1.5" fill="#b49a5a" opacity="0.3"/></svg></div>
+                <div class="corner-ornament corner-tr"><svg viewBox="0 0 140 140"><path d="M8,70 Q8,8 70,8" fill="none" stroke="#8c7440" stroke-width="2.2"/><path d="M12,85 Q12,12 85,12" fill="none" stroke="#b49a5a" stroke-width="1.5" opacity="0.6"/><path d="M18,100 Q18,18 100,18" fill="none" stroke="#b49a5a" stroke-width="1" opacity="0.35"/><path d="M24,112 Q24,24 112,24" fill="none" stroke="#c9b57a" stroke-width="0.6" opacity="0.2"/><circle cx="10" cy="10" r="6" fill="none" stroke="#8c7440" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#8c7440" opacity="0.2"/><line x1="24" y1="8" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><line x1="8" y1="24" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><path d="M35,8 Q20,20 8,35" fill="none" stroke="#8c7440" stroke-width="0.6" opacity="0.3"/><circle cx="35" cy="35" r="1.5" fill="#b49a5a" opacity="0.3"/></svg></div>
+                <div class="corner-ornament corner-bl"><svg viewBox="0 0 140 140"><path d="M8,70 Q8,8 70,8" fill="none" stroke="#8c7440" stroke-width="2.2"/><path d="M12,85 Q12,12 85,12" fill="none" stroke="#b49a5a" stroke-width="1.5" opacity="0.6"/><path d="M18,100 Q18,18 100,18" fill="none" stroke="#b49a5a" stroke-width="1" opacity="0.35"/><path d="M24,112 Q24,24 112,24" fill="none" stroke="#c9b57a" stroke-width="0.6" opacity="0.2"/><circle cx="10" cy="10" r="6" fill="none" stroke="#8c7440" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#8c7440" opacity="0.2"/><line x1="24" y1="8" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><line x1="8" y1="24" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><path d="M35,8 Q20,20 8,35" fill="none" stroke="#8c7440" stroke-width="0.6" opacity="0.3"/><circle cx="35" cy="35" r="1.5" fill="#b49a5a" opacity="0.3"/></svg></div>
+                <div class="corner-ornament corner-br"><svg viewBox="0 0 140 140"><path d="M8,70 Q8,8 70,8" fill="none" stroke="#8c7440" stroke-width="2.2"/><path d="M12,85 Q12,12 85,12" fill="none" stroke="#b49a5a" stroke-width="1.5" opacity="0.6"/><path d="M18,100 Q18,18 100,18" fill="none" stroke="#b49a5a" stroke-width="1" opacity="0.35"/><path d="M24,112 Q24,24 112,24" fill="none" stroke="#c9b57a" stroke-width="0.6" opacity="0.2"/><circle cx="10" cy="10" r="6" fill="none" stroke="#8c7440" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#8c7440" opacity="0.2"/><line x1="24" y1="8" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><line x1="8" y1="24" x2="24" y2="24" stroke="#b49a5a" stroke-width="0.8" opacity="0.4"/><path d="M35,8 Q20,20 8,35" fill="none" stroke="#8c7440" stroke-width="0.6" opacity="0.3"/><circle cx="35" cy="35" r="1.5" fill="#b49a5a" opacity="0.3"/></svg></div>
 
                 <!-- 左上角認證章 -->
                 <div class="cert-stamp">
@@ -548,6 +652,9 @@
 
                 <!-- 主內容 -->
                 <div class="cert-content">
+
+                    <!-- 頂部機構標示 -->
+                    <div class="cert-institution">倉 勳 科 技 學 院</div>
 
                     <!-- 標題 -->
                     <div class="cert-title">
@@ -568,9 +675,27 @@
                         <div class="cert-recipient" id="certName">學員姓名</div>
                         <div class="cert-org-name" id="certOrg"></div>
                         <div class="cert-congrats">
-                            已完成專業課程學習並通過認證測驗，具備 AI Skill 設計、建構與部署的知識與實務能力。
+                            已完成專業課程學習並通過認證測驗，特此證明具備 AI Skill 設計、<br>建構與跨平台部署的專業知識與實務能力，成績優異，准予認證。
                         </div>
                         <div class="cert-course-badge">AI Skill 實作課_專業變現 AI 技能</div>
+
+                        <!-- 認證能力列表 -->
+                        <div class="cert-skills-section">
+                            <div class="cert-divider-wide">
+                                <div class="cert-divider-wide-line"></div>
+                                <div class="cert-divider-star">✦ 認證能力 ✦</div>
+                                <div class="cert-divider-wide-line"></div>
+                            </div>
+                            <div class="cert-skills-grid">
+                                <div class="cert-skill-item"><span class="cert-skill-check">✔</span> SKILL.md 結構設計與撰寫</div>
+                                <div class="cert-skill-item"><span class="cert-skill-check">✔</span> AI 技能模組建構與部署</div>
+                                <div class="cert-skill-item"><span class="cert-skill-check">✔</span> 跨平台 Skill 同步發佈</div>
+                                <div class="cert-skill-item"><span class="cert-skill-check">✔</span> 防呆機制與品質控管</div>
+                                <div class="cert-skill-item"><span class="cert-skill-check">✔</span> AI 生成器表單製作</div>
+                                <div class="cert-skill-item"><span class="cert-skill-check">✔</span> 專業流程變現五層架構</div>
+                            </div>
+                        </div>
+
                         <div class="cert-number" id="certNumber">證書編號：SKILL-2026-XXXXX</div>
                     </div>
 
@@ -582,10 +707,13 @@
                             <div class="cert-footer-label">發 證 日 期</div>
                         </div>
                         <div class="cert-footer-item">
-                            <div class="cert-gold-seal">
-                                <div class="gold-seal-icon">✦</div>
-                                <div class="gold-seal-text">CERTIFIED</div>
-                                <div class="gold-seal-org">倉勳科技學院</div>
+                            <div class="cert-seal-wrapper">
+                                <svg class="cert-seal-rays" viewBox="0 0 130 130"><g opacity="0.15"><line x1="65" y1="0" x2="65" y2="130" stroke="#b49a5a" stroke-width="1"/><line x1="0" y1="65" x2="130" y2="65" stroke="#b49a5a" stroke-width="1"/><line x1="10" y1="10" x2="120" y2="120" stroke="#b49a5a" stroke-width="0.8"/><line x1="120" y1="10" x2="10" y2="120" stroke="#b49a5a" stroke-width="0.8"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(22.5 65 65)"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(67.5 65 65)"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(112.5 65 65)"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(157.5 65 65)"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(202.5 65 65)"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(247.5 65 65)"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(292.5 65 65)"/><line x1="65" y1="0" x2="120" y2="65" stroke="#b49a5a" stroke-width="0.5" transform="rotate(337.5 65 65)"/></g></svg>
+                                <div class="cert-gold-seal">
+                                    <div class="gold-seal-icon">✦</div>
+                                    <div class="gold-seal-text">CERTIFIED</div>
+                                    <div class="gold-seal-org">倉勳科技學院</div>
+                                </div>
                             </div>
                         </div>
                         <div class="cert-footer-item">
@@ -599,6 +727,11 @@
                             <div class="cert-footer-label">認 證 單 位</div>
                         </div>
                     </div>
+                </div>
+
+                <!-- 底部安全條 -->
+                <div class="cert-security-strip">
+                    <div class="cert-security-text">CERTIFICATE NO. SKILL-2026 · ISSUED BY 倉勳科技學院 · AI SKILL WORKSHOP · VERIFIED AUTHENTIC · CERTIFICATE NO. SKILL-2026 · ISSUED BY 倉勳科技學院 · AI SKILL WORKSHOP · VERIFIED AUTHENTIC</div>
                 </div>
             </div>
         </div>
