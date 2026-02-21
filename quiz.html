@@ -213,36 +213,36 @@
                 linear-gradient(180deg, #f7f2e4 0%, #efe8d4 50%, #f2ece0 100%);
         }
 
-        /* Guilloche 細線交織 */
+        /* Guilloche 細線交織（加深版） */
         .cert-guilloche {
             position: absolute; inset: 0; pointer-events: none;
             background:
-                repeating-linear-gradient(20deg,
-                    transparent, transparent 4px,
-                    rgba(180,150,80,0.035) 4px, rgba(180,150,80,0.035) 4.6px,
-                    transparent 4.6px, transparent 8.6px),
-                repeating-linear-gradient(-20deg,
-                    transparent, transparent 4px,
-                    rgba(180,150,80,0.035) 4px, rgba(180,150,80,0.035) 4.6px,
-                    transparent 4.6px, transparent 8.6px),
-                repeating-linear-gradient(70deg,
-                    transparent, transparent 6px,
-                    rgba(160,130,60,0.02) 6px, rgba(160,130,60,0.02) 6.5px,
-                    transparent 6.5px, transparent 12.5px),
-                repeating-linear-gradient(-70deg,
-                    transparent, transparent 6px,
-                    rgba(160,130,60,0.02) 6px, rgba(160,130,60,0.02) 6.5px,
-                    transparent 6.5px, transparent 12.5px);
+                repeating-linear-gradient(18deg,
+                    transparent, transparent 3px,
+                    rgba(170,140,70,0.07) 3px, rgba(170,140,70,0.07) 3.8px,
+                    transparent 3.8px, transparent 6.8px),
+                repeating-linear-gradient(-18deg,
+                    transparent, transparent 3px,
+                    rgba(170,140,70,0.07) 3px, rgba(170,140,70,0.07) 3.8px,
+                    transparent 3.8px, transparent 6.8px),
+                repeating-linear-gradient(72deg,
+                    transparent, transparent 5px,
+                    rgba(150,120,50,0.04) 5px, rgba(150,120,50,0.04) 5.6px,
+                    transparent 5.6px, transparent 10.6px),
+                repeating-linear-gradient(-72deg,
+                    transparent, transparent 5px,
+                    rgba(150,120,50,0.04) 5px, rgba(150,120,50,0.04) 5.6px,
+                    transparent 5.6px, transparent 10.6px);
         }
 
-        /* 同心圓漣漪 */
+        /* 同心圓漣漪（加深版） */
         .cert-rosette {
             position: absolute; inset: 0; pointer-events: none;
             background:
                 repeating-radial-gradient(circle at 50% 45%,
-                    transparent 0px, transparent 20px,
-                    rgba(180,150,80,0.02) 20px, rgba(180,150,80,0.02) 21px,
-                    transparent 21px, transparent 41px);
+                    transparent 0px, transparent 18px,
+                    rgba(170,140,70,0.035) 18px, rgba(170,140,70,0.035) 19px,
+                    transparent 19px, transparent 37px);
         }
 
         /* 微文字底紋 */
@@ -254,7 +254,7 @@
             position: absolute; top: 48%; left: -30%; right: -30%;
             transform: rotate(-22deg) translateY(-50%);
             font-size: 6.5px; letter-spacing: 4px;
-            color: rgba(160,130,60,0.055);
+            color: rgba(160,130,60,0.08);
             white-space: nowrap; line-height: 24px;
             font-family: 'Courier New', monospace; font-weight: 700;
         }
@@ -263,7 +263,7 @@
             position: absolute; top: 58%; left: -30%; right: -30%;
             transform: rotate(-22deg) translateY(-50%);
             font-size: 6.5px; letter-spacing: 4px;
-            color: rgba(160,130,60,0.045);
+            color: rgba(160,130,60,0.07);
             white-space: nowrap; line-height: 24px;
             font-family: 'Courier New', monospace; font-weight: 700;
         }
@@ -305,19 +305,33 @@
             align-items: center;
         }
 
-        /* 頂部 Logo 徽章 */
-        .cert-top-logo {
-            width: 56px; height: 56px;
-            border: 2px solid #8c7440;
+        /* 左上角紅色認證章 */
+        .cert-stamp {
+            position: absolute; top: 38px; left: 48px; z-index: 3;
+            width: 105px; height: 105px;
+        }
+        .cert-stamp-ring {
+            width: 100%; height: 100%;
+            border: 3px solid #8b0000;
             border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            margin-bottom: 10px;
-            background: rgba(255,255,255,0.4);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.8);
+            transform: rotate(-12deg);
+            box-shadow: 0 2px 10px rgba(139,0,0,0.12);
+            position: relative;
         }
-        .cert-top-logo-inner {
-            font-size: 22px; color: #8c7440; font-weight: 700;
-            font-family: Georgia, 'Times New Roman', serif;
+        .cert-stamp-ring::before {
+            content: ''; position: absolute; inset: 5px;
+            border: 1.5px solid #8b0000; border-radius: 50%;
         }
+        .cert-stamp-ring::after {
+            content: ''; position: absolute; inset: 9px;
+            border: 1px dashed rgba(139,0,0,0.3); border-radius: 50%;
+        }
+        .stamp-check { font-size: 22px; color: #8b0000; font-weight: 900; }
+        .stamp-label { font-size: 10px; color: #8b0000; font-weight: 700; letter-spacing: 1px; }
+        .stamp-org { font-size: 8px; color: #8b0000; font-weight: 700; letter-spacing: 1px; margin-top: 1px; }
 
         /* 證書標題 */
         .cert-title { text-align: center; margin-bottom: 2px; }
@@ -373,13 +387,13 @@
         }
         .cert-course-badge {
             display: inline-block; margin: 14px auto 0;
-            padding: 10px 28px;
-            border: 2px solid #8c7440;
-            color: #3a3020;
-            border-radius: 4px;
+            padding: 10px 32px;
+            background: linear-gradient(135deg, #3a3020, #4a2040);
+            color: #ffd700;
+            border-radius: 30px;
             font-size: 14px; font-weight: 700;
             letter-spacing: 3px;
-            background: rgba(180,154,90,0.08);
+            border: 1px solid rgba(255,215,0,0.3);
         }
         .cert-number {
             text-align: center; font-size: 10px; color: #aaa;
@@ -392,13 +406,13 @@
             align-items: flex-end;
             width: 100%; padding-top: 12px;
         }
-        .cert-footer-item { text-align: center; min-width: 170px; }
+        .cert-footer-item { text-align: center; min-width: 140px; }
         .cert-footer-value {
             font-size: 14px; color: #3a3020;
             font-weight: 600; margin-bottom: 4px;
         }
         .cert-footer-line {
-            width: 170px; height: 1px;
+            width: 140px; height: 1px;
             background: #8c7440;
             margin: 0 auto 4px;
         }
@@ -523,13 +537,17 @@
                 <div class="corner-ornament corner-bl"><svg viewBox="0 0 120 120"><path d="M8,60 Q8,8 60,8" fill="none" stroke="#8c7440" stroke-width="2"/><path d="M14,75 Q14,14 75,14" fill="none" stroke="#b49a5a" stroke-width="1.2" opacity="0.6"/><path d="M20,88 Q20,20 88,20" fill="none" stroke="#b49a5a" stroke-width="0.8" opacity="0.35"/><circle cx="10" cy="10" r="5" fill="none" stroke="#8c7440" stroke-width="1.2"/><circle cx="10" cy="10" r="2.5" fill="#8c7440" opacity="0.25"/><line x1="22" y1="8" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><line x1="8" y1="22" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><path d="M30,8 Q18,18 8,30" fill="none" stroke="#8c7440" stroke-width="0.5" opacity="0.3"/></svg></div>
                 <div class="corner-ornament corner-br"><svg viewBox="0 0 120 120"><path d="M8,60 Q8,8 60,8" fill="none" stroke="#8c7440" stroke-width="2"/><path d="M14,75 Q14,14 75,14" fill="none" stroke="#b49a5a" stroke-width="1.2" opacity="0.6"/><path d="M20,88 Q20,20 88,20" fill="none" stroke="#b49a5a" stroke-width="0.8" opacity="0.35"/><circle cx="10" cy="10" r="5" fill="none" stroke="#8c7440" stroke-width="1.2"/><circle cx="10" cy="10" r="2.5" fill="#8c7440" opacity="0.25"/><line x1="22" y1="8" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><line x1="8" y1="22" x2="22" y2="22" stroke="#b49a5a" stroke-width="0.6" opacity="0.4"/><path d="M30,8 Q18,18 8,30" fill="none" stroke="#8c7440" stroke-width="0.5" opacity="0.3"/></svg></div>
 
+                <!-- 左上角認證章 -->
+                <div class="cert-stamp">
+                    <div class="cert-stamp-ring">
+                        <div class="stamp-check">✓</div>
+                        <div class="stamp-label">CERTIFIED</div>
+                        <div class="stamp-org">倉勳科技學院</div>
+                    </div>
+                </div>
+
                 <!-- 主內容 -->
                 <div class="cert-content">
-
-                    <!-- 頂部 Logo 圓徽 -->
-                    <div class="cert-top-logo">
-                        <span class="cert-top-logo-inner">倉</span>
-                    </div>
 
                     <!-- 標題 -->
                     <div class="cert-title">
@@ -556,7 +574,7 @@
                         <div class="cert-number" id="certNumber">證書編號：SKILL-2026-XXXXX</div>
                     </div>
 
-                    <!-- 底部：左簽名 + 中央金色徽章 + 右簽名 -->
+                    <!-- 底部簽名區 -->
                     <div class="cert-footer">
                         <div class="cert-footer-item">
                             <div class="cert-footer-value" id="certDate">2026 年 2 月 22 日</div>
@@ -574,6 +592,11 @@
                             <div class="cert-footer-value">曾慶良（阿亮老師）</div>
                             <div class="cert-footer-line"></div>
                             <div class="cert-footer-label">授 課 講 師</div>
+                        </div>
+                        <div class="cert-footer-item">
+                            <div class="cert-footer-value">倉勳科技學院</div>
+                            <div class="cert-footer-line"></div>
+                            <div class="cert-footer-label">認 證 單 位</div>
                         </div>
                     </div>
                 </div>
