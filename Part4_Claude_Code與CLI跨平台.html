@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 4 - Claude Code 與 CLI 跨平台｜AI Skill 實作課</title>
+    <style>
+        /* ===== Reset & Base ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            height: 100vh;
+            overflow: hidden;
+            color: #444;
+            line-height: 1.6;
+        }
+
+        /* ===== Nav Bar ===== */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-left {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-1px);
+        }
+
+        /* ===== Arrow Navigation ===== */
+        .arrow-btn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 9000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .arrow-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .arrow-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .arrow-left {
+            left: 20px;
+        }
+
+        .arrow-right {
+            right: 20px;
+        }
+
+        .arrow-btn.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .arrow-btn.disabled:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-50%) scale(1);
+        }
+
+        /* ===== Slides ===== */
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 100px 60px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .slide.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ===== Content Card ===== */
+        .content-card {
+            background: #fff;
+            border-radius: 24px;
+            padding: 60px;
+            max-width: 1400px;
+            width: 95%;
+            max-height: 88vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .content-card::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .content-card::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .content-card::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .content-card::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* ===== Cover Slide ===== */
+        .cover-card {
+            text-align: center;
+            padding: 80px 60px;
+        }
+
+        .cover-part-label {
+            display: inline-block;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #fff;
+            padding: 8px 28px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        .cover-title {
+            font-size: 44px;
+            font-weight: 900;
+            color: #1e3c72;
+            margin-bottom: 16px;
+            line-height: 1.3;
+        }
+
+        .cover-subtitle {
+            font-size: 22px;
+            color: #666;
+            margin-bottom: 36px;
+            line-height: 1.5;
+        }
+
+        .cover-tags {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .cover-tag {
+            background: rgba(42, 82, 152, 0.1);
+            color: #2a5298;
+            padding: 8px 22px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 600;
+            border: 1px solid rgba(42, 82, 152, 0.2);
+        }
+
+        /* ===== Typography ===== */
+        h2 {
+            font-size: 38px;
+            font-weight: 800;
+            color: #2a5298;
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+
+        h3 {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1e3c72;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+
+        p, li {
+            font-size: 20px;
+            color: #444;
+            line-height: 1.8;
+        }
+
+        ul, ol {
+            padding-left: 28px;
+            margin: 12px 0;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* ===== Info / Warning / Success / Danger Boxes ===== */
+        .box {
+            padding: 20px 24px;
+            border-radius: 14px;
+            margin: 20px 0;
+            font-size: 18px;
+            line-height: 1.7;
+        }
+
+        .box.info {
+            background: #e8f4fd;
+            border-left: 5px solid #2a5298;
+            color: #1e3c72;
+        }
+
+        .box.warning {
+            background: #fff8e1;
+            border-left: 5px solid #f9a825;
+            color: #7a6000;
+        }
+
+        .box.success {
+            background: #e8f5e9;
+            border-left: 5px solid #43a047;
+            color: #2e7d32;
+        }
+
+        .box.danger {
+            background: #fce4ec;
+            border-left: 5px solid #e53935;
+            color: #b71c1c;
+        }
+
+        /* ===== Concept Grid ===== */
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .concept-card {
+            background: linear-gradient(135deg, #f8faff, #eef2ff);
+            border: 1px solid rgba(42, 82, 152, 0.15);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(42, 82, 152, 0.15);
+        }
+
+        .concept-card h4 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2a5298;
+            margin-bottom: 10px;
+        }
+
+        .concept-card p {
+            font-size: 17px;
+            color: #555;
+            line-height: 1.7;
+        }
+
+        .concept-card .card-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        /* ===== Code ===== */
+        code {
+            background: #f0f4f8;
+            color: #d6336c;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 17px;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 24px;
+            border-radius: 14px;
+            overflow-x: auto;
+            margin: 16px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+            font-size: inherit;
+        }
+
+        /* ===== Feature List ===== */
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            padding-left: 36px;
+            position: relative;
+            font-size: 20px;
+        }
+
+        .feature-list li::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: 0;
+            top: 10px;
+            font-size: 20px;
+        }
+
+        /* ===== Table ===== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        th {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #fff;
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        td {
+            padding: 14px 20px;
+            font-size: 17px;
+            color: #444;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:nth-child(even) td {
+            background: #f8faff;
+        }
+
+        tr:hover td {
+            background: #eef2ff;
+        }
+
+        /* ===== Benefit Row ===== */
+        .benefit-row {
+            display: flex;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .benefit-item {
+            flex: 1;
+            background: linear-gradient(135deg, #f8faff, #eef2ff);
+            border: 1px solid rgba(42, 82, 152, 0.15);
+            border-radius: 14px;
+            padding: 22px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 600;
+            color: #2a5298;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(42, 82, 152, 0.12);
+        }
+
+        /* ===== Dot Indicators ===== */
+        .dot-indicators {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 9000;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 50px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.35);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: #fff;
+            transform: scale(1.2);
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+
+        .dot:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        /* ===== Slide Number Badge ===== */
+        .slide-number {
+            position: fixed;
+            bottom: 70px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9000;
+        }
+
+        /* ===== Next Step Box ===== */
+        .next-step {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #fff;
+            padding: 24px 28px;
+            border-radius: 14px;
+            margin-top: 24px;
+            font-size: 19px;
+            line-height: 1.7;
+        }
+
+        .next-step strong {
+            color: #ffd54f;
+        }
+
+        .next-step a {
+            display: inline-block;
+            margin-top: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+            padding: 12px 32px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .next-step a:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-2px);
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 900px) {
+            .slide {
+                padding: 80px 20px 60px;
+            }
+
+            .content-card {
+                padding: 36px 24px;
+            }
+
+            .cover-card {
+                padding: 50px 24px;
+            }
+
+            .cover-title {
+                font-size: 32px;
+            }
+
+            h2 {
+                font-size: 30px;
+            }
+
+            h3 {
+                font-size: 22px;
+            }
+
+            .concept-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .benefit-row {
+                flex-direction: column;
+            }
+
+            .arrow-btn {
+                width: 46px;
+                height: 46px;
+                font-size: 22px;
+            }
+
+            .arrow-left {
+                left: 8px;
+            }
+
+            .arrow-right {
+                right: 8px;
+            }
+
+            .nav-right {
+                gap: 6px;
+            }
+
+            .nav-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== Nav Bar ===== -->
+    <nav class="nav-bar">
+        <div class="nav-left">&#x1F527; Part 4 - Claude Code &#33287; CLI &#36328;&#24179;&#21488;</div>
+        <div class="nav-right">
+            <a href="index.html" class="nav-btn">&#x1F3E0; &#39318;&#38913;</a>
+            <button class="nav-btn" id="fullscreenBtn" onclick="toggleFullscreen()">&#x1F5A5;&#xFE0F; &#20840;&#34722;&#24149;</button>
+            <a href="https://www.facebook.com/?locale=zh_TW" target="_blank" class="nav-btn">&#x1F4D8; FB</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="nav-btn">&#x1F3A5; YT</a>
+            <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank" class="nav-btn">&#x1F465; 3A&#31038;&#22296;</a>
+        </div>
+    </nav>
+
+    <!-- ===== Arrow Buttons ===== -->
+    <button class="arrow-btn arrow-left" id="prevBtn" onclick="changeSlide(-1)">&#10094;</button>
+    <button class="arrow-btn arrow-right" id="nextBtn" onclick="changeSlide(1)">&#10095;</button>
+
+    <!-- ===== Slide Number ===== -->
+    <div class="slide-number" id="slideNumber">1 / 15</div>
+
+    <!-- ===================== SLIDES ===================== -->
+
+    <!-- Slide 1: Cover -->
+    <div class="slide active" data-slide="0">
+        <div class="content-card cover-card">
+            <div class="cover-part-label">Part 4 &middot; Claude Code &#33287; CLI &#36328;&#24179;&#21488;</div>
+            <h1 class="cover-title">&#36328;&#24179;&#21488; Skill &#37096;&#32626;&#33287;&#31649;&#29702;</h1>
+            <p class="cover-subtitle">&#22312; Claude Code &#21644; Gemini CLI &#19978;&#20351;&#29992;&#21516;&#19968;&#22871; Skill</p>
+            <div class="cover-tags">
+                <span class="cover-tag">&#x1F4BB; Claude Code</span>
+                <span class="cover-tag">&#x1F31F; Gemini CLI</span>
+                <span class="cover-tag">&#x1F511; API Key</span>
+                <span class="cover-tag">&#x1F310; &#36328;&#24179;&#21488;</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 2: &#35469;&#35672; Claude Code -->
+    <div class="slide" data-slide="1">
+        <div class="content-card">
+            <h2>&#x1F4BB; &#35469;&#35672; Claude Code</h2>
+            <p>Claude Code &#26159; Anthropic &#23448;&#26041;&#25512;&#20986;&#30340; CLI &#24037;&#20855;&#65292;&#35731;&#20320;&#22312;&#32066;&#31471;&#27231;&#20013;&#30452;&#25509;&#33287; Claude &#20114;&#21205;&#12290;&#21151;&#33021;&#24375;&#22823;&#65292;&#20294;&#38656;&#35201;&#20184;&#36027;&#20351;&#29992; API&#12290;</p>
+            <h3>Claude Code &#22522;&#26412;&#36039;&#35338;</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>&#38917;&#30446;</th>
+                        <th>&#35498;&#26126;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>&#38283;&#30332;&#21830;</strong></td>
+                        <td>Anthropic&#65288;Claude &#30340;&#38283;&#30332;&#20844;&#21496;&#65289;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#36027;&#29992;</strong></td>
+                        <td>&#20184;&#36027;&#65288;&#25353; API &#29992;&#37327;&#35336;&#36027;&#65289;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#23433;&#35037;</strong></td>
+                        <td><code>npm install -g @anthropic-ai/claude-code</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Skill &#36335;&#24465;</strong></td>
+                        <td><code>.claude/skills/</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#29305;&#33394;</strong></td>
+                        <td>&#24375;&#22823;&#30340;&#31243;&#24335;&#30908;&#33021;&#21147;&#12289;&#32066;&#31471;&#27231;&#25972;&#21512;</td>
+                    </tr>
+                </tbody>
+            </table>
+            <img src="images/01-25_claude_pricing_plans.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Claude Pricing Plans" />
+        </div>
+    </div>
+
+    <!-- Slide 3: &#35387;&#20874; Anthropic Console -->
+    <div class="slide" data-slide="2">
+        <div class="content-card">
+            <h2>&#x1F4DD; Step 1&#65306;&#35387;&#20874; Anthropic Console</h2>
+            <p>&#35201;&#20351;&#29992; Claude Code&#65292;&#39318;&#20808;&#38656;&#35201;&#21040; Anthropic Console &#35387;&#20874;&#24115;&#34399;&#20006;&#21462;&#24471; API Key&#12290;</p>
+            <h3>&#35387;&#20874;&#27493;&#39519;</h3>
+            <ol>
+                <li>&#21069;&#24448; <strong>console.anthropic.com</strong></li>
+                <li>&#40670;&#36984; <strong>Sign Up</strong>&#65288;&#35387;&#20874;&#65289;</li>
+                <li>&#22635;&#23531; <strong>Email</strong> &#21644;<strong>&#23494;&#30908;</strong>&#65292;&#23436;&#25104;&#35387;&#20874;&#27969;&#31243;</li>
+            </ol>
+            <div class="box info">
+                <strong>&#x1F4A1; &#23567;&#25552;&#37266;</strong><br>
+                &#20813;&#36027;&#35387;&#20874;&#65292;&#20294;&#20351;&#29992; API &#38656;&#35201;&#20808;&#20786;&#20540;&#65288;&#26368;&#20302; $5 &#32654;&#20803;&#65289;&#12290;
+            </div>
+            <img src="images/01-26_anthropic_console_signup.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Anthropic Console Signup" />
+        </div>
+    </div>
+
+    <!-- Slide 4: &#24314;&#31435; API Key -->
+    <div class="slide" data-slide="3">
+        <div class="content-card">
+            <h2>&#x1F511; Step 2&#65306;&#24314;&#31435; API Key</h2>
+            <p>&#30331;&#20837; Anthropic Console &#24460;&#65292;&#38656;&#35201;&#24314;&#31435;&#19968;&#32068; API Key &#20358;&#35731; Claude Code &#39511;&#35657;&#20320;&#30340;&#36523;&#20221;&#12290;</p>
+            <h3>&#24314;&#31435;&#27493;&#39519;</h3>
+            <ol>
+                <li>&#30331;&#20837; <strong>Console</strong> &#24460;&#21488;</li>
+                <li>&#24038;&#20596;&#36984;&#21934;&#40670;&#36984; <strong>API Keys</strong></li>
+                <li>&#40670;&#36984; <strong>Create Key</strong>&#65288;&#24314;&#31435;&#37329;&#37749;&#65289;</li>
+                <li>&#36664;&#20837;&#19968;&#20491;&#23481;&#26131;&#36776;&#35672;&#30340;<strong>&#21517;&#31281;</strong></li>
+            </ol>
+            <div class="box info">
+                <strong>&#x1F4A1; &#21629;&#21517;&#24314;&#35696;</strong><br>
+                &#24314;&#35696;&#21462;&#19968;&#20491;&#23481;&#26131;&#36776;&#35672;&#30340;&#21517;&#31281;&#65292;&#22914;&#12300;my-skill-workshop&#12301;&#65292;&#26041;&#20415;&#26085;&#24460;&#31649;&#29702;&#22810;&#32068;&#37329;&#37749;&#12290;
+            </div>
+            <img src="images/01-27_create_api_key.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Create API Key" />
+        </div>
+    </div>
+
+    <!-- Slide 5: &#35079;&#35069; API Key -->
+    <div class="slide" data-slide="4">
+        <div class="content-card">
+            <h2>&#x1F4CB; Step 3&#65306;&#35079;&#35069; API Key</h2>
+            <p>&#24314;&#31435;&#23436;&#25104;&#24460;&#65292;&#31995;&#32113;&#26371;&#39023;&#31034;&#20320;&#30340; API Key&#12290;&#23427;&#30340;&#26684;&#24335;&#26159; <code>sk-ant-</code> &#38283;&#38957;&#30340;&#19968;&#38263;&#20018;&#23383;&#20018;&#12290;</p>
+            <div class="box danger">
+                <strong>&#x26A0;&#xFE0F; &#26997;&#37325;&#35201;&#35686;&#21578;&#65281;</strong><br>
+                API Key &#21482;&#26371;&#39023;&#31034;&#19968;&#27425;&#65281;&#35531;&#31435;&#21363;&#35079;&#35069;&#20445;&#23384;&#21040;&#23433;&#20840;&#30340;&#22320;&#26041;&#12290;&#22914;&#26524;&#36986;&#22833;&#65292;&#21482;&#33021;&#37325;&#26032;&#24314;&#31435;&#19968;&#20491;&#26032;&#30340;&#12290;&#21315;&#33836;&#19981;&#35201;&#25226; API Key &#20844;&#38283;&#20998;&#20139;&#25110;&#19978;&#20659;&#21040; GitHub&#12290;
+            </div>
+            <h3>API Key &#26684;&#24335;&#31684;&#20363;</h3>
+            <pre><code>sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...</code></pre>
+            <div class="box info">
+                <strong>&#x1F4A1; &#20445;&#23384;&#24314;&#35696;</strong><br>
+                &#21487;&#20197;&#23384;&#22312;&#23494;&#30908;&#31649;&#29702;&#22120;&#65288;&#22914; 1Password&#12289;Bitwarden&#65289;&#25110;&#26412;&#22320;&#30340;&#23433;&#20840;&#31558;&#35352;&#20013;&#12290;
+            </div>
+            <img src="images/01-28_copy_api_key.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Copy API Key" />
+        </div>
+    </div>
+
+    <!-- Slide 6: &#23433;&#35037; Claude Code -->
+    <div class="slide" data-slide="5">
+        <div class="content-card">
+            <h2>&#x2699;&#xFE0F; Step 4&#65306;&#23433;&#35037; Claude Code</h2>
+            <p>&#20351;&#29992; npm &#20840;&#22495;&#23433;&#35037; Claude Code&#65292;&#21482;&#35201;&#19968;&#34892;&#25351;&#20196;&#23601;&#33021;&#25630;&#23450;&#12290;</p>
+            <h3>&#23433;&#35037;&#25351;&#20196;</h3>
+            <pre><code>npm install -g @anthropic-ai/claude-code</code></pre>
+            <h3>&#39511;&#35657;&#23433;&#35037;</h3>
+            <pre><code>claude --version</code></pre>
+            <div class="box info">
+                <strong>&#x1F4A1; &#21069;&#32622;&#38656;&#27714;</strong><br>
+                &#38656;&#35201;&#20808;&#23433;&#35037; Node.js&#65288;&#24314;&#35696; v18 &#20197;&#19978;&#29256;&#26412;&#65289;&#12290;&#22914;&#26524;&#36996;&#27794;&#23433;&#35037;&#65292;&#21487;&#21040; <strong>nodejs.org</strong> &#19979;&#36617;&#23433;&#35037;&#12290;
+            </div>
+            <img src="images/01-29_claude_code_installed.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Claude Code Installed" />
+        </div>
+    </div>
+
+    <!-- Slide 7: API Key &#30331;&#20837; -->
+    <div class="slide" data-slide="6">
+        <div class="content-card">
+            <h2>&#x1F510; Step 5&#65306;&#20351;&#29992; API Key &#30331;&#20837;</h2>
+            <p>&#23433;&#35037;&#23436;&#25104;&#24460;&#65292;&#36914;&#20837;&#20320;&#30340;&#23560;&#26696;&#30446;&#37636;&#65292;&#21855;&#21205; Claude Code &#20006;&#20351;&#29992; API Key &#30331;&#20837;&#12290;</p>
+            <h3>&#30331;&#20837;&#27493;&#39519;</h3>
+            <ol>
+                <li>&#22312;&#23560;&#26696;&#30446;&#37636;&#20013;&#22519;&#34892; <code>claude</code></li>
+                <li>&#36984;&#25799;&#12300;<strong>Use an API key</strong>&#12301;</li>
+                <li>&#36028;&#19978;&#20320;&#30340; <code>sk-ant-...</code> API Key</li>
+                <li>&#20986;&#29694;&#25552;&#31034;&#31526;&#34399; <code>&gt;</code> &#34920;&#31034;&#30331;&#20837;&#25104;&#21151;</li>
+            </ol>
+            <div class="box success">
+                <strong>&#x2705; &#30331;&#20837;&#25104;&#21151;&#65281;</strong><br>
+                &#30475;&#21040; <code>&gt;</code> &#25552;&#31034;&#31526;&#34399;&#23601;&#34920;&#31034;&#21487;&#20197;&#38283;&#22987;&#20351;&#29992;&#20102;&#65281;
+            </div>
+            <img src="images/01-30_claude_code_api_key_login.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Claude Code API Key Login" />
+        </div>
+    </div>
+
+    <!-- Slide 8: &#23560;&#26696; vs &#20491;&#20154; Skill -->
+    <div class="slide" data-slide="7">
+        <div class="content-card">
+            <h2>&#x1F4C2; &#23560;&#26696;&#23652;&#32026; vs &#20491;&#20154;&#23652;&#32026; Skill</h2>
+            <p>Claude Code &#25903;&#25588;&#20841;&#31278; Skill &#23384;&#25918;&#26041;&#24335;&#65292;&#20381;&#29031;&#20351;&#29992;&#31684;&#22285;&#19981;&#21516;&#65292;&#36984;&#25799;&#26368;&#36969;&#21512;&#30340;&#23652;&#32026;&#12290;</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>&#27604;&#36611;&#38917;&#30446;</th>
+                        <th>&#23560;&#26696;&#23652;&#32026;</th>
+                        <th>&#20491;&#20154;&#23652;&#32026;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>&#36335;&#24465;</strong></td>
+                        <td><code>.claude/skills/</code></td>
+                        <td><code>~/.claude/skills/</code></td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#31684;&#22285;</strong></td>
+                        <td>&#21482;&#26377;&#36889;&#20491;&#23560;&#26696;&#33021;&#29992;</td>
+                        <td>&#25152;&#26377;&#23560;&#26696;&#37117;&#33021;&#29992;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#27604;&#21947;</strong></td>
+                        <td>&#24037;&#22320;&#30340;&#23560;&#29992;&#24037;&#20855;&#31665;</td>
+                        <td>&#20320;&#30340;&#38568;&#36523;&#24037;&#20855;&#21253;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#36969;&#21512;</strong></td>
+                        <td>&#22296;&#38538;&#20849;&#29992;&#30340; Skill</td>
+                        <td>&#20491;&#20154;&#24120;&#29992;&#30340; Skill</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Git</strong></td>
+                        <td>&#26371;&#34987;&#29256;&#26412;&#25511;&#21046;</td>
+                        <td>&#19981;&#26371;&#34987;&#29256;&#26412;&#25511;&#21046;</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="box info">
+                <strong>&#x1F4A1; &#35506;&#31243;&#24314;&#35696;</strong><br>
+                &#20170;&#22825;&#30340;&#35506;&#31243;&#20351;&#29992;&#12300;&#23560;&#26696;&#23652;&#32026;&#12301;&#65292;&#26041;&#20415;&#22296;&#38538;&#20998;&#20139;&#21644;&#29256;&#26412;&#25511;&#21046;&#12290;
+            </div>
+            <img src="images/01-31_project_vs_personal_skill.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Project vs Personal Skill" />
+        </div>
+    </div>
+
+    <!-- Slide 9: Claude Code &#22519;&#34892; Skill -->
+    <div class="slide" data-slide="8">
+        <div class="content-card">
+            <h2>&#x1F680; &#22312; Claude Code &#20351;&#29992; Skill</h2>
+            <p>&#25226; SKILL.md &#25918;&#21040; <code>.claude/skills/email-reply-helper/</code> &#24460;&#65292;Claude Code &#23601;&#26371;<strong>&#33258;&#21205;&#20597;&#28204;</strong>&#20006;&#36617;&#20837;&#20320;&#30340; Skill&#12290;</p>
+            <h3>&#20114;&#21205;&#27969;&#31243;</h3>
+            <ol>
+                <li>&#23559; SKILL.md &#35079;&#35069;&#21040; <code>.claude/skills/email-reply-helper/</code></li>
+                <li>&#21855;&#21205; Claude Code&#65292;&#36664;&#20837;&#23458;&#25142;&#20358;&#20449;&#20839;&#23481;</li>
+                <li>AI &#33258;&#21205;&#20597;&#28204;&#20006;&#36617;&#20837;&#23565;&#25033;&#30340; Skill</li>
+                <li>&#25353;&#29031; Skill &#23450;&#32681;&#30340;&#35215;&#21063;&#29986;&#29983;&#32080;&#27083;&#21270;&#22238;&#35206;</li>
+            </ol>
+            <div class="box success">
+                <strong>&#x1F389; &#36328;&#24179;&#21488;&#25104;&#21151;&#65281;</strong><br>
+                &#21516;&#19968;&#20491; SKILL.md&#65292;&#22312; Antigravity &#21644; Claude Code &#37117;&#33021;&#27491;&#24120;&#22519;&#34892;&#65281;&#19981;&#38656;&#35201;&#20570;&#20219;&#20309;&#20462;&#25913;&#12290;
+            </div>
+            <img src="images/01-32_claude_code_skill_response.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Claude Code Skill Response" />
+        </div>
+    </div>
+
+    <!-- Slide 10: CLI &#24120;&#29992;&#25351;&#20196; -->
+    <div class="slide" data-slide="9">
+        <div class="content-card">
+            <h2>&#x1F4DF; Claude Code CLI &#24120;&#29992;&#25351;&#20196;</h2>
+            <p>&#20197;&#19979;&#26159; Claude Code &#22312;&#32066;&#31471;&#27231;&#20013;&#26368;&#24120;&#29992;&#30340;&#25351;&#20196;&#65292;&#29087;&#24713;&#36889;&#20123;&#23601;&#33021;&#27969;&#26274;&#25805;&#20316;&#12290;</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>&#25351;&#20196;</th>
+                        <th>&#35498;&#26126;</th>
+                        <th>&#31684;&#20363;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>claude</code></td>
+                        <td>&#36914;&#20837;&#20114;&#21205;&#27169;&#24335;</td>
+                        <td>&#30452;&#25509;&#36664;&#20837; <code>claude</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>claude -p "..."</code></td>
+                        <td>&#21934;&#27425;&#22519;&#34892;&#27169;&#24335;</td>
+                        <td><code>claude -p "&#24171;&#25105;&#22238;&#35206;&#36889;&#23553;&#20449;"</code></td>
+                    </tr>
+                    <tr>
+                        <td><code>claude --help</code></td>
+                        <td>&#26597;&#30475;&#35498;&#26126;</td>
+                        <td>&#21015;&#20986;&#25152;&#26377;&#21487;&#29992;&#36984;&#38917;</td>
+                    </tr>
+                    <tr>
+                        <td><code>claude --version</code></td>
+                        <td>&#26597;&#30475;&#29256;&#26412;</td>
+                        <td>&#30906;&#35469;&#23433;&#35037;&#25104;&#21151;</td>
+                    </tr>
+                </tbody>
+            </table>
+            <img src="images/01-33_cli_commands.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="CLI Commands" />
+        </div>
+    </div>
+
+    <!-- Slide 11: CLI &#21934;&#27425;&#22519;&#34892; -->
+    <div class="slide" data-slide="10">
+        <div class="content-card">
+            <h2>&#x26A1; CLI &#21934;&#27425;&#22519;&#34892;&#27169;&#24335;</h2>
+            <p>&#20351;&#29992; <code>-p</code> &#21443;&#25976;&#21487;&#20197;&#19981;&#36914;&#20837;&#20114;&#21205;&#27169;&#24335;&#65292;&#30452;&#25509;&#22519;&#34892;&#19968;&#27425;&#24615;&#20219;&#21209;&#65292;&#38750;&#24120;&#36969;&#21512;&#25972;&#21512;&#21040;&#33258;&#21205;&#21270;&#27969;&#31243;&#20013;&#12290;</p>
+            <h3>&#25351;&#20196;&#31684;&#20363;</h3>
+            <pre><code>claude -p "&#35531;&#29992; email-reply-helper &#24171;&#25105;&#22238;&#35206;&#36889;&#23553;&#23458;&#25142;&#35426;&#20729;&#20449;&#65306;
+&#24744;&#22909;&#65292;&#25105;&#20497;&#20844;&#21496;&#24819;&#35426;&#21839;&#20225;&#26989;&#22521;&#35347;&#26041;&#26696;&#30340;&#22577;&#20729;..."</code></pre>
+            <h3>&#19977;&#22823;&#22909;&#34389;</h3>
+            <div class="benefit-row">
+                <div class="benefit-item">&#x1F3AF; &#19981;&#38656;&#36914;&#20837;&#20114;&#21205;&#27169;&#24335;<br>&#19968;&#34892;&#25351;&#20196;&#30452;&#25509;&#22519;&#34892;</div>
+                <div class="benefit-item">&#x1F517; &#21487;&#20197;&#25972;&#21512;&#21040;&#33139;&#26412;&#20013;<br>&#20018;&#25509;&#33258;&#21205;&#21270;&#24037;&#20316;&#27969;</div>
+                <div class="benefit-item">&#x1F4E6; &#36969;&#21512;&#25209;&#27425;&#34389;&#29702;<br>&#19968;&#27425;&#34389;&#29702;&#22810;&#23553;&#20449;&#20214;</div>
+            </div>
+            <img src="images/01-34_cli_single_run.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="CLI Single Run" />
+        </div>
+    </div>
+
+    <!-- Slide 12: Gemini CLI -->
+    <div class="slide" data-slide="11">
+        <div class="content-card">
+            <h2>&#x1F31F; &#35469;&#35672; Gemini CLI</h2>
+            <p>Gemini CLI &#26159; Google &#25512;&#20986;&#30340;&#20813;&#36027; CLI &#24037;&#20855;&#65292;&#26368;&#22823;&#29305;&#33394;&#26159;<strong>&#33258;&#21205;&#35712;&#21462;&#24037;&#20316;&#21312;&#27284;&#26696;</strong>&#65292;&#33021;&#30452;&#25509;&#36776;&#35672;&#30446;&#37636;&#20013;&#30340; Skill &#23450;&#32681;&#12290;</p>
+            <h3>&#23433;&#35037;&#26041;&#24335;</h3>
+            <pre><code>npm install -g @anthropics/gemini-cli</code></pre>
+            <p style="margin-top:4px; color:#888; font-size:16px;">&#65288;&#25110;&#20381;&#29031; Google &#23448;&#26041;&#25991;&#20214;&#25351;&#24341;&#23433;&#35037;&#65289;</p>
+            <h3>&#19977;&#31278;&#35469;&#35657;&#26041;&#24335;</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>&#26041;&#24335;</th>
+                        <th>&#35498;&#26126;</th>
+                        <th>&#25512;&#34214;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Login with Google</strong></td>
+                        <td>&#29992; Google &#24115;&#34399;&#30331;&#20837;&#65288;&#20813;&#36027;&#65289;</td>
+                        <td>&#x2B50; &#25512;&#34214;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>API Key</strong></td>
+                        <td>&#20351;&#29992; Gemini API Key</td>
+                        <td>&#36914;&#38542;&#29992;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Vertex AI</strong></td>
+                        <td>GCP &#20225;&#26989;&#29256;</td>
+                        <td>&#20225;&#26989;&#29992;</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="box info">
+                <strong>&#x1F4A1; &#26368;&#31777;&#21934;&#30340;&#26041;&#24335;</strong><br>
+                &#36984;&#12300;Login with Google&#12301;&#26368;&#31777;&#21934;&#65292;&#20813;&#36027;&#23601;&#33021;&#29992;&#65281;&#26377; Google &#24115;&#34399;&#23601;&#33021;&#30452;&#25509;&#38283;&#22987;&#12290;
+            </div>
+            <img src="images/01-35-1_gemini_cli_installed.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Gemini CLI Installed 1" />
+            <img src="images/01-35-2_gemini_cli_installed.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Gemini CLI Installed 2" />
+        </div>
+    </div>
+
+    <!-- Slide 13: &#19977;&#24179;&#21488;&#23565;&#29031; -->
+    <div class="slide" data-slide="12">
+        <div class="content-card">
+            <h2>&#x1F4CA; &#19977;&#22823;&#24179;&#21488;&#23436;&#25972;&#23565;&#29031;&#34920;</h2>
+            <p>&#19977;&#20491;&#24179;&#21488;&#21508;&#26377;&#29305;&#33394;&#33287;&#20778;&#21218;&#65292;&#20197;&#19979;&#26159;&#23436;&#25972;&#30340;&#21151;&#33021;&#23565;&#29031;&#65292;&#24171;&#20320;&#36984;&#25799;&#26368;&#36969;&#21512;&#30340;&#24037;&#20855;&#12290;</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>&#27604;&#36611;&#38917;&#30446;</th>
+                        <th>Antigravity</th>
+                        <th>Claude Code</th>
+                        <th>Gemini CLI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>&#36027;&#29992;</strong></td>
+                        <td>&#x1F193; &#20813;&#36027;</td>
+                        <td>&#x1F4B3; &#20184;&#36027;&#65288;API Key&#65289;</td>
+                        <td>&#x1F193; &#20813;&#36027;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#23433;&#35037;</strong></td>
+                        <td>&#19981;&#38656;&#35201;&#65288;&#32178;&#38913;&#29256;&#65289;</td>
+                        <td>npm install</td>
+                        <td>npm install</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Skill &#36335;&#24465;</strong></td>
+                        <td><code>.agent/skills/</code></td>
+                        <td><code>.claude/skills/</code></td>
+                        <td>&#35712;&#21462;&#24037;&#20316;&#21312;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#20171;&#38754;</strong></td>
+                        <td>&#32178;&#38913; IDE</td>
+                        <td>&#32066;&#31471;&#27231;</td>
+                        <td>&#32066;&#31471;&#27231;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#29305;&#33394;</strong></td>
+                        <td>&#35222;&#35258;&#21270;&#25805;&#20316;</td>
+                        <td>&#31243;&#24335;&#30908;&#33021;&#21147;&#24375;</td>
+                        <td>&#33258;&#21205;&#35712;&#27284;</td>
+                    </tr>
+                    <tr>
+                        <td><strong>&#36969;&#21512;</strong></td>
+                        <td>&#21021;&#23416;&#32773;</td>
+                        <td>&#38283;&#30332;&#32773;</td>
+                        <td>&#25152;&#26377;&#20154;</td>
+                    </tr>
+                </tbody>
+            </table>
+            <img src="images/01-36-1_three_platform_comparison.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Three Platform Comparison 1" />
+            <img src="images/01-36-2_three_platform_comparison.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Three Platform Comparison 2" />
+        </div>
+    </div>
+
+    <!-- Slide 14: &#21516;&#27493;&#33139;&#26412; -->
+    <div class="slide" data-slide="13">
+        <div class="content-card">
+            <h2>&#x1F504; &#19968;&#37749;&#21516;&#27493;&#21040;&#25152;&#26377;&#24179;&#21488;</h2>
+            <p>&#28858;&#20102;&#36991;&#20813;&#22312;&#22810;&#20491;&#24179;&#21488;&#20043;&#38291;&#25163;&#21205;&#35079;&#35069; Skill &#27284;&#26696;&#65292;&#25105;&#20497;&#29992; <code>skills-source/</code> &#20316;&#28858;<strong>&#21934;&#19968;&#20358;&#28304;</strong>&#65292;&#25645;&#37197;&#21516;&#27493;&#33139;&#26412;&#19968;&#37749;&#30332;&#20296;&#21040;&#25152;&#26377;&#24179;&#21488;&#12290;</p>
+            <h3>&#21516;&#27493;&#27969;&#31243;</h3>
+<pre><code>skills-source/&#65288;&#23531;&#22312;&#36889;&#35041;&#65289;
+    &#8595; bash sync-skills.sh
+    &#9500;&#9472;&#9472; .agent/skills/&#12288;&#12288;&#65288;Antigravity &#29992;&#65289;
+    &#9492;&#9472;&#9472; .claude/skills/&#12288;&#12288;&#65288;Claude Code &#29992;&#65289;</code></pre>
+            <h3>&#21516;&#27493;&#33139;&#26412;&#20839;&#23481;</h3>
+<pre><code>#!/bin/bash
+# sync-skills.sh - &#19968;&#37749;&#21516;&#27493; Skill &#21040;&#25152;&#26377;&#24179;&#21488;
+
+SKILL_SOURCE="skills-source"
+ANTIGRAVITY_DIR=".agent/skills"
+CLAUDE_DIR=".claude/skills"
+
+# &#24314;&#31435;&#30446;&#27161;&#36039;&#26009;&#22846;
+mkdir -p "$ANTIGRAVITY_DIR"
+mkdir -p "$CLAUDE_DIR"
+
+# &#21516;&#27493;&#27284;&#26696;
+cp -r "$SKILL_SOURCE"/* "$ANTIGRAVITY_DIR"/
+cp -r "$SKILL_SOURCE"/* "$CLAUDE_DIR"/
+
+echo "&#127881; &#20840;&#37096;&#21516;&#27493;&#23436;&#25104;&#65281;"</code></pre>
+            <div class="box success">
+                <strong>&#x2705; &#19968;&#34389;&#32173;&#35703;&#65292;&#34389;&#34389;&#26356;&#26032;&#65281;</strong><br>
+                &#21482;&#35201;&#32173;&#35703; <code>skills-source/</code> &#19968;&#20491;&#22320;&#26041;&#65292;&#25152;&#26377;&#24179;&#21488;&#37117;&#26371;&#21516;&#27493;&#26356;&#26032;&#65281;&#20877;&#20063;&#19981;&#29992;&#25812;&#24515;&#29256;&#26412;&#19981;&#19968;&#33268;&#30340;&#21839;&#38988;&#12290;
+            </div>
+            <img src="images/01-37_sync_script.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Sync Script" />
+        </div>
+    </div>
+
+    <!-- Slide 15: Part 4 &#23567;&#32080; -->
+    <div class="slide" data-slide="14">
+        <div class="content-card">
+            <h2>&#x1F4DD; Part 4 &#37325;&#40670;&#22238;&#39015;</h2>
+            <p>&#22312;&#36889;&#20491;&#21934;&#20803;&#20013;&#65292;&#25105;&#20497;&#23416;&#26371;&#20102;&#22914;&#20309;&#22312; Claude Code &#21644; Gemini CLI &#19978;&#37096;&#32626;&#21644;&#20351;&#29992; Skill&#65292;&#23526;&#29694;&#30495;&#27491;&#30340;&#36328;&#24179;&#21488;&#31649;&#29702;&#12290;</p>
+            <div class="concept-grid">
+                <div class="concept-card">
+                    <div class="card-icon">&#x1F511;</div>
+                    <h4>Claude Code &#38656;&#35201; API Key</h4>
+                    <p>&#20184;&#36027;&#20294;&#21151;&#33021;&#24375;&#22823;&#65292;&#36969;&#21512;&#38283;&#30332;&#32773;&#12290;&#36879;&#36942; Anthropic Console &#21462;&#24471; API Key &#21363;&#21487;&#20351;&#29992;&#12290;</p>
+                </div>
+                <div class="concept-card">
+                    <div class="card-icon">&#x1F31F;</div>
+                    <h4>Gemini CLI &#20813;&#36027;&#22909;&#29992;</h4>
+                    <p>Login with Google &#21363;&#21487;&#65292;&#33258;&#21205;&#35712;&#21462;&#24037;&#20316;&#21312;&#27284;&#26696;&#65292;&#38646;&#25104;&#26412;&#23601;&#33021;&#38283;&#22987;&#20351;&#29992;&#12290;</p>
+                </div>
+                <div class="concept-card">
+                    <div class="card-icon">&#x1F504;</div>
+                    <h4>&#21516;&#27493;&#33139;&#26412;&#19968;&#37749;&#30332;&#20296;</h4>
+                    <p><code>skills-source/</code> &#23531;&#19968;&#27425;&#65292;&#21516;&#27493;&#21040;&#25152;&#26377;&#24179;&#21488;&#12290;&#32173;&#35703;&#31777;&#21934;&#65292;&#29256;&#26412;&#19968;&#33268;&#12290;</p>
+                </div>
+                <div class="concept-card">
+                    <div class="card-icon">&#x1F4CA;</div>
+                    <h4>&#19977;&#20491;&#24179;&#21488;&#21508;&#26377;&#29305;&#33394;</h4>
+                    <p>&#20381;&#38656;&#27714;&#21644;&#38928;&#31639;&#36984;&#25799;&#26368;&#36969;&#21512;&#30340;&#24179;&#21488;&#12290;&#21021;&#23416;&#29992; Antigravity&#65292;&#36914;&#38542;&#29992; Claude Code &#25110; Gemini CLI&#12290;</p>
+                </div>
+            </div>
+            <div class="next-step">
+                <strong>&#x27A1;&#xFE0F; &#19979;&#19968;&#27493;&#65306;Part 5</strong> &#23559;&#23416;&#32722;&#36914;&#38542;&#25216;&#24039;&#65292;&#21253;&#25324; Guard Rails &#38450;&#35703;&#27231;&#21046;&#12289;HTML &#34920;&#21934;&#25972;&#21512;&#65292;&#20197;&#21450;&#22914;&#20309;&#23559;&#20320;&#30340;&#23560;&#26989;&#27969;&#31243;&#35722;&#29694;&#28858;&#21487;&#37559;&#21806;&#30340; AI &#25216;&#33021;&#29986;&#21697;&#12290;
+                <br>
+                <a href="Part5_&#36914;&#38542;&#25216;&#24039;&#33287;&#27969;&#31243;&#35722;&#29694;.html">&#x1F449; &#21069;&#24448; Part 5&#65306;&#36914;&#38542;&#25216;&#24039;&#33287;&#27969;&#31243;&#35722;&#29694;</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Dot Indicators ===== -->
+    <div class="dot-indicators" id="dotIndicators"></div>
+
+    <!-- ===== JavaScript ===== -->
+    <script>
+        (function () {
+            var currentSlide = 0;
+            var slides = document.querySelectorAll('.slide');
+            var totalSlides = slides.length;
+            var dotContainer = document.getElementById('dotIndicators');
+            var slideNumber = document.getElementById('slideNumber');
+            var prevBtn = document.getElementById('prevBtn');
+            var nextBtn = document.getElementById('nextBtn');
+
+            // Build dot indicators
+            for (var i = 0; i < totalSlides; i++) {
+                var dot = document.createElement('div');
+                dot.className = 'dot' + (i === 0 ? ' active' : '');
+                dot.setAttribute('data-index', i);
+                dot.addEventListener('click', function () {
+                    goToSlide(parseInt(this.getAttribute('data-index')));
+                });
+                dotContainer.appendChild(dot);
+            }
+
+            function goToSlide(index) {
+                if (index < 0 || index >= totalSlides) return;
+                slides[currentSlide].classList.remove('active');
+                var dots = dotContainer.querySelectorAll('.dot');
+                dots[currentSlide].classList.remove('active');
+
+                currentSlide = index;
+
+                slides[currentSlide].classList.add('active');
+                dots[currentSlide].classList.add('active');
+                slideNumber.textContent = (currentSlide + 1) + ' / ' + totalSlides;
+
+                // Reset scroll position for content cards
+                var activeCard = slides[currentSlide].querySelector('.content-card');
+                if (activeCard) activeCard.scrollTop = 0;
+
+                // Update arrow states
+                prevBtn.classList.toggle('disabled', currentSlide === 0);
+                nextBtn.classList.toggle('disabled', currentSlide === totalSlides - 1);
+            }
+
+            window.changeSlide = function (direction) {
+                var newIndex = currentSlide + direction;
+                if (newIndex >= 0 && newIndex < totalSlides) {
+                    goToSlide(newIndex);
+                }
+            };
+
+            // Keyboard navigation
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+                    e.preventDefault();
+                    changeSlide(1);
+                } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    changeSlide(-1);
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    goToSlide(0);
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    goToSlide(totalSlides - 1);
+                }
+            });
+
+            // Touch swipe support
+            var touchStartX = 0;
+            var touchEndX = 0;
+
+            document.addEventListener('touchstart', function (e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            document.addEventListener('touchend', function (e) {
+                touchEndX = e.changedTouches[0].screenX;
+                var diff = touchStartX - touchEndX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0) {
+                        changeSlide(1);
+                    } else {
+                        changeSlide(-1);
+                    }
+                }
+            }, { passive: true });
+
+            // Fullscreen toggle
+            window.toggleFullscreen = function () {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(function () {});
+                } else {
+                    document.exitFullscreen().catch(function () {});
+                }
+            };
+
+            // Initial arrow state
+            prevBtn.classList.add('disabled');
+        })();
+    </script>
+
+<script src="auth.js"></script>
+</body>
+</html>

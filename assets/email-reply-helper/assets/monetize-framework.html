@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>流程變現五層架構</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 40px;
+        }
+        .level {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .level:nth-child(2) { border-left: 6px solid #e74c3c; }
+        .level:nth-child(4) { border-left: 6px solid #f39c12; }
+        .level:nth-child(6) { border-left: 6px solid #3498db; }
+        .level:nth-child(8) { border-left: 6px solid #9b59b6; }
+        .level:nth-child(10) { border-left: 6px solid #2ecc71; }
+        .icon { font-size: 36px; }
+        .text h3 { font-size: 18px; color: #333; margin-bottom: 4px; }
+        .text p { font-size: 14px; color: #888; }
+        .arrow {
+            text-align: center;
+            color: #667eea;
+            font-size: 24px;
+            padding: 4px 0;
+            letter-spacing: 4px;
+        }
+        .tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 流程變現五層架構</h1>
+
+        <div class="level">
+            <div class="icon">🧠</div>
+            <div class="text">
+                <h3>第一層：專業知識 <span class="tag" style="background:#e74c3c">存在腦中</span></h3>
+                <p>你的經驗、判斷、做事方法 → 難以規模化，離開就帶走</p>
+            </div>
+        </div>
+        <div class="arrow">▼</div>
+
+        <div class="level">
+            <div class="icon">📋</div>
+            <div class="text">
+                <h3>第二層：流程拆解表 <span class="tag" style="background:#f39c12">寫在紙上</span></h3>
+                <p>拆成步驟、寫成 SOP → 可以教人，但仍需人工執行</p>
+            </div>
+        </div>
+        <div class="arrow">▼</div>
+
+        <div class="level">
+            <div class="icon">📄</div>
+            <div class="text">
+                <h3>第三層：SKILL.md <span class="tag" style="background:#3498db">存在檔案</span></h3>
+                <p>轉化為 AI 看得懂的指令 → AI 可重複執行，品質穩定</p>
+            </div>
+        </div>
+        <div class="arrow">▼</div>
+
+        <div class="level">
+            <div class="icon">🖱️</div>
+            <div class="text">
+                <h3>第四層：AI 生成器 <span class="tag" style="background:#9b59b6">任何人能用</span></h3>
+                <p>加上輸入表單 → 填空就能跑，不需要學 AI</p>
+            </div>
+        </div>
+        <div class="arrow">▼</div>
+
+        <div class="level">
+            <div class="icon">⚙️</div>
+            <div class="text">
+                <h3>第五層：AI 工作系統 <span class="tag" style="background:#2ecc71">持續進化</span></h3>
+                <p>多個 Skill 串接 → 自動化工作鏈，長期價值</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

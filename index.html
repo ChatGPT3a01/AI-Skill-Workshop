@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 1 課程簡報｜AI Skill 實作課</title>
+    <style>
+        /* ===== Reset & Base ===== */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ===== Scroll Progress Bar ===== */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            z-index: 10000;
+            transition: width 0.1s linear;
+        }
+
+        /* ===== Top Navigation Bar ===== */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: rgba(30, 20, 60, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 0 30px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .top-nav .nav-brand {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .top-nav .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .top-nav .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.12);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .top-nav .nav-links a:hover {
+            background: rgba(255,255,255,0.28);
+            transform: translateY(-1px);
+        }
+
+        /* ===== FadeIn Animation ===== */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(35px);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== Header ===== */
+        .header {
+            text-align: center;
+            padding: 130px 20px 60px;
+        }
+
+        .header-title {
+            font-size: 52px;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 12px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            letter-spacing: 2px;
+            animation: headerSlideDown 0.9s ease-out;
+        }
+
+        .header-subtitle {
+            font-size: 26px;
+            color: rgba(255,255,255,0.92);
+            margin-bottom: 28px;
+            font-weight: 400;
+            animation: headerSlideDown 1.1s ease-out;
+        }
+
+        .header-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.22);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 10px 32px;
+            border-radius: 50px;
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+            animation: headerSlideDown 1.3s ease-out;
+        }
+
+        .header-desc {
+            font-size: 18px;
+            color: rgba(255,255,255,0.85);
+            max-width: 680px;
+            margin: 0 auto;
+            animation: headerSlideDown 1.5s ease-out;
+        }
+
+        @keyframes headerSlideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Container ===== */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        /* ===== White Big Card ===== */
+        .big-card {
+            background: #fff;
+            border-radius: 30px;
+            padding: 45px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+            margin-bottom: 40px;
+        }
+
+        .section-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 38px;
+            font-weight: 900;
+            color: #5b21b6;
+            margin-bottom: 6px;
+        }
+
+        .section-subtitle {
+            font-size: 20px;
+            color: #7c3aed;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .section-description {
+            font-size: 17px;
+            color: #444;
+            line-height: 1.9;
+            border-left: 5px solid #7c3aed;
+            padding-left: 22px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, rgba(124,58,237,0.06) 0%, transparent 100%);
+            border-radius: 0 12px 12px 0;
+            padding: 18px 22px;
+        }
+
+        /* ===== Parts Grid ===== */
+        .parts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            margin-top: 36px;
+        }
+
+        .part-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 32px 28px;
+            color: #fff;
+            text-decoration: none;
+            display: block;
+            transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .part-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .part-card:hover::before {
+            opacity: 1;
+        }
+
+        .part-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.45);
+        }
+
+        .part-number {
+            font-size: 40px;
+            font-weight: 900;
+            opacity: 0.35;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        .part-title {
+            font-size: 21px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .part-desc {
+            font-size: 14px;
+            opacity: 0.85;
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* ===== Schedule Table Section ===== */
+        .schedule-card {
+            background: #fff;
+            border-radius: 30px;
+            padding: 45px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.35);
+            margin-bottom: 40px;
+        }
+
+        .schedule-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .schedule-title {
+            font-size: 34px;
+            font-weight: 900;
+            color: #5b21b6;
+            margin-bottom: 6px;
+        }
+
+        .schedule-subtitle {
+            font-size: 18px;
+            color: #7c3aed;
+            margin-bottom: 28px;
+            font-weight: 500;
+        }
+
+        .schedule-table-wrapper {
+            overflow-x: auto;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 15px;
+            min-width: 650px;
+        }
+
+        .schedule-table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 14px 18px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 15px;
+            white-space: nowrap;
+        }
+
+        .schedule-table tbody td {
+            padding: 13px 18px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .schedule-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .schedule-table tbody tr:hover {
+            background: rgba(124, 58, 237, 0.04);
+        }
+
+        .time-badge {
+            display: inline-block;
+            background: rgba(124, 58, 237, 0.1);
+            color: #5b21b6;
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .output-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 3px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        /* ===== Footer ===== */
+        .footer {
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            padding: 50px 20px 30px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .footer-title {
+            font-size: 26px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 36px;
+        }
+
+        .footer-link {
+            display: inline-block;
+            color: #fff;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 12px 28px;
+            border-radius: 50px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.25);
+            transition: all 0.3s ease;
+        }
+
+        .footer-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .footer-copy {
+            font-size: 14px;
+            color: rgba(255,255,255,0.65);
+            margin-top: 10px;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .top-nav {
+                height: auto;
+                padding: 10px 16px;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .top-nav .nav-links {
+                justify-content: center;
+            }
+
+            .header {
+                padding: 120px 16px 40px;
+            }
+
+            .header-title {
+                font-size: 34px;
+            }
+
+            .header-subtitle {
+                font-size: 20px;
+            }
+
+            .header-badge {
+                font-size: 14px;
+                padding: 8px 22px;
+            }
+
+            .header-desc {
+                font-size: 15px;
+            }
+
+            .big-card, .schedule-card {
+                padding: 28px 20px;
+                border-radius: 22px;
+            }
+
+            .section-title {
+                font-size: 28px;
+            }
+
+            .schedule-title {
+                font-size: 26px;
+            }
+
+            .parts-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Top Navigation -->
+<nav class="top-nav">
+    <div class="nav-brand">AI Skill 實作課</div>
+    <div class="nav-links">
+        <a href="https://www.facebook.com/?locale=zh_TW" target="_blank" rel="noopener noreferrer">📘 Facebook</a>
+        <a href="https://www.youtube.com/@Liang-yt02" target="_blank" rel="noopener noreferrer">🎥 YouTube</a>
+        <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank" rel="noopener noreferrer">👥 3A社團</a>
+    </div>
+</nav>
+
+<!-- Header -->
+<header class="header">
+    <h1 class="header-title">AI Skill 實作課</h1>
+    <p class="header-subtitle">專業流程變現為 AI 技能教戰手冊</p>
+    <div class="header-badge">Day 1｜打造你的第一個 AI Skill</div>
+    <p class="header-desc">從零開始打造可重複執行的 AI 技能模組，帶走 2 個完整 Skill 作品</p>
+</header>
+
+<!-- Main Content -->
+<div class="container">
+
+    <!-- Section: Day 1 課程簡報 -->
+    <div class="big-card fade-in">
+        <div class="section-icon">🎯</div>
+        <h2 class="section-title">Day 1 課程簡報</h2>
+        <p class="section-subtitle">Course Slides</p>
+        <div class="section-description">
+            本課程將帶你從零開始，學會把「你的專業流程」轉化為「AI 可重複執行的技能模組」。從概念理解、結構拆解、實作撰寫，到跨平台部署與流程變現，完整走過一次 AI Skill 的打造歷程。
+        </div>
+
+        <!-- Parts Grid -->
+        <div class="parts-grid">
+            <a href="Part1_AI_Skill基礎概念.html" class="part-card fade-in">
+                <div class="part-number">Part 1</div>
+                <div class="part-title">AI Skill 基礎概念</div>
+                <div class="part-desc">什麼是 Agent Skills？工作流程拆解方法</div>
+            </a>
+            <a href="Part2_SKILL結構與實作.html" class="part-card fade-in">
+                <div class="part-number">Part 2</div>
+                <div class="part-title">SKILL.md 結構與實作</div>
+                <div class="part-desc">YAML 格式、四大關鍵指令、動手寫第一個 Skill</div>
+            </a>
+            <a href="Part3_Antigravity執行Skill.html" class="part-card fade-in">
+                <div class="part-number">Part 3</div>
+                <div class="part-title">在 Antigravity 執行 Skill</div>
+                <div class="part-desc">免費平台實測、詢價與客訴測試、除錯技巧</div>
+            </a>
+            <a href="Part4_Claude_Code與CLI跨平台.html" class="part-card fade-in">
+                <div class="part-number">Part 4</div>
+                <div class="part-title">Claude Code 與 CLI 跨平台</div>
+                <div class="part-desc">API Key 設定、Gemini CLI、三平台對照、同步腳本</div>
+            </a>
+            <a href="Part5_進階技巧與流程變現.html" class="part-card fade-in">
+                <div class="part-number">Part 5</div>
+                <div class="part-title">進階技巧與流程變現</div>
+                <div class="part-desc">防呆機制、AI 生成器、流程變現五層架構</div>
+            </a>
+            <a href="Part6_實戰專案與成果展示.html" class="part-card fade-in">
+                <div class="part-number">Part 6</div>
+                <div class="part-title">實戰專案與成果展示</div>
+                <div class="part-desc">會議紀錄產生器、Day 1 成果、Day 2 預告</div>
+            </a>
+            <a href="Part7_Pencil_AI設計工具.html" class="part-card fade-in">
+                <div class="part-number">Part 7</div>
+                <div class="part-title">Pencil AI 設計工具</div>
+                <div class="part-desc">用 Skill 驅動 AI 做設計、MCP 協定、Design to Code</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Section: Course Outline -->
+    <div class="schedule-card fade-in">
+        <div class="schedule-icon">📋</div>
+        <h2 class="schedule-title">課程大綱</h2>
+        <p class="schedule-subtitle">Course Outline</p>
+        <div class="schedule-table-wrapper">
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th style="width:12%;">時段</th>
+                        <th style="width:48%;">模組主題</th>
+                        <th style="width:40%;">核心產出</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>上午 A</td>
+                        <td>開場：什麼是 Agent Skills？</td>
+                        <td><span class="output-tag">建立認知框架</span></td>
+                    </tr>
+                    <tr>
+                        <td>上午 B</td>
+                        <td>拆解你的工作流程</td>
+                        <td><span class="output-tag">完成流程拆解表</span></td>
+                    </tr>
+                    <tr>
+                        <td>上午 C</td>
+                        <td>SKILL.md 結構全解析</td>
+                        <td><span class="output-tag">理解 Skill 檔案格式</span></td>
+                    </tr>
+                    <tr>
+                        <td>上午 D</td>
+                        <td>動手寫第一個 Skill</td>
+                        <td><span class="output-tag">完成 Email 回覆助手</span></td>
+                    </tr>
+                    <tr>
+                        <td>上午 E</td>
+                        <td>在 Antigravity 中執行 Skill</td>
+                        <td><span class="output-tag">成功跑起來</span></td>
+                    </tr>
+                    <tr>
+                        <td>上午 F</td>
+                        <td>上午回顧 + Skill 除錯技巧</td>
+                        <td><span class="output-tag">修正常見問題</span></td>
+                    </tr>
+                    <tr>
+                        <td>下午 A</td>
+                        <td>Claude Code 環境設定</td>
+                        <td><span class="output-tag">在 Claude Code 使用</span></td>
+                    </tr>
+                    <tr>
+                        <td>下午 B</td>
+                        <td>CLI + 跨平台對照</td>
+                        <td><span class="output-tag">用 CLI 觸發 Skill</span></td>
+                    </tr>
+                    <tr>
+                        <td>下午 C</td>
+                        <td>進階 Skill：防呆 + 判斷邏輯</td>
+                        <td><span class="output-tag">升級 Skill 品質</span></td>
+                    </tr>
+                    <tr>
+                        <td>下午 D</td>
+                        <td>專業流程變現：設計輸入表單</td>
+                        <td><span class="output-tag">完成表單化 Skill</span></td>
+                    </tr>
+                    <tr>
+                        <td>下午 E</td>
+                        <td>小專案：會議紀錄產生器</td>
+                        <td><span class="output-tag">完成第二個 Skill</span></td>
+                    </tr>
+                    <tr>
+                        <td>下午 F</td>
+                        <td>Day 1 成果展示 + Day 2 預告</td>
+                        <td><span class="output-tag">作品分享</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section: Downloads -->
+    <div class="schedule-card fade-in">
+        <div class="schedule-icon">📥</div>
+        <h2 class="schedule-title">學員資源下載</h2>
+        <p class="schedule-subtitle">Course Resources</p>
+        <div class="section-description" style="margin-bottom: 28px;">
+            以下是 Day 1 課程產出的所有 Skill 檔案與工具，點擊即可下載或檢視。
+        </div>
+        <div class="schedule-table-wrapper">
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th style="width:30%;">資源名稱</th>
+                        <th style="width:45%;">說明</th>
+                        <th style="width:25%;">下載 / 檢視</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>📄 Email 回覆助手 SKILL.md</strong></td>
+                        <td>Skill 1 的核心指令檔，含完整防呆規則</td>
+                        <td><a href="assets/email-reply-helper/SKILL.md" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">📎 下載檔案</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>📄 Email 回覆範本</strong></td>
+                        <td>email-template.md — Email 格式模板</td>
+                        <td><a href="assets/email-reply-helper/assets/email-template.md" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">📎 下載檔案</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>🖱️ AI 生成器表單</strong></td>
+                        <td>input-form.html — 填空即可產生提示詞</td>
+                        <td><a href="assets/email-reply-helper/assets/input-form.html" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">🔗 開啟表單</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>📊 流程變現架構圖</strong></td>
+                        <td>monetize-framework.html — 五層架構視覺化</td>
+                        <td><a href="assets/email-reply-helper/assets/monetize-framework.html" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">🔗 開啟檢視</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>📄 會議紀錄產生器 SKILL.md</strong></td>
+                        <td>Skill 2 的核心指令檔</td>
+                        <td><a href="assets/meeting-notes-generator/SKILL.md" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">📎 下載檔案</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>📄 會議紀錄範本</strong></td>
+                        <td>meeting-template.md — 會議紀錄格式模板</td>
+                        <td><a href="assets/meeting-notes-generator/assets/meeting-template.md" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">📎 下載檔案</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>🔄 同步腳本</strong></td>
+                        <td>sync-skills.sh — 一鍵發佈到所有 AI 平台</td>
+                        <td><a href="assets/sync-skills.sh" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">📎 下載檔案</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>🎨 Pencil Skill</strong></td>
+                        <td>pencil-web-designer/SKILL.md — AI 網頁設計助手</td>
+                        <td><a href="assets/pencil-web-designer/SKILL.md" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">📎 下載檔案</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>🎨 設計風格指南</strong></td>
+                        <td>design-guidelines.md — 色彩、字型、間距規範</td>
+                        <td><a href="assets/pencil-web-designer/assets/design-guidelines.md" target="_blank" style="color:#7c3aed; font-weight:600; text-decoration:none;">📎 下載檔案</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+    <h3 class="footer-title">課程資源連結</h3>
+    <div class="footer-links">
+        <a href="https://www.facebook.com/?locale=zh_TW" class="footer-link" target="_blank" rel="noopener noreferrer">📘 Facebook</a>
+        <a href="https://www.youtube.com/@Liang-yt02" class="footer-link" target="_blank" rel="noopener noreferrer">🎥 YouTube</a>
+        <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" class="footer-link" target="_blank" rel="noopener noreferrer">👥 3A科技研究社</a>
+    </div>
+    <p class="footer-copy">&copy; 2026 AI Skill 實作課 | Made with 曾慶良(阿亮老師) ❤️</p>
+</footer>
+
+<script>
+    // ===== Scroll Progress Bar =====
+    window.addEventListener('scroll', function() {
+        var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        var scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var progress = (scrollTop / scrollHeight) * 100;
+        document.getElementById('scrollProgress').style.width = progress + '%';
+    });
+
+    // ===== Intersection Observer for Fade-In =====
+    document.addEventListener('DOMContentLoaded', function() {
+        var fadeElements = document.querySelectorAll('.fade-in');
+
+        var observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -60px 0px',
+            threshold: 0.1
+        };
+
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        fadeElements.forEach(function(el) {
+            observer.observe(el);
+        });
+    });
+</script>
+
+<script src="auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Part 5: 進階技巧與流程變現</title>
+    <style>
+        /* 基礎設定 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+
+        /* === 導航列 === */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 10000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* === 導航箭頭 === */
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 9000;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .prev-arrow {
+            left: 30px;
+        }
+
+        .next-arrow {
+            right: 30px;
+        }
+
+        .nav-arrow:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* === 投影片容器 === */
+        .slide-container {
+            width: 100%;
+            height: 100vh;
+            padding-top: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .slide {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 60px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 10;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            z-index: 20;
+        }
+
+        /* === 內容卡片 === */
+        .content-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            padding: 60px;
+            max-width: 1400px;
+            width: 95%;
+            max-height: 88vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* 通用樣式 */
+        h1 {
+            color: #1e3c72;
+            font-size: 56px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #2a5298;
+            font-size: 38px;
+            margin-bottom: 35px;
+            border-bottom: 3px solid #1e3c72;
+            padding-bottom: 12px;
+        }
+
+        h3 {
+            color: #1e3c72;
+            font-size: 26px;
+            margin: 30px 0 15px 0;
+        }
+
+        p, li {
+            font-size: 20px;
+            line-height: 1.8;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+        code {
+            background: #f0f2f5;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            color: #d63384;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 25px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 25px 0;
+            font-size: 18px;
+            line-height: 1.6;
+            font-family: monospace;
+        }
+
+        .box {
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            border-left: 6px solid;
+            font-size: 20px;
+        }
+
+        .info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            color: #0d47a1;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+
+        .success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: #004d40;
+        }
+
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .concept-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #e9ecef;
+            transition: transform 0.3s;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-8px);
+            border-color: #4facfe;
+        }
+
+        .indicators {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 4000;
+            padding: 10px 25px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active {
+            background: #4facfe;
+            transform: scale(1.3);
+        }
+
+        /* 對比表格 */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .compare-table th,
+        .compare-table td {
+            padding: 15px 20px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+            font-size: 18px;
+        }
+
+        .compare-table th {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .compare-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* Demo 區塊 */
+        .demo-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 2px solid #667eea;
+        }
+
+        .demo-command {
+            background: #1e1e1e;
+            color: #4ec9b0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 22px;
+            margin: 15px 0;
+        }
+
+        .demo-result {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            margin-top: 15px;
+        }
+
+        /* 重點列表 */
+        .key-points {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .key-points li::before {
+            content: none;
+        }
+
+        .key-icon {
+            font-size: 28px;
+        }
+
+        /* 流程圖樣式 */
+        .flow-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .flow-step {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: center;
+            min-width: 180px;
+        }
+
+        .flow-arrow {
+            font-size: 30px;
+            color: #667eea;
+        }
+
+        /* 資料夾樹狀圖樣式 */
+        .folder-tree {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 30px;
+            border-radius: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 18px;
+            line-height: 1.8;
+        }
+
+        .folder-tree .folder {
+            color: #dcdcaa;
+        }
+
+        .folder-tree .file {
+            color: #9cdcfe;
+        }
+
+        .folder-tree .comment {
+            color: #6a9955;
+        }
+
+        /* 防呆指令色條卡片 */
+        .guard-card {
+            padding: 22px 25px;
+            border-radius: 12px;
+            margin: 18px 0;
+            border-left: 7px solid;
+        }
+
+        .guard-card h4 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .guard-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .guard-card ul li {
+            font-size: 18px;
+            padding: 5px 0;
+            line-height: 1.7;
+        }
+
+        .guard-must {
+            background: #e8f5e9;
+            border-color: #28a745;
+        }
+
+        .guard-must h4 {
+            color: #1b5e20;
+        }
+
+        .guard-never {
+            background: #fce4ec;
+            border-color: #dc3545;
+        }
+
+        .guard-never h4 {
+            color: #b71c1c;
+        }
+
+        .guard-check {
+            background: #fff8e1;
+            border-color: #ffc107;
+        }
+
+        .guard-check h4 {
+            color: #f57f17;
+        }
+
+        .guard-ask {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .guard-ask h4 {
+            color: #0d47a1;
+        }
+
+        /* 五層架構 */
+        .layer-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px 25px;
+            border-radius: 14px;
+            margin: 10px 0;
+            transition: transform 0.3s;
+        }
+
+        .layer-item:hover {
+            transform: translateX(8px);
+        }
+
+        .layer-icon {
+            font-size: 40px;
+            flex-shrink: 0;
+        }
+
+        .layer-content {
+            flex: 1;
+        }
+
+        .layer-content h4 {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .layer-content p {
+            font-size: 17px;
+            margin-bottom: 0;
+        }
+
+        .layer-tag {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .layer-arrow {
+            text-align: center;
+            font-size: 28px;
+            color: #667eea;
+            margin: -4px 0;
+        }
+
+        /* 生成器三步驟 */
+        .step-big {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 28px 20px;
+            background: #f8f9fa;
+            border-radius: 16px;
+            border: 2px solid #e9ecef;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .step-big:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .step-big .step-num {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .step-big .step-emoji {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .step-big h4 {
+            font-size: 20px;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+
+        .step-big p {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 導航列 -->
+    <div class="nav-bar">
+        <div class="nav-title">&#128161; Part 5 - 進階技巧與流程變現</div>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-btn">&#127968; 首頁</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">&#128421; 全螢幕</button>
+            <a href="https://www.facebook.com/?locale=zh_TW" target="_blank" class="nav-btn">&#128216; FB</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="nav-btn">&#127909; YT</a>
+            <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank" class="nav-btn">&#128101; 3A社團</a>
+        </div>
+    </div>
+
+    <!-- 投影片內容 -->
+    <div class="slide-container">
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active">
+            <div class="content-card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h4 style="color: #4facfe; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; font-size: 20px;">
+                    Part 5 &middot; 進階技巧與流程變現
+                </h4>
+                <h1 style="font-size: 52px; margin-bottom: 20px;">防呆機制＋打造你的 AI 生成器</h1>
+                <h2 style="border: none; font-weight: normal; font-size: 28px; color: #666; max-width: 900px; margin-bottom: 30px;">
+                    讓 Skill 更可靠，讓任何人都能用你的 AI 技能
+                </h2>
+                <div style="margin-top: 20px; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;">
+                    <div style="background: linear-gradient(135deg, #dc3545 0%, #c0392b 100%); color: white; padding: 10px 24px; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                        MUST/NEVER
+                    </div>
+                    <div style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); color: white; padding: 10px 24px; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                        防呆機制
+                    </div>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 24px; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                        AI生成器
+                    </div>
+                    <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 10px 24px; border-radius: 25px; font-weight: bold; font-size: 16px;">
+                        流程變現
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 為什麼需要防呆機制 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#128737;&#65039; 為什麼需要防呆機制？</h2>
+                <p style="font-size: 24px; text-align: center; margin-bottom: 30px; font-style: italic; color: #555;">
+                    「沒有防呆的 Skill，就像沒有護欄的山路——很危險！」
+                </p>
+
+                <div class="concept-grid" style="grid-template-columns: repeat(3, 1fr);">
+                    <div class="concept-card" style="text-align: center; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border: 2px solid #ef5350;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">&#128683;</div>
+                        <h3 style="margin-top: 0; font-size: 20px; color: #c62828;">過度承諾</h3>
+                        <p style="font-size: 16px; color: #b71c1c;">AI 可能承諾做不到的事，如未確認的交期、未授權的折扣</p>
+                    </div>
+                    <div class="concept-card" style="text-align: center; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border: 2px solid #ef5350;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">&#128275;</div>
+                        <h3 style="margin-top: 0; font-size: 20px; color: #c62828;">洩露機密</h3>
+                        <p style="font-size: 16px; color: #b71c1c;">AI 可能不小心說出公司內部成本、競爭策略等敏感資訊</p>
+                    </div>
+                    <div class="concept-card" style="text-align: center; background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border: 2px solid #ef5350;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">&#128545;</div>
+                        <h3 style="margin-top: 0; font-size: 20px; color: #c62828;">語氣失當</h3>
+                        <p style="font-size: 16px; color: #b71c1c;">AI 可能用不恰當的語氣回覆，讓客戶不滿</p>
+                    </div>
+                </div>
+
+                <div class="box warning" style="margin-top: 30px; font-size: 22px;">
+                    <strong>&#9888;&#65039; 重要提醒：</strong>在正式使用 Skill 前，必須加入完整的防呆機制！
+                </div>
+
+                <img src="images/01-38-1_guard_rails.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+                <img src="images/01-38-2_guard_rails.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+            </div>
+        </div>
+
+        <!-- Slide 3: 四大防呆指令詳解 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#128274; 四大防呆指令實戰解析</h2>
+
+                <div class="guard-card guard-must">
+                    <h4>&#128994; MUST（必須遵守）</h4>
+                    <ul>
+                        <li>&#10003; MUST 以「○○先生/小姐 您好」開頭</li>
+                        <li>&#10003; MUST 提供具體的下一步行動</li>
+                        <li>&#10003; MUST 以「敬祝 商祺」結尾</li>
+                    </ul>
+                </div>
+
+                <div class="guard-card guard-never">
+                    <h4>&#128308; NEVER（絕對禁止）</h4>
+                    <ul>
+                        <li>&#10007; NEVER 使用口語化表達（嗨、OK、沒問題啦）</li>
+                        <li>&#10007; NEVER 承諾未經確認的價格或交期</li>
+                        <li>&#10007; NEVER 洩露公司內部資訊</li>
+                        <li>&#10007; NEVER 提及競爭對手的負面評價</li>
+                    </ul>
+                </div>
+
+                <div class="guard-card guard-check">
+                    <h4>&#128993; Check if（條件檢查）</h4>
+                    <ul>
+                        <li>&#128269; Check if 金額超過 10 萬 &#10132; 建議加入主管副本</li>
+                        <li>&#128269; Check if 金額超過 50 萬 &#10132; Ask user 是否需要主管審核</li>
+                        <li>&#128269; Check if 來信涉及法律爭議 &#10132; 建議轉交法務部門</li>
+                    </ul>
+                </div>
+
+                <div class="guard-card guard-ask">
+                    <h4>&#128309; Ask user（詢問使用者）</h4>
+                    <ul>
+                        <li>&#128172; Ask user 提供收件人的稱謂</li>
+                        <li>&#128172; Ask user 確認公司退貨政策</li>
+                        <li>&#128172; Ask user 提供確認的交期</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 完整 Skill 結構 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#128194; 完整的 Skill 結構</h2>
+                <p style="font-size: 22px;">展示 <code>email-reply-helper</code> 的完整檔案結構：</p>
+
+                <div class="folder-tree">
+                    <span class="folder">email-reply-helper/</span><br>
+                    ├── <span class="file">SKILL.md</span> <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8592; 主要指令檔（含防呆規則）</span><br>
+                    └── <span class="folder">assets/</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">email-template.md</span> <span class="comment">&nbsp;&nbsp;&#8592; Email 格式範本</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">input-form.html</span> <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&#8592; AI 生成器表單</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file">monetize-framework.html</span> <span class="comment">&#8592; 流程變現圖</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px;">
+                    <div class="box info" style="margin: 0;">
+                        <strong>&#128196; SKILL.md</strong><br>
+                        核心指令檔，定義 AI 的角色、流程、防呆規則。所有平台共用這一個檔案。
+                    </div>
+                    <div class="box info" style="margin: 0;">
+                        <strong>&#128196; email-template.md</strong><br>
+                        Email 的格式模板，確保每次產出的 Email 格式一致、專業。
+                    </div>
+                    <div class="box info" style="margin: 0;">
+                        <strong>&#128196; input-form.html</strong><br>
+                        AI 生成器的互動表單，讓不懂 AI 的人也能填空產生提示詞。
+                    </div>
+                    <div class="box info" style="margin: 0;">
+                        <strong>&#128196; monetize-framework.html</strong><br>
+                        流程變現五層架構的視覺化展示圖。
+                    </div>
+                </div>
+
+                <img src="images/01-39_complete_skill_structure.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+            </div>
+        </div>
+
+        <!-- Slide 5: 防呆實測 - Claude Code -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#129514; 防呆實測：在 Claude Code 測試</h2>
+
+                <div class="box info" style="font-size: 22px;">
+                    <strong>&#128300; 測試情境：</strong>故意輸入涉及法律爭議的客戶來信，看 AI 是否遵守 NEVER 規則
+                </div>
+
+                <div class="demo-box">
+                    <h3 style="margin-top: 0;">預期結果</h3>
+                    <div class="demo-result">
+                        <p style="font-size: 20px; margin-bottom: 0;">
+                            AI <strong>不會</strong>直接回覆法律問題，而是建議：<br>
+                            <span style="color: #2196f3; font-weight: bold; font-size: 22px;">「本信件涉及法律事項，建議轉交法務部門處理」</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="box success" style="font-size: 22px;">
+                    <strong>&#9989; 測試通過！</strong>Claude Code 完全遵守了 SKILL.md 中的 NEVER 規則！
+                </div>
+
+                <img src="images/01-40_guard_rail_triggered.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+            </div>
+        </div>
+
+        <!-- Slide 6: 防呆實測 - Gemini CLI -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#129514; 防呆實測：在 Gemini CLI 測試</h2>
+                <p style="font-size: 22px; margin-bottom: 25px;">
+                    同一個測試情境，在 <strong>Gemini CLI</strong> 上驗證——不同的 AI 平台都能遵守同一套防呆規則！
+                </p>
+
+                <table class="compare-table">
+                    <tr>
+                        <th style="width: 30%;">項目</th>
+                        <th style="width: 35%;">Claude Code</th>
+                        <th style="width: 35%;">Gemini CLI</th>
+                    </tr>
+                    <tr>
+                        <td><strong>遵守 NEVER 規則</strong></td>
+                        <td style="text-align: center;"><span style="color: #28a745; font-size: 24px;">&#9989;</span> 是</td>
+                        <td style="text-align: center;"><span style="color: #28a745; font-size: 24px;">&#9989;</span> 是</td>
+                    </tr>
+                    <tr>
+                        <td><strong>建議轉交法務</strong></td>
+                        <td style="text-align: center;"><span style="color: #28a745; font-size: 24px;">&#9989;</span> 有</td>
+                        <td style="text-align: center;"><span style="color: #28a745; font-size: 24px;">&#9989;</span> 有</td>
+                    </tr>
+                    <tr>
+                        <td><strong>保持專業語氣</strong></td>
+                        <td style="text-align: center;"><span style="color: #28a745; font-size: 24px;">&#9989;</span> 是</td>
+                        <td style="text-align: center;"><span style="color: #28a745; font-size: 24px;">&#9989;</span> 是</td>
+                    </tr>
+                </table>
+
+                <div class="box success" style="font-size: 22px; text-align: center;">
+                    <strong>&#127881; 寫一次防呆規則，所有平台都有效！</strong>
+                </div>
+
+                <img src="images/01-40-1_guard_rail_gemini.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+            </div>
+        </div>
+
+        <!-- Slide 7: AI 生成器概念 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#128433;&#65039; 打造你的專屬 AI 生成器</h2>
+                <p style="font-size: 22px; margin-bottom: 10px;">
+                    「如果你想讓<span class="highlight">不懂 AI 的同事</span>也能用你的 Skill，怎麼辦？」
+                </p>
+                <p style="font-size: 22px; margin-bottom: 30px;">
+                    答案：做一個 <strong>HTML 表單（生成器）</strong>，填空就能產生 AI 提示詞！
+                </p>
+
+                <div class="concept-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 30px;">
+                    <div class="step-big">
+                        <div class="step-num">1</div>
+                        <div class="step-emoji">&#128221;</div>
+                        <h4>填寫表單</h4>
+                        <p>客戶來信、優先順序、語氣</p>
+                    </div>
+                    <div class="step-big">
+                        <div class="step-num">2</div>
+                        <div class="step-emoji">&#128640;</div>
+                        <h4>按下「產生 AI 提示詞」</h4>
+                        <p>一鍵生成格式化提示詞</p>
+                    </div>
+                    <div class="step-big">
+                        <div class="step-num">3</div>
+                        <div class="step-emoji">&#128203;</div>
+                        <h4>複製文字</h4>
+                        <p>貼到任何 AI 平台使用</p>
+                    </div>
+                </div>
+
+                <div class="box warning" style="font-size: 20px;">
+                    <strong>&#9888;&#65039; 重要：</strong>生成器本身<strong>不呼叫任何 AI API</strong>！它只是產生格式化的提示詞文字，使用者再手動複製到 AI 平台貼上使用。
+                </div>
+
+                <img src="images/01-41_html_form_preview.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+            </div>
+        </div>
+
+        <!-- Slide 8: 生成器實測 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#9889; 生成器產出的提示詞</h2>
+                <p style="font-size: 22px; margin-bottom: 20px;">展示操作流程：填好表單後，按下按鈕即可得到格式化的提示詞</p>
+
+                <div class="demo-box">
+                    <h3 style="margin-top: 0;">&#128203; 產出範例</h3>
+                    <pre style="font-size: 16px; line-height: 1.7; background: #1e1e1e; color: #d4d4d4;">
+<span style="color: #6a9955;">## 請依照以下規則回覆 Email</span>
+
+<span style="color: #dcdcaa;">角色：</span><span style="color: #ce9178;">你是一位專業的客服人員</span>
+<span style="color: #dcdcaa;">優先順序：</span><span style="color: #ce9178;">高（24 小時內回覆）</span>
+<span style="color: #dcdcaa;">語氣：</span><span style="color: #ce9178;">正式且同理心</span>
+
+<span style="color: #6a9955;">## 客戶來信內容</span>
+<span style="color: #ce9178;">我在貴公司購買的產品出現瑕疵...</span>
+
+<span style="color: #6a9955;">## 防呆規則</span>
+<span style="color: #4ec9b0;">MUST</span> 以「○○先生/小姐 您好」開頭
+<span style="color: #f44747;">NEVER</span> 承諾未經確認的價格或交期
+<span style="color: #4ec9b0;">MUST</span> 以「敬祝 商祺」結尾</pre>
+                </div>
+
+                <p style="font-size: 20px;">產出的文字可以複製到：</p>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
+                    <span style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold;">Claude Code</span>
+                    <span style="background: linear-gradient(135deg, #4285f4, #34a853); color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold;">Gemini CLI</span>
+                    <span style="background: linear-gradient(135deg, #10a37f, #1a7f64); color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold;">ChatGPT</span>
+                    <span style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 8px 20px; border-radius: 20px; font-weight: bold;">任何 AI</span>
+                </div>
+
+                <div class="box info" style="font-size: 22px;">
+                    <strong>&#128161; 關鍵洞察：</strong>這就是「流程變現」的第四層——任何人都能用的 AI 工具！
+                </div>
+
+                <img src="images/01-42_generated_prompt.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+            </div>
+        </div>
+
+        <!-- Slide 9: 流程變現五層架構 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#128640; 流程變現五層架構</h2>
+
+                <div style="max-width: 900px; margin: 0 auto;">
+                    <!-- 第一層 -->
+                    <div class="layer-item" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);">
+                        <div class="layer-icon">&#129504;</div>
+                        <div class="layer-content">
+                            <h4 style="color: #c62828;">第一層：專業知識</h4>
+                            <p style="color: #b71c1c;">你的經驗、判斷、做事方法，離開就帶走</p>
+                        </div>
+                        <div class="layer-tag" style="background: #dc3545;">存在腦中</div>
+                    </div>
+                    <div class="layer-arrow">&#9660;</div>
+
+                    <!-- 第二層 -->
+                    <div class="layer-item" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
+                        <div class="layer-icon">&#128203;</div>
+                        <div class="layer-content">
+                            <h4 style="color: #e65100;">第二層：流程拆解表</h4>
+                            <p style="color: #bf360c;">拆成步驟、寫成 SOP，可以教人但仍需人工</p>
+                        </div>
+                        <div class="layer-tag" style="background: #ff9800;">寫在紙上</div>
+                    </div>
+                    <div class="layer-arrow">&#9660;</div>
+
+                    <!-- 第三層 -->
+                    <div class="layer-item" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+                        <div class="layer-icon">&#128196;</div>
+                        <div class="layer-content">
+                            <h4 style="color: #0d47a1;">第三層：SKILL.md</h4>
+                            <p style="color: #1565c0;">AI 看得懂的指令，可重複執行，品質穩定</p>
+                        </div>
+                        <div class="layer-tag" style="background: #2196f3;">存在檔案</div>
+                    </div>
+                    <div class="layer-arrow">&#9660;</div>
+
+                    <!-- 第四層 -->
+                    <div class="layer-item" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);">
+                        <div class="layer-icon">&#128433;&#65039;</div>
+                        <div class="layer-content">
+                            <h4 style="color: #6a1b9a;">第四層：AI 生成器</h4>
+                            <p style="color: #7b1fa2;">加上表單，填空就能跑，不需要學 AI</p>
+                        </div>
+                        <div class="layer-tag" style="background: #9c27b0;">任何人能用</div>
+                    </div>
+                    <div class="layer-arrow">&#9660;</div>
+
+                    <!-- 第五層 -->
+                    <div class="layer-item" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                        <div class="layer-icon">&#9881;&#65039;</div>
+                        <div class="layer-content">
+                            <h4 style="color: #1b5e20;">第五層：AI 工作系統</h4>
+                            <p style="color: #2e7d32;">多個 Skill 串接，自動化工作鏈</p>
+                        </div>
+                        <div class="layer-tag" style="background: #28a745;">持續進化</div>
+                    </div>
+                </div>
+
+                <div class="box success" style="margin-top: 30px; font-size: 22px; text-align: center;">
+                    <strong>&#127881; 恭喜！今天你已經走到了第四層！明天 Day 2 會帶你進入第五層</strong>
+                </div>
+
+                <img src="images/01-43_monetize_framework.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" />
+            </div>
+        </div>
+
+        <!-- Slide 10: Part 5 小結 + 下一個 Part -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>&#128221; Part 5 重點回顧</h2>
+
+                <div class="concept-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="concept-card" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); border-left: 5px solid #dc3545;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">&#128737;&#65039;</div>
+                        <h3 style="margin-top: 0; color: #c62828;">防呆 = AI 的護欄</h3>
+                        <p style="font-size: 18px; color: #b71c1c;">MUST / NEVER / Check if / Ask user 四大武器，確保 AI 不暴走</p>
+                    </div>
+                    <div class="concept-card" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-left: 5px solid #28a745;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">&#127760;</div>
+                        <h3 style="margin-top: 0; color: #1b5e20;">跨平台一致性</h3>
+                        <p style="font-size: 18px; color: #2e7d32;">同一套規則，Claude Code 和 Gemini CLI 都遵守</p>
+                    </div>
+                    <div class="concept-card" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-left: 5px solid #9c27b0;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">&#128433;&#65039;</div>
+                        <h3 style="margin-top: 0; color: #6a1b9a;">生成器降低門檻</h3>
+                        <p style="font-size: 18px; color: #7b1fa2;">HTML 表單讓任何人都能用你的 Skill，不需要懂 AI</p>
+                    </div>
+                    <div class="concept-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 5px solid #2196f3;">
+                        <div style="font-size: 36px; margin-bottom: 10px;">&#128640;</div>
+                        <h3 style="margin-top: 0; color: #0d47a1;">五層架構</h3>
+                        <p style="font-size: 18px; color: #1565c0;">專業知識 &#10132; 流程 &#10132; Skill &#10132; 生成器 &#10132; AI 工作系統</p>
+                    </div>
+                </div>
+
+                <div class="box info" style="margin-top: 30px; text-align: center; font-size: 22px;">
+                    <strong>&#128073; 下一步：</strong>Part 6 將進入實戰專案與成果展示！
+                </div>
+
+                <div style="margin-top: 30px; text-align: center;">
+                    <a href="Part6_實戰專案與成果展示.html" class="nav-btn"
+                        style="display: inline-flex; padding: 20px 40px; font-size: 22px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                        前往 Part 6：實戰專案與成果展示 &#10132;
+                    </a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 導航箭頭 -->
+    <button class="nav-arrow prev-arrow" id="prevBtn" onclick="changeSlide(-1)">&#10094;</button>
+    <button class="nav-arrow next-arrow" id="nextBtn" onclick="changeSlide(1)">&#10095;</button>
+
+    <!-- 頁碼圓點 -->
+    <div class="indicators" id="indicatorContainer"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function init() {
+            createIndicators();
+            showSlide(0);
+            updateButtons();
+            document.addEventListener('keydown', handleKeydown);
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        }
+
+        function createIndicators() {
+            const container = document.getElementById('indicatorContainer');
+            container.innerHTML = '';
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                dot.onclick = () => goToSlide(index);
+                container.appendChild(dot);
+            });
+        }
+
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[index].classList.add('active');
+
+            currentSlide = index;
+
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === index);
+            });
+
+            updateButtons();
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        function goToSlide(index) {
+            showSlide(index);
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        init();
+    </script>
+<script src="auth.js"></script>
+</body>
+
+</html>

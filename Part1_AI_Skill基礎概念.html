@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 1 - AI Skill 基礎概念 | AI Skill 實作課</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    height: 100vh;
+    overflow: hidden;
+    color: #333;
+}
+
+/* ===== 導航列 ===== */
+.nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+}
+.nav-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.nav-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-block;
+    font-family: inherit;
+}
+.nav-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-1px);
+}
+
+/* ===== 投影片容器 ===== */
+.slides-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding-top: 60px;
+}
+
+.slide {
+    display: none;
+    width: 95%;
+    max-width: 1400px;
+    max-height: 88vh;
+    background: rgba(255,255,255,0.98);
+    border-radius: 24px;
+    padding: 60px;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: fadeIn 0.4s ease;
+}
+.slide.active { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* scrollbar */
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-track { background: transparent; }
+.slide::-webkit-scrollbar-thumb { background: rgba(30,60,114,0.3); border-radius: 4px; }
+.slide::-webkit-scrollbar-thumb:hover { background: rgba(30,60,114,0.5); }
+
+/* ===== 文字樣式 ===== */
+h1 { color: #1e3c72; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #2a5298; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #1e3c72; }
+h3 { color: #1e3c72; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #1e3c72; }
+
+/* ===== 表格 ===== */
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: #1e3c72; color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f5f7ff; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+
+/* ===== 程式碼 ===== */
+code {
+    background: #f0f2f5;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #d63384;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 25px;
+    border-radius: 12px;
+    font-size: 18px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+}
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* ===== Box 提示 ===== */
+.box {
+    padding: 20px 24px;
+    border-radius: 12px;
+    margin: 20px 0;
+    font-size: 19px;
+    line-height: 1.8;
+}
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.box strong { display: inline; }
+
+/* ===== Concept Grid ===== */
+.concept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin: 24px 0;
+}
+.concept-card {
+    background: #f8f9fa;
+    padding: 28px;
+    border-radius: 15px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.concept-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.concept-card h3 { margin-top: 0; }
+
+/* ===== 截圖 ===== */
+.slide-img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    margin: 24px 0;
+}
+
+/* ===== 左右箭頭 ===== */
+.arrow-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+.arrow-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-50%) scale(1.1);
+}
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+
+/* ===== 底部圓點指示器 ===== */
+.dots {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 9999;
+}
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid rgba(255,255,255,0.5);
+}
+.dot.active {
+    background: white;
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+/* ===== 封面專用 ===== */
+.cover-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 70vh;
+}
+.cover-slide .subtitle {
+    font-size: 22px;
+    color: #2a5298;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+}
+.cover-slide h1 {
+    font-size: 56px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+}
+.cover-slide .desc {
+    font-size: 24px;
+    color: #666;
+    max-width: 800px;
+    line-height: 1.8;
+    margin-bottom: 40px;
+}
+.tags {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.tag {
+    padding: 10px 28px;
+    border-radius: 50px;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+/* ===== Before/After 雙欄 ===== */
+.ba-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin: 24px 0;
+}
+.ba-card {
+    padding: 30px;
+    border-radius: 16px;
+    font-size: 19px;
+}
+.ba-card.before {
+    background: #fef2f2;
+    border: 2px solid #fca5a5;
+}
+.ba-card.after {
+    background: #f0fdf4;
+    border: 2px solid #86efac;
+}
+.ba-card h3 { margin-top: 0; }
+.ba-card li { margin-bottom: 10px; }
+
+/* ===== 編號圓點 ===== */
+.num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+/* ===== Next Part 按鈕 ===== */
+.next-part-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    padding: 18px 48px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: 0 8px 25px rgba(30,60,114,0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.next-part-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(30,60,114,0.5);
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 導航列 ===== -->
+<nav class="nav-bar">
+    <div class="nav-title">🎯 Part 1 - AI Skill 基礎概念</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="index.html">🏠 首頁</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+        <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">📘 FB</a>
+        <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">🎥 YT</a>
+        <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">👥 3A社團</a>
+    </div>
+</nav>
+
+<!-- ===== 左右箭頭 ===== -->
+<button class="arrow-btn arrow-left" onclick="changeSlide(-1)">&#9664;</button>
+<button class="arrow-btn arrow-right" onclick="changeSlide(1)">&#9654;</button>
+
+<!-- ===== 投影片容器 ===== -->
+<div class="slides-container">
+
+<!-- ==================== Slide 1: 封面 ==================== -->
+<div class="slide active" id="slide-1">
+    <div class="cover-slide">
+        <div class="subtitle">Part 1 &middot; AI Skill 基礎概念</div>
+        <h1>什麼是 Agent Skills？</h1>
+        <p class="desc">理解 AI Skill 的核心概念，學會把工作流程拆解為可執行的步驟</p>
+        <div class="tags">
+            <span class="tag" style="background:linear-gradient(135deg,#667eea,#764ba2);">Agent Skills</span>
+            <span class="tag" style="background:linear-gradient(135deg,#f093fb,#f5576c);">流程拆解</span>
+            <span class="tag" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">三大平台</span>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Slide 2: Skills vs 一般 Prompt ==================== -->
+<div class="slide" id="slide-2">
+    <h2>🍳 Skills = AI 的食譜</h2>
+
+    <p>各位平常用 AI 工作時，有沒有遇過這個情境：你花了 <strong>10 分鐘教 AI 怎麼做一件事</strong>，結果下次開新對話，又要重新教一遍？</p>
+
+    <p>這就好像每次做菜都要重新發明食譜一樣——明明上次已經煮得很好了，為什麼不把步驟寫下來呢？</p>
+
+    <p>如果我告訴你，有一種方法可以把你教 AI 的過程「<strong>封裝</strong>」起來，下次一鍵就能用——這就是 <strong>Agent Skills</strong>。Skill 就是你寫給 AI 的「標準作業程序（SOP）」，讓 AI 每次都能按照你設定的流程，穩定地完成任務。</p>
+
+    <h3>🧑‍🍳 食譜比喻：為什麼叫「AI 的食譜」？</h3>
+    <table>
+        <thead>
+            <tr><th>做菜的食譜</th><th>對應到 Skill</th><th>說明</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>食譜名稱</td><td>Skill 名稱</td><td>例如「Email 回覆助手」「會議記錄整理」</td></tr>
+            <tr><td>食材清單</td><td>輸入參數</td><td>AI 需要你提供什麼資料才能開始工作</td></tr>
+            <tr><td>烹飪步驟</td><td>執行規則</td><td>AI 要依序完成的每一個動作</td></tr>
+            <tr><td>成品照片</td><td>輸出格式</td><td>最終交付的結果長什麼樣子</td></tr>
+            <tr><td>注意事項</td><td>防呆機制</td><td>什麼情況該拒絕、什麼錯誤要避免</td></tr>
+        </tbody>
+    </table>
+
+    <h3>📊 Skills vs 一般 Prompt 差異比較</h3>
+    <table>
+        <thead>
+            <tr><th>比較項目</th><th>一般 Prompt</th><th>Agent Skill</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>保存方式</strong></td><td>存在聊天紀錄裡，容易遺失</td><td>獨立的 <code>.md</code> 檔案，永久保存</td></tr>
+            <tr><td><strong>觸發方式</strong></td><td>每次手動貼上或重新打字</td><td>AI 自動偵測相關情境，一鍵載入</td></tr>
+            <tr><td><strong>可維護性</strong></td><td>改了這次，下次又忘記</td><td>修改檔案即可，所有對話自動生效</td></tr>
+            <tr><td><strong>共享性</strong></td><td>只能截圖或複製文字分享</td><td>整個資料夾複製即可分享給團隊</td></tr>
+            <tr><td><strong>載入效率</strong></td><td>每次都消耗完整 Token</td><td>按需載入，節省 Token 用量</td></tr>
+            <tr><td><strong>擴展性</strong></td><td>Prompt 越長越難維護</td><td>可拆分多檔案、引用外部資源</td></tr>
+        </tbody>
+    </table>
+
+    <div class="box info">
+        <strong>💡 重點：</strong>Skill 就是一個 Markdown 檔案（<code>SKILL.md</code>），不需要寫程式！只要你會打字、會列清單，就能建立自己的 AI Skill。
+    </div>
+
+    <img src="images/01-01_skills_vs_prompt.png" alt="Skills vs Prompt 比較圖" class="slide-img">
+</div>
+
+<!-- ==================== Slide 3: Skills 的三層架構 ==================== -->
+<div class="slide" id="slide-3">
+    <h2>🏗️ Skills 的三層架構（漸進式揭露）</h2>
+
+    <p>Agent Skills 採用<strong>三層式架構</strong>設計，這是一個聰明的「漸進式揭露」機制。AI 不會一次把所有資料都讀進去，而是根據需要逐層載入，大幅節省 Token 消耗。</p>
+
+    <p>這就像圖書館的管理方式：書名和簡介放在目錄（快速瀏覽），書的內容放在書架上（需要時才翻閱），參考資料放在資料庫（深入研究時才查詢）。</p>
+
+    <pre><code>┌─────────────────────────────────────────────┐
+│  第一層：元資料（~100 tokens）               │  ← AI 啟動時就讀取
+│  name + description                         │
+├─────────────────────────────────────────────┤
+│  第二層：指令（~500-5000 tokens）            │  ← AI 判斷相關時才載入
+│  SKILL.md 主體內容                          │
+├─────────────────────────────────────────────┤
+│  第三層：資源（不限大小）                    │  ← 按需載入
+│  scripts/ references/ assets/               │
+└─────────────────────────────────────────────┘</code></pre>
+
+    <div class="concept-grid">
+        <div class="concept-card">
+            <h3>📌 第一層：元資料</h3>
+            <p>包含 Skill 的<strong>名稱</strong>和<strong>簡短描述</strong>，大約只有 100 個 Token。AI 在啟動時就會讀取所有 Skill 的元資料，用來判斷「使用者現在的需求跟哪個 Skill 有關」。</p>
+            <p>這一層就像書的封面和目錄——快速掃描，不花時間。</p>
+        </div>
+        <div class="concept-card">
+            <h3>📋 第二層：指令</h3>
+            <p>這就是 <code>SKILL.md</code> 的主體內容，包含執行步驟、輸出格式、安全規則等。大約 500~5000 個 Token。</p>
+            <p>只有當 AI 判斷「使用者的需求跟這個 Skill 相關」時，才會載入這一層。這就像翻開書本閱讀內容。</p>
+        </div>
+        <div class="concept-card">
+            <h3>📦 第三層：資源</h3>
+            <p>包含輔助腳本（<code>scripts/</code>）、參考資料（<code>references/</code>）、範本（<code>assets/</code>）等外部檔案，大小不限。</p>
+            <p>只有在 Skill 執行過程中需要時才會載入。這就像查閱圖書館的參考資料庫。</p>
+        </div>
+    </div>
+
+    <div class="box info">
+        <strong>💡 關鍵設計：</strong>不像 <code>CLAUDE.md</code> 每次都完整讀取，Skills 是「用到才載入」，因此你可以建立幾十個 Skill 而不會拖慢 AI。這是 Skills 架構最聰明的地方！
+    </div>
+
+    <div class="box warning">
+        <strong>⚠️ 注意：</strong>元資料中的 <code>description</code> 要寫得精準，因為 AI 是根據它來判斷是否載入這個 Skill。描述太模糊會導致 AI 錯過你的 Skill，描述太廣泛則可能誤觸發。
+    </div>
+</div>
+
+<!-- ==================== Slide 4: 三大應用平台 ==================== -->
+<div class="slide" id="slide-4">
+    <h2>🖥️ Skills 的三大應用平台</h2>
+
+    <p>目前支援 Agent Skills 的主流平台有三個，各有不同的適用場景。選擇哪個平台取決於你的需求、預算和技術背景。今天的課程會帶你在這三個平台上都實際操作一遍。</p>
+
+    <table>
+        <thead>
+            <tr><th>項目</th><th>Antigravity</th><th>Claude Code</th><th>Gemini CLI</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>費用</strong></td><td>免費使用</td><td>付費（需 API Key）</td><td>免費使用</td></tr>
+            <tr><td><strong>介面</strong></td><td>網頁 IDE（圖形化）</td><td>終端機 CLI（命令列）</td><td>終端機 CLI（命令列）</td></tr>
+            <tr><td><strong>Skill 路徑</strong></td><td><code>.agent/skills/</code></td><td><code>.claude/skills/</code></td><td>讀取工作區檔案</td></tr>
+            <tr><td><strong>安裝需求</strong></td><td>不需要安裝</td><td><code>npm install -g @anthropic-ai/claude-code</code></td><td><code>npm install -g @anthropic-ai/gemini-cli</code></td></tr>
+            <tr><td><strong>AI 模型</strong></td><td>Claude（Anthropic）</td><td>Claude（Anthropic）</td><td>Gemini（Google）</td></tr>
+            <tr><td><strong>特色</strong></td><td>視覺化操作、適合初學者</td><td>程式碼能力強、開發者首選</td><td>自動讀取工作區檔案</td></tr>
+            <tr><td><strong>適合誰</strong></td><td>非技術背景、初次接觸</td><td>工程師、進階使用者</td><td>Google 生態系使用者</td></tr>
+        </tbody>
+    </table>
+
+    <div class="box info">
+        <strong>💡 建議學習順序：</strong>先從 Antigravity 開始（免費、圖形化、容易上手），熟悉 Skill 概念後，再嘗試 Claude Code 和 Gemini CLI。三個平台的 Skill 寫法幾乎相同，學會一個就能舉一反三。
+    </div>
+
+    <h3>📸 Antigravity 網頁 IDE</h3>
+    <img src="images/01-02_antigravity_home.png" alt="Antigravity 平台首頁" class="slide-img">
+
+    <h3>📸 Claude Code 終端機介面</h3>
+    <img src="images/01-03_claude_code_terminal.png" alt="Claude Code 終端機介面" class="slide-img">
+
+    <h3>📸 Gemini CLI 介面</h3>
+    <img src="images/01-04_openclaw_interface.png" alt="Gemini CLI 介面" class="slide-img">
+</div>
+
+<!-- ==================== Slide 5: 有了 Skills 之後 ==================== -->
+<div class="slide" id="slide-5">
+    <h2>✨ 有了 Skills 之後的改變</h2>
+
+    <p>讓我們用一個簡單的 Before / After 來感受一下，導入 Agent Skills 前後的差異。這不只是效率的提升，更是<strong>工作方式的根本轉變</strong>。</p>
+
+    <p>想像一下：你是一位客服主管，團隊有 5 個人。每個人回覆客戶信件的風格都不一樣，品質也參差不齊。如果你能把「最佳回覆流程」寫成一個 Skill，讓每個人的 AI 助手都照著做呢？</p>
+
+    <div class="ba-grid">
+        <div class="ba-card before">
+            <h3 style="color:#dc2626;">❌ Before：沒有 Skills</h3>
+            <ul>
+                <li><strong>每次重新教 AI</strong>：開新對話就要重新交代一次規則，浪費 5~10 分鐘</li>
+                <li><strong>品質不穩定</strong>：同一個任務，每次給出的結果格式、語氣都不一樣</li>
+                <li><strong>無法分享給同事</strong>：你的「秘密 Prompt」只存在你的聊天紀錄裡</li>
+                <li><strong>離職知識就消失</strong>：專業知識隨著人員異動而流失</li>
+                <li><strong>難以迭代改進</strong>：不知道上次用的是哪個版本的 Prompt</li>
+            </ul>
+        </div>
+        <div class="ba-card after">
+            <h3 style="color:#16a34a;">✅ After：有了 Skills</h3>
+            <ul>
+                <li><strong>一鍵觸發</strong>：AI 自動偵測情境，載入對應 Skill，零秒啟動</li>
+                <li><strong>品質穩定一致</strong>：每次都按照相同的步驟和格式執行</li>
+                <li><strong>整個資料夾分享</strong>：把 <code>skills/</code> 資料夾傳給同事就搞定</li>
+                <li><strong>知識永久保存在檔案中</strong>：人員異動不影響，Skill 就是組織的知識庫</li>
+                <li><strong>版本控制容易</strong>：用 Git 追蹤每次修改，隨時可以回溯</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="box success">
+        <strong>🎯 核心價值：</strong>Skills 讓你的專業知識從「存在腦中」變成「存在檔案中」，從「個人經驗」變成「團隊資產」。這就是「專業流程變現」的第一步。
+    </div>
+
+    <img src="images/01-05_before_after_skill.png" alt="Before/After 對比圖" class="slide-img">
+</div>
+
+<!-- ==================== Slide 6: 拆解你的工作流程 ==================== -->
+<div class="slide" id="slide-6">
+    <h2>📋 拆解你的工作流程</h2>
+
+    <p>把你腦中的專業知識，拆成 AI 看得懂的步驟。這是建立 Skill 最重要的前置作業，也是整個課程的核心技能。</p>
+
+    <p>很多人以為「我的工作太複雜，AI 做不來」，其實不是做不來，而是你還沒把流程拆解得夠清楚。任何工作，不管多複雜，都可以拆成一個一個的小步驟。</p>
+
+    <h3>📐 拆解三原則</h3>
+    <table>
+        <thead>
+            <tr><th>原則</th><th>說明</th><th>正確範例</th><th>錯誤範例</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>足夠具體</strong></td>
+                <td>每一步都可以明確執行，不需要額外猜測</td>
+                <td>✅「分析來信的情緒傾向（正面/中性/負面）」</td>
+                <td>❌「處理一下這封信件」</td>
+            </tr>
+            <tr>
+                <td><strong>有順序性</strong></td>
+                <td>前後步驟有邏輯關聯，不能跳著做</td>
+                <td>✅ 先分析情緒 → 再組織回覆 → 最後檢查語氣</td>
+                <td>❌ 隨便從哪一步開始都行</td>
+            </tr>
+            <tr>
+                <td><strong>可判斷完成</strong></td>
+                <td>每個步驟有明確的產出物，知道做完了沒</td>
+                <td>✅「輸出：情緒判斷結果（正面/中性/負面）」</td>
+                <td>❌「大概看一下就好」</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>📝 實際演練：Email 回覆流程拆解</h3>
+    <p>以「收到客戶來信後的回覆流程」為例，看看怎麼把日常工作拆解成 AI 可執行的步驟：</p>
+    <ol>
+        <li><strong>辨識信件類型</strong>：是詢問、投訴、感謝，還是合作邀約？</li>
+        <li><strong>分析來信情緒</strong>：對方的語氣是友善、中性還是不滿？</li>
+        <li><strong>提取關鍵資訊</strong>：對方的核心需求是什麼？有沒有時間限制？</li>
+        <li><strong>決定回覆策略</strong>：根據信件類型和情緒，選擇適合的回覆框架</li>
+        <li><strong>撰寫回覆內容</strong>：按照策略撰寫，確保語氣一致</li>
+        <li><strong>自我檢查</strong>：確認沒有遺漏重點、語氣是否恰當</li>
+    </ol>
+
+    <div class="box success">
+        <strong>🌟 小提醒：</strong>你不需要一次拆解得很完美，先寫出來，再慢慢優化！Skill 的好處就是可以持續迭代——先求有，再求好。
+    </div>
+
+    <div class="box info">
+        <strong>💡 訣竅：</strong>試著想像你在教一個「很聰明但完全不懂你工作」的新人。你會怎麼一步步教他？那些步驟，就是你的 Skill 內容。
+    </div>
+
+    <img src="images/01-06_workflow_breakdown_example.png" alt="工作流程拆解範例" class="slide-img">
+</div>
+
+<!-- ==================== Slide 7: 從流程到 Skill ==================== -->
+<div class="slide" id="slide-7">
+    <h2>🔄 從流程拆解到 SKILL.md</h2>
+
+    <p>上一張投影片我們學會了如何拆解工作流程，現在來看看這些拆解出來的步驟，<strong>如何對應到 SKILL.md 的各個段落</strong>。這是從「腦中知識」到「可執行檔案」的轉換過程。</p>
+
+    <p>SKILL.md 的結構其實就是一份「超級詳細的工作說明書」，每個段落都有明確的用途：</p>
+
+    <table>
+        <thead>
+            <tr><th>你的流程步驟</th><th>對應 SKILL.md 段落</th><th>具體內容</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>這個任務要做什麼？</td>
+                <td><code>## 用途</code></td>
+                <td>清楚描述這個 Skill 解決什麼問題、適用什麼場景</td>
+            </tr>
+            <tr>
+                <td>開始前要確認什麼？</td>
+                <td><code>## 前置檢查</code></td>
+                <td>使用者需要提供什麼資料？缺少什麼要先問？</td>
+            </tr>
+            <tr>
+                <td>具體怎麼做？</td>
+                <td><code>## 執行步驟</code></td>
+                <td>AI 要依序完成的每一個動作，越具體越好</td>
+            </tr>
+            <tr>
+                <td>做完要長什麼樣子？</td>
+                <td><code>## 輸出格式</code></td>
+                <td>最終結果的格式、結構、長度等規範</td>
+            </tr>
+            <tr>
+                <td>什麼事情絕對不能做？</td>
+                <td><code>## 安全規則</code></td>
+                <td>防呆機制、禁止行為、邊界條件處理</td>
+            </tr>
+            <tr>
+                <td>做一次示範</td>
+                <td><code>## 範例</code></td>
+                <td>給 AI 看一個完整的輸入→輸出範例</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>📌 轉換小技巧</h3>
+    <div class="concept-grid">
+        <div class="concept-card">
+            <h3>🎯 用途要精準</h3>
+            <p>不要寫「幫我處理 Email」，要寫「根據收到的客戶來信，分析情緒和類型，生成符合公司語氣的專業回覆」。越精準，AI 越容易判斷何時該啟用這個 Skill。</p>
+        </div>
+        <div class="concept-card">
+            <h3>📋 步驟要有序</h3>
+            <p>用數字編號列出每一步，而且每一步都要有<strong>明確的輸出</strong>。例如「步驟一：判斷信件類型 → 輸出：類型標籤（詢問/投訴/感謝/合作）」。</p>
+        </div>
+        <div class="concept-card">
+            <h3>🛡️ 安全不能少</h3>
+            <p>告訴 AI 什麼情況要拒絕（例如：「如果來信涉及法律糾紛，回覆『建議諮詢法律顧問』」），避免 AI 在不該回答的地方亂回答。</p>
+        </div>
+    </div>
+
+    <div class="box info">
+        <strong>💡 今天的實作重點：</strong>今天我們會用「Email 回覆助手」作為範例，完整走過這個轉換流程。從流程拆解 → 寫成 SKILL.md → 部署到三大平台 → 實際測試。
+    </div>
+
+    <img src="images/01-07_workflow_to_skill_mapping.png" alt="流程到 Skill 對應圖" class="slide-img">
+</div>
+
+<!-- ==================== Slide 8: Part 1 小結 ==================== -->
+<div class="slide" id="slide-8">
+    <h2>📝 Part 1 重點回顧</h2>
+
+    <p>恭喜你完成 Part 1 的學習！讓我們快速回顧一下這個章節的四個核心概念：</p>
+
+    <div class="concept-grid">
+        <div class="concept-card" style="border-top: 4px solid #667eea;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">1</span>
+                <h3 style="margin:0;">Skills 是 AI 的食譜</h3>
+            </div>
+            <p>預先寫好的規則檔案（<code>SKILL.md</code>），讓 AI 照著做不誤。不需要寫程式，只要會打字、會列清單就能建立。從此告別「每次重新教 AI」的窘境。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #f093fb;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">2</span>
+                <h3 style="margin:0;">三層架構，按需載入</h3>
+            </div>
+            <p>元資料（~100 tokens）→ 指令（~500-5000 tokens）→ 資源（不限大小）。這種漸進式揭露設計，讓你可以建立幾十個 Skill 而不浪費 Token。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #4facfe;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">3</span>
+                <h3 style="margin:0;">三大平台任你選</h3>
+            </div>
+            <p>Antigravity（免費、圖形化）/ Claude Code（付費、程式碼能力強）/ Gemini CLI（免費、Google 生態系）。三個平台的 Skill 寫法幾乎相同，學會一個就能舉一反三。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #43e97b;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">4</span>
+                <h3 style="margin:0;">流程拆解是第一步</h3>
+            </div>
+            <p>把你的專業知識拆成 AI 看得懂的步驟，是建立 Skill 的前置作業。掌握「足夠具體、有順序性、可判斷完成」三原則，任何工作都能轉化為 Skill。</p>
+        </div>
+    </div>
+
+    <div class="box success">
+        <strong>🎯 接下來的 Part 2：</strong>我們會進入實作環節，學習 SKILL.md 的完整結構，並親手寫出你的第一個 Agent Skill——「Email 回覆助手」。準備好了嗎？
+    </div>
+
+    <div style="text-align:center; margin-top:40px;">
+        <a href="Part2_SKILL結構與實作.html" class="next-part-btn">
+            Part 2：SKILL.md 結構與實作 →
+        </a>
+    </div>
+</div>
+
+</div><!-- end slides-container -->
+
+<!-- ===== 底部圓點 ===== -->
+<div class="dots" id="dots"></div>
+
+<!-- ===== JavaScript ===== -->
+<script>
+(function(){
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dots');
+    let current = 0;
+    const total = slides.length;
+
+    // 建立圓點
+    for(let i = 0; i < total; i++){
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => goTo(i));
+        dotsContainer.appendChild(dot);
+    }
+
+    function goTo(n){
+        slides[current].classList.remove('active');
+        dotsContainer.children[current].classList.remove('active');
+        current = (n + total) % total;
+        slides[current].classList.add('active');
+        dotsContainer.children[current].classList.add('active');
+        slides[current].scrollTop = 0;
+    }
+
+    window.changeSlide = function(dir){ goTo(current + dir); };
+
+    // 鍵盤控制
+    document.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+        if(e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); changeSlide(1); }
+    });
+
+    // 觸控滑動
+    let touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e){
+        const diff = e.changedTouches[0].screenX - touchStartX;
+        if(Math.abs(diff) > 60){
+            if(diff < 0) changeSlide(1);
+            else changeSlide(-1);
+        }
+    });
+})();
+
+// 全螢幕
+function toggleFullscreen(){
+    if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen().catch(()=>{});
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
+
+<script src="auth.js"></script>
+</body>
+</html>

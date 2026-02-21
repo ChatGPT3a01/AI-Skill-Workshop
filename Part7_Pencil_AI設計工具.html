@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 7 - Pencil AI 設計工具 | AI Skill 實作課</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    height: 100vh;
+    overflow: hidden;
+    color: #333;
+}
+
+/* ===== 導航列 ===== */
+.nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+}
+.nav-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.nav-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-block;
+    font-family: inherit;
+}
+.nav-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-1px);
+}
+
+/* ===== 投影片容器 ===== */
+.slides-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding-top: 60px;
+}
+
+.slide {
+    display: none;
+    width: 95%;
+    max-width: 1400px;
+    max-height: 88vh;
+    background: rgba(255,255,255,0.98);
+    border-radius: 24px;
+    padding: 60px;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: fadeIn 0.4s ease;
+}
+.slide.active { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* scrollbar */
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-track { background: transparent; }
+.slide::-webkit-scrollbar-thumb { background: rgba(30,60,114,0.3); border-radius: 4px; }
+.slide::-webkit-scrollbar-thumb:hover { background: rgba(30,60,114,0.5); }
+
+/* ===== 文字樣式 ===== */
+h1 { color: #1e3c72; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #2a5298; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #1e3c72; }
+h3 { color: #1e3c72; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #1e3c72; }
+
+/* ===== 表格 ===== */
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: #1e3c72; color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f5f7ff; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+
+/* ===== 程式碼 ===== */
+code {
+    background: #f0f2f5;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #d63384;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 25px;
+    border-radius: 12px;
+    font-size: 18px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+}
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* ===== Box 提示 ===== */
+.box {
+    padding: 20px 24px;
+    border-radius: 12px;
+    margin: 20px 0;
+    font-size: 19px;
+    line-height: 1.8;
+}
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.box.purple { background: #f3e5f5; border-left: 6px solid #9c27b0; }
+.box strong { display: inline; }
+
+/* ===== Concept Grid ===== */
+.concept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin: 24px 0;
+}
+.concept-card {
+    background: #f8f9fa;
+    padding: 28px;
+    border-radius: 15px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.concept-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.concept-card h3 { margin-top: 0; }
+
+/* ===== 截圖 ===== */
+.slide-img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    margin: 24px 0;
+}
+
+/* ===== 左右箭頭 ===== */
+.arrow-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+.arrow-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-50%) scale(1.1);
+}
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+
+/* ===== 底部圓點指示器 ===== */
+.dots {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 9999;
+}
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid rgba(255,255,255,0.5);
+}
+.dot.active {
+    background: white;
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+/* ===== 封面專用 ===== */
+.cover-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 70vh;
+}
+.cover-slide .subtitle {
+    font-size: 22px;
+    color: #2a5298;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+}
+.cover-slide h1 {
+    font-size: 56px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+}
+.cover-slide .desc {
+    font-size: 24px;
+    color: #666;
+    max-width: 800px;
+    line-height: 1.8;
+    margin-bottom: 40px;
+}
+.tags {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.tag {
+    padding: 10px 28px;
+    border-radius: 50px;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+/* ===== MCP 流程圖 ===== */
+.flow-chart {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 30px;
+    margin: 24px 0;
+    text-align: center;
+    font-size: 20px;
+    line-height: 2.2;
+    border: 1px solid #e9ecef;
+}
+.flow-chart .flow-arrow {
+    color: #2a5298;
+    font-weight: 700;
+    font-size: 24px;
+}
+
+/* ===== Step Badge ===== */
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+/* ===== Checklist ===== */
+.checklist {
+    list-style: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+.checklist li {
+    padding: 8px 0 8px 36px;
+    position: relative;
+}
+.checklist li::before {
+    content: '☐';
+    position: absolute;
+    left: 0;
+    font-size: 22px;
+    color: #2a5298;
+}
+
+/* ===== Next Part 按鈕 ===== */
+.next-part-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    padding: 18px 48px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: 0 8px 25px rgba(30,60,114,0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.next-part-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(30,60,114,0.5);
+}
+
+/* ===== 結業頁 ===== */
+.ending {
+    text-align: center;
+    padding: 40px 0;
+}
+.ending h1 {
+    font-size: 52px;
+    margin-bottom: 16px;
+}
+.ending .author-name {
+    font-size: 24px;
+    color: #2a5298;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+.ending .social-btns {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+.ending .social-btns a {
+    padding: 14px 32px;
+    border-radius: 50px;
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 700;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.ending .social-btns a:hover {
+    transform: translateY(-3px);
+}
+.btn-fb { background: linear-gradient(135deg, #1877f2, #0d65d9); box-shadow: 0 4px 15px rgba(24,119,242,0.4); }
+.btn-yt { background: linear-gradient(135deg, #ff0000, #cc0000); box-shadow: 0 4px 15px rgba(255,0,0,0.4); }
+.btn-group { background: linear-gradient(135deg, #28a745, #20893a); box-shadow: 0 4px 15px rgba(40,167,69,0.4); }
+.home-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 14px 40px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    font-size: 20px;
+    font-weight: 700;
+    box-shadow: 0 6px 20px rgba(30,60,114,0.4);
+    transition: transform 0.3s;
+}
+.home-btn:hover { transform: translateY(-3px) scale(1.03); }
+.copyright {
+    margin-top: 30px;
+    font-size: 14px;
+    color: #999;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 導航列 ===== -->
+<nav class="nav-bar">
+    <div class="nav-title">&#x1F3A8; Part 7 - Pencil AI 設計工具</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="index.html">&#x1F3E0; 首頁</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">&#x1F5A5;&#xFE0F; 全螢幕</button>
+        <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">&#x1F4D8; FB</a>
+        <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">&#x1F3A5; YT</a>
+        <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">&#x1F465; 3A社團</a>
+    </div>
+</nav>
+
+<!-- ===== 左右箭頭 ===== -->
+<button class="arrow-btn arrow-left" onclick="changeSlide(-1)">&#9664;</button>
+<button class="arrow-btn arrow-right" onclick="changeSlide(1)">&#9654;</button>
+
+<!-- ===== 投影片容器 ===== -->
+<div class="slides-container">
+
+<!-- ==================== Slide 1: 封面 ==================== -->
+<div class="slide active" id="slide-1">
+    <div class="cover-slide">
+        <div class="subtitle">Part 7 &middot; 延伸實作</div>
+        <h1>Pencil AI 設計工具</h1>
+        <p class="desc">用 Skill 驅動 AI 做設計 — 在畫布上設計，落地為程式碼</p>
+        <div class="tags">
+            <span class="tag" style="background:linear-gradient(135deg,#667eea,#764ba2);">Pencil</span>
+            <span class="tag" style="background:linear-gradient(135deg,#f093fb,#f5576c);">MCP 協定</span>
+            <span class="tag" style="background:linear-gradient(135deg,#4facfe,#00f2fe);">Design to Code</span>
+            <span class="tag" style="background:linear-gradient(135deg,#43e97b,#38f9d7);">第 3 個 Skill</span>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Slide 2: M-1 認識 Pencil ==================== -->
+<div class="slide" id="slide-2">
+    <h2>&#x1F3A8; 認識 Pencil — Design on Canvas, Land in Code</h2>
+
+    <p><strong>Pencil</strong>（<a href="https://www.pencil.dev/" target="_blank">pencil.dev</a>）是由 High Agency 公司開發的 AI 驅動設計工具。它的核心理念是：</p>
+
+    <div class="box purple">
+        <strong>&#x1F4A1; 核心理念：</strong>「在畫布上設計，落地為程式碼」（Design on canvas. Land in code.）
+    </div>
+
+    <p>Pencil <strong>不是</strong>一個獨立的設計軟體，而是一個 <strong>IDE 擴充套件</strong>，直接嵌入到你的程式碼編輯器中運作。</p>
+
+    <h3>&#x1F4A1; Pencil vs 傳統設計工具</h3>
+    <table>
+        <thead>
+            <tr><th>比較項目</th><th>傳統流程（Figma → 開發）</th><th>Pencil 流程</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>設計環境</strong></td><td>獨立設計軟體</td><td>直接在 IDE 中設計</td></tr>
+            <tr><td><strong>交接方式</strong></td><td>匯出圖片/規格給工程師</td><td>設計即程式碼，無需交接</td></tr>
+            <tr><td><strong>AI 整合</strong></td><td>無 / 有限</td><td>透過 MCP 深度整合 AI</td></tr>
+            <tr><td><strong>版本控制</strong></td><td>設計檔案難以 Git 管理</td><td><code>.pen</code> 是 JSON，原生支援 Git</td></tr>
+            <tr><td><strong>協作方式</strong></td><td>設計師 → 工程師（序列）</td><td>設計 + 開發同時進行（平行）</td></tr>
+        </tbody>
+    </table>
+
+    <h3>&#x1F50C; 核心技術：MCP（Model Context Protocol）</h3>
+    <div class="flow-chart">
+        <strong>你</strong>（自然語言描述需求）<br>
+        <span class="flow-arrow">&#x2B07;</span><br>
+        <strong>AI 助手</strong>（Antigravity 內建 AI）<br>
+        <span class="flow-arrow">&#x2B07; MCP 協定</span><br>
+        <strong>Pencil MCP Server</strong>（本機運行，不上傳雲端）<br>
+        <span class="flow-arrow">&#x2B07;</span><br>
+        <strong>設計畫布</strong>（.pen 檔案）<br>
+        <span class="flow-arrow">&#x2B07;</span><br>
+        <strong>程式碼</strong>（HTML / CSS / React / Tailwind）
+    </div>
+
+    <div class="box warning">
+        <strong>&#x26A0;&#xFE0F; 重要：</strong>Pencil MCP Server 在本機運行，設計資料不會外傳到雲端。你的設計完全私密安全。
+    </div>
+
+    <img src="images/01-48_pencil_homepage.png" alt="Pencil 官網首頁" class="slide-img">
+</div>
+
+<!-- ==================== Slide 3: M-2 安裝 Pencil ==================== -->
+<div class="slide" id="slide-3">
+    <h2>&#x1F4E6; 在 Antigravity 安裝 Pencil 擴充套件</h2>
+
+    <h3>&#x1F527; Step 1：安裝 Pencil</h3>
+    <ol>
+        <li>開啟 <strong>Antigravity</strong>（<a href="https://antigravity.ai" target="_blank">antigravity.ai</a>）</li>
+        <li>進入你的專案工作區</li>
+        <li>點選左側活動列的 <strong>擴充套件圖示</strong>（四方塊圖示）</li>
+        <li>在搜尋框中輸入 <strong>「Pencil」</strong></li>
+        <li>找到 <strong>Pencil</strong>（開發者為 High Agency），點選 <strong>Install</strong> 安裝</li>
+        <li>安裝完成後會提示你進行 Email 驗證（輸入 Email 即可）</li>
+    </ol>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 小提醒：</strong>Antigravity 本身就內建支援 Pencil 的 MCP 連線，安裝後即可直接使用，不需額外設定。
+    </div>
+
+    <img src="images/01-49_pencil_antigravity_install.png" alt="Antigravity 安裝 Pencil" class="slide-img">
+
+    <h3>&#x2705; Step 2：驗證安裝成功</h3>
+    <ol>
+        <li>在 Antigravity 的檔案總管中，建立一個 <code>.pen</code> 檔案（例如 <code>test.pen</code>）</li>
+        <li>點擊該檔案，應該會自動用 <strong>Pencil 編輯器</strong>開啟，出現無限畫布</li>
+        <li>或在左側活動列中看到 Pencil 的圖示</li>
+    </ol>
+
+    <div class="box success">
+        <strong>&#x1F4A1; Antigravity 的優勢：</strong>因為 Antigravity 原生支援 MCP 協定，Pencil 安裝後會自動與 AI 聊天面板連線，不需要手動設定 MCP Server。
+    </div>
+
+    <img src="images/01-50_pencil_antigravity_installed.png" alt="確認安裝成功" class="slide-img">
+</div>
+
+<!-- ==================== Slide 4: M-3 建立 .pen 檔案 ==================== -->
+<div class="slide" id="slide-4">
+    <h2>&#x1F4C4; 建立你的第一個 .pen 設計檔</h2>
+
+    <h3>Step 1：建立 .pen 檔案</h3>
+
+    <p><strong>方法一：用 Antigravity 終端機</strong></p>
+    <pre><code># 在專案根目錄建立 designs 資料夾
+mkdir -p designs
+
+# 建立一個空的 .pen 檔案
+touch designs/my-first-design.pen</code></pre>
+
+    <p><strong>方法二：用 Antigravity 檔案總管（更簡單）</strong></p>
+    <ol>
+        <li>在左側檔案總管中，右鍵 → <strong>New File</strong></li>
+        <li>檔名輸入 <code>my-first-design.pen</code></li>
+        <li>Pencil 編輯器會<strong>自動開啟</strong>無限畫布</li>
+    </ol>
+
+    <div class="box info">
+        <strong>&#x1F4A1;</strong> <code>.pen</code> 檔案本質上是 <strong>JSON 格式</strong>，可以用 Git 做版本控制，這是 Pencil 最大的優勢之一。
+    </div>
+
+    <img src="images/01-51_pencil_empty_canvas.png" alt="Pencil 無限畫布" class="slide-img">
+
+    <h3>Step 2：確認 MCP 連線</h3>
+    <p>在 Antigravity 的 <strong>AI 聊天面板</strong>中輸入：</p>
+    <pre><code>請確認你是否可以存取 Pencil 設計工具，列出可用的 Pencil MCP 工具</code></pre>
+    <p>如果 AI 回應中列出了 <code>pencil</code> 相關的工具（如 <code>batch_design</code>、<code>batch_get</code>、<code>get_screenshot</code> 等），就代表 MCP 連線成功。</p>
+
+    <div class="box success">
+        <strong>&#x1F4A1; Antigravity 的好處：</strong>不像 Claude Code 或 Gemini CLI 需要額外設定 MCP，Antigravity 是圖形化操作，安裝完 Pencil 就能直接使用。
+    </div>
+
+    <img src="images/01-52_pencil_mcp_connected.png" alt="確認 MCP 連線成功" class="slide-img">
+</div>
+
+<!-- ==================== Slide 5: M-4 用 AI 操作 Pencil ==================== -->
+<div class="slide" id="slide-5">
+    <h2>&#x1F3A8; 用 AI 操作 Pencil 設計畫面</h2>
+
+    <h3>Pencil 提供的 MCP 工具一覽</h3>
+    <table>
+        <thead>
+            <tr><th>工具名稱</th><th>功能</th><th>用途</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>batch_design</code></td><td>建立/修改/刪除設計元素</td><td>新增按鈕、調整版面、更換顏色</td></tr>
+            <tr><td><code>batch_get</code></td><td>讀取設計結構</td><td>了解目前畫布上有什麼元素</td></tr>
+            <tr><td><code>get_screenshot</code></td><td>截取設計預覽圖</td><td>AI 自我驗證設計結果</td></tr>
+            <tr><td><code>snapshot_layout</code></td><td>分析版面結構</td><td>檢查元素位置、找出重疊問題</td></tr>
+            <tr><td><code>get_editor_state</code></td><td>取得編輯器狀態</td><td>知道目前選取了什麼</td></tr>
+            <tr><td><code>get_style_guide</code></td><td>取得風格指南</td><td>用於設計靈感與一致性</td></tr>
+            <tr><td><code>find_empty_space_on_canvas</code></td><td>尋找空白區域</td><td>找到放置新元素的位置</td></tr>
+        </tbody>
+    </table>
+
+    <h3>&#x1F680; 實作：用自然語言設計一個登入頁面</h3>
+    <p>在 Antigravity 的 AI 聊天面板中，確保 <code>.pen</code> 檔案已開啟，然後輸入：</p>
+    <pre><code>請在 my-first-design.pen 中設計一個現代風格的登入頁面，包含：
+- 一個標題「歡迎回來」
+- Email 和密碼輸入框
+- 登入按鈕（藍色漸層）
+- 「忘記密碼？」連結
+- 底部的「還沒有帳號？立即註冊」文字</code></pre>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 提示詞技巧：</strong><br>
+        &#x274C; 模糊：「幫我設計一個頁面」<br>
+        &#x2705; 具體：「設計一個登入頁面，藍色漸層按鈕，白色背景，置中對齊」<br>
+        &#x1F4A1; 採用<strong>漸進式建構</strong>：先佈局 → 加元件 → 加樣式 → 調間距
+    </div>
+
+    <p>AI 會透過 MCP 呼叫 <code>batch_design</code> 工具，在 Pencil 畫布上逐步建立這些元素。你可以在旁邊的畫布上<strong>即時看到結果</strong>！</p>
+
+    <img src="images/01-53_pencil_ai_login_design.png" alt="AI 設計登入頁面" class="slide-img">
+</div>
+
+<!-- ==================== Slide 6: M-5 設計轉程式碼 ==================== -->
+<div class="slide" id="slide-6">
+    <h2>&#x1F4BB; 設計轉程式碼 — 一步到位</h2>
+
+    <p>Pencil 最強大的功能之一，就是可以將設計<strong>直接轉換為生產等級的程式碼</strong>。</p>
+
+    <p>在 Antigravity 的 AI 聊天面板中輸入：</p>
+    <pre><code>請將目前的登入頁面設計轉換為 HTML + Tailwind CSS 程式碼</code></pre>
+
+    <h3>支援的輸出格式</h3>
+    <table>
+        <thead>
+            <tr><th>指令範例</th><th>輸出格式</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>轉換為 HTML + CSS</code></td><td>原生 HTML/CSS</td></tr>
+            <tr><td><code>轉換為 HTML + Tailwind CSS</code></td><td>Tailwind 樣式</td></tr>
+            <tr><td><code>轉換為 React 元件</code></td><td>React JSX + CSS</td></tr>
+            <tr><td><code>轉換為 React + Tailwind</code></td><td>React + Tailwind</td></tr>
+        </tbody>
+    </table>
+
+    <div class="box purple">
+        <strong>&#x1F4A1; 這就是「Design on canvas, land in code」的精髓！</strong>設計完成的同時，程式碼也準備好了。不需要設計師和工程師來回交接，一個人就能完成「設計 → 程式碼」的全流程。
+    </div>
+
+    <img src="images/01-54_pencil_design_to_code.png" alt="設計轉程式碼" class="slide-img">
+</div>
+
+<!-- ==================== Slide 7: M-6 建立 Pencil Skill ==================== -->
+<div class="slide" id="slide-7">
+    <h2>&#x1F4DD; 建立「Pencil 網頁設計助手」Skill</h2>
+
+    <h3>&#x1F3AF; 為什麼要為 Pencil 建立 Skill？</h3>
+    <p>到目前為止，每次都要手動告訴 AI 用什麼風格、包含哪些元素、遵守什麼規範。如果把這些規則<strong>寫成 Skill</strong>，AI 每次設計時都會自動遵守！</p>
+
+    <h3>Step 1：建立 Skill 資料夾</h3>
+    <pre><code>mkdir -p skills-source/pencil-web-designer/assets</code></pre>
+
+    <h3>Step 2：撰寫 SKILL.md</h3>
+    <p>建立 <code>skills-source/pencil-web-designer/SKILL.md</code>，核心內容結構：</p>
+    <pre><code>---
+name: pencil-web-designer
+description: >
+  AI 網頁設計助手，使用 Pencil 工具在 .pen 畫布上設計網頁介面。
+  當使用者需要設計網頁、Landing Page、Dashboard、表單頁面時觸發。
+---
+
+# Pencil 網頁設計助手
+
+## 前置檢查
+- Check if Pencil MCP 工具可用
+- Ask user 想要設計什麼類型的頁面
+- Ask user 偏好的風格
+
+## 執行步驟
+- Step 1：了解需求（MUST 確認後才開始）
+- Step 2：建立設計（漸進式建構）
+- Step 3：驗證設計（截圖 + 版面檢查）
+- Step 4：產出程式碼（如需要）
+
+## 安全規則
+- NEVER 修改未要求修改的現有設計
+- MUST 每次重大變更前先確認
+
+## 設計規範
+- MUST 使用 8px 間距系統
+- MUST 確保 WCAG AA 對比度</code></pre>
+
+    <img src="images/01-55_pencil_skill_md.png" alt="SKILL.md 檔案內容" class="slide-img">
+
+    <h3>Step 3：建立設計風格參考檔</h3>
+    <p>在 <code>assets/</code> 中建立 <code>design-guidelines.md</code>，定義三種色彩方案、字型建議、間距系統：</p>
+
+    <div class="concept-grid">
+        <div class="concept-card">
+            <h3>&#x1F7E3; 現代科技風</h3>
+            <p>主色：<code>#667eea → #764ba2</code>（紫色漸層）</p>
+            <p>背景：<code>#f8f9fa</code>　強調：<code>#00d2ff</code></p>
+        </div>
+        <div class="concept-card">
+            <h3>&#x1F535; 企業專業風</h3>
+            <p>主色：<code>#1e3c72 → #2a5298</code>（深藍漸層）</p>
+            <p>背景：<code>#ffffff</code>　強調：<code>#28a745</code></p>
+        </div>
+        <div class="concept-card">
+            <h3>&#x1F7E1; 活潑創意風</h3>
+            <p>主色：<code>#f093fb → #f5576c</code>（粉紫漸層）</p>
+            <p>背景：<code>#fafafa</code>　強調：<code>#fdcb6e</code></p>
+        </div>
+    </div>
+
+    <img src="images/01-56_pencil_design_guidelines.png" alt="design-guidelines.md 內容" class="slide-img">
+
+    <h3>Step 4：同步到所有平台</h3>
+    <pre><code>bash sync-skills.sh</code></pre>
+    <p>然後執行 <code>tree skills-source /F</code> 確認三個 Skill 都在：</p>
+    <pre><code>skills-source/
+├── email-reply-helper/          &#x2190; Skill 1
+│   ├── SKILL.md
+│   └── assets/
+├── meeting-notes-generator/     &#x2190; Skill 2
+│   ├── SKILL.md
+│   └── assets/
+└── pencil-web-designer/         &#x2190; Skill 3（新增！）
+    ├── SKILL.md
+    └── assets/
+        └── design-guidelines.md</code></pre>
+
+    <img src="images/01-57_pencil_skill_synced.png" alt="同步成功 + 三個 Skill 結構" class="slide-img">
+</div>
+
+<!-- ==================== Slide 8: M-7 測試 Pencil Skill ==================== -->
+<div class="slide" id="slide-8">
+    <h2>&#x1F9EA; 測試 Pencil Skill</h2>
+
+    <h3>Step 1：確認環境準備</h3>
+    <ul class="checklist">
+        <li>Pencil 擴充套件已安裝並啟動（左側看到 Pencil 圖示）</li>
+        <li>已開啟一個 <code>.pen</code> 檔案（畫布上可以看到無限畫布）</li>
+        <li><code>pencil-web-designer</code> Skill 已同步到 <code>.agent/skills/</code></li>
+    </ul>
+
+    <h3>Step 2：在 AI 聊天面板中輸入測試指令</h3>
+    <pre><code>請用 pencil-web-designer 幫我設計一個 AI 課程的 Landing Page，
+風格要現代簡約，主色用紫色漸層，
+需要包含：導覽列、Hero 區塊、三個課程特色卡片、報名 CTA 按鈕</code></pre>
+
+    <h3>Step 3：觀察 AI 的行為</h3>
+    <table>
+        <thead>
+            <tr><th>順序</th><th>AI 應該做的事</th><th>對應 Skill 中的哪條規則</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>1</strong></td><td>自動偵測並載入 Skill</td><td>Skill 的 <code>description</code> 觸發條件</td></tr>
+            <tr><td><strong>2</strong></td><td>先跟你確認需求</td><td><code>Ask user</code> 規則</td></tr>
+            <tr><td><strong>3</strong></td><td>在 Pencil 畫布上建立設計</td><td><code>batch_design</code> MCP 工具</td></tr>
+            <tr><td><strong>4</strong></td><td>遵守設計規範（8px 間距）</td><td><code>MUST 使用一致的間距系統</code></td></tr>
+            <tr><td><strong>5</strong></td><td>詢問是否需要轉碼</td><td><code>Ask user 想要的程式碼格式</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Step 4：對比「有 Skill」vs「沒有 Skill」</h3>
+    <div class="concept-grid">
+        <div class="concept-card" style="border-color:#fca5a5; background:#fef2f2;">
+            <h3>&#x274C; 沒有 Skill</h3>
+            <ul>
+                <li>AI 隨意設計，風格不一致</li>
+                <li>每次都要重新說明規範</li>
+                <li>間距、色彩可能混亂</li>
+                <li>不會主動確認需求</li>
+            </ul>
+        </div>
+        <div class="concept-card" style="border-color:#86efac; background:#f0fdf4;">
+            <h3>&#x2705; 有 Skill</h3>
+            <ul>
+                <li>自動遵守設計規範</li>
+                <li>先確認需求再動手</li>
+                <li>使用一致的間距 &amp; 色彩方案</li>
+                <li>主動截圖讓你確認</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="box success">
+        <strong>&#x1F3AF; 這就是 Skill 的價值：</strong>讓 AI 的行為可預期、可重複、有品質保證。
+    </div>
+
+    <img src="images/01-58_pencil_skill_result.png" alt="Pencil Skill 設計成果" class="slide-img">
+</div>
+
+<!-- ==================== Slide 9: M-8 模組小結 ==================== -->
+<div class="slide" id="slide-9">
+    <h2>&#x1F9E0; Pencil 模組小結</h2>
+
+    <table>
+        <thead>
+            <tr><th>#</th><th>重點</th><th>一句話記憶</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>1</strong></td><td>Pencil = IDE 內的設計工具</td><td>不用開 Figma，在 Antigravity 裡就能設計</td></tr>
+            <tr><td><strong>2</strong></td><td>MCP 是橋梁</td><td>AI 透過 MCP 協定操作 Pencil 畫布</td></tr>
+            <tr><td><strong>3</strong></td><td>.pen 是 JSON</td><td>設計檔案可以用 Git 版本控制</td></tr>
+            <tr><td><strong>4</strong></td><td>Skill 讓設計更一致</td><td>把設計規範寫成 Skill，AI 自動遵守</td></tr>
+            <tr><td><strong>5</strong></td><td>設計即程式碼</td><td>設計完成 → 一鍵轉換 HTML/CSS/React</td></tr>
+        </tbody>
+    </table>
+
+    <h3>&#x1F3AF; 目前你的 Skill 專案成果</h3>
+    <pre><code>skills-source/
+├── email-reply-helper/          &#x2190; Skill 1：Email 回覆助手
+│   ├── SKILL.md
+│   └── assets/
+│       ├── email-template.md
+│       ├── input-form.html
+│       └── monetize-framework.html
+├── meeting-notes-generator/     &#x2190; Skill 2：會議紀錄產生器
+│   ├── SKILL.md
+│   └── assets/
+│       └── meeting-template.md
+└── pencil-web-designer/         &#x2190; Skill 3：Pencil 網頁設計助手
+    ├── SKILL.md
+    └── assets/
+        └── design-guidelines.md</code></pre>
+
+    <div class="box success">
+        <strong>&#x1F389; 恭喜！</strong>你現在已經擁有 <strong>3 個完整的 AI Skill</strong>，橫跨文字處理、會議管理、視覺設計三大領域！
+    </div>
+
+    <div class="ending">
+        <h1>&#x1F389; Day 1 完整結束！</h1>
+        <p class="author-name">曾慶良（阿亮老師）</p>
+        <div class="social-btns">
+            <a href="https://www.facebook.com/?locale=zh_TW" target="_blank" class="btn-fb">&#x1F4D8; Facebook</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="btn-yt">&#x1F3A5; YouTube</a>
+            <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank" class="btn-group">&#x1F465; 3A科技研究社</a>
+        </div>
+        <a href="index.html" class="home-btn">&#x1F3E0; 回到課程首頁</a>
+        <p class="copyright">&copy; 2026 阿亮老師 版權所有 | Made with &#x2764;&#xFE0F; by 曾慶良(阿亮老師) &times; Claude Code</p>
+    </div>
+</div>
+
+</div><!-- end slides-container -->
+
+<!-- ===== 底部圓點 ===== -->
+<div class="dots" id="dots"></div>
+
+<!-- ===== JavaScript ===== -->
+<script>
+(function(){
+    var slides = document.querySelectorAll('.slide');
+    var dotsContainer = document.getElementById('dots');
+    var current = 0;
+
+    // Build dots
+    slides.forEach(function(_, i){
+        var d = document.createElement('div');
+        d.className = 'dot' + (i === 0 ? ' active' : '');
+        d.addEventListener('click', function(){ goTo(i); });
+        dotsContainer.appendChild(d);
+    });
+
+    function goTo(index){
+        if(index < 0 || index >= slides.length) return;
+        slides[current].classList.remove('active');
+        dotsContainer.children[current].classList.remove('active');
+        current = index;
+        slides[current].classList.add('active');
+        dotsContainer.children[current].classList.add('active');
+        slides[current].scrollTop = 0;
+    }
+
+    window.changeSlide = function(dir){ goTo(current + dir); };
+
+    // Keyboard
+    document.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowRight' || e.key === 'ArrowDown'){ e.preventDefault(); changeSlide(1); }
+        if(e.key === 'ArrowLeft' || e.key === 'ArrowUp'){ e.preventDefault(); changeSlide(-1); }
+        if(e.key === 'Home'){ e.preventDefault(); goTo(0); }
+        if(e.key === 'End'){ e.preventDefault(); goTo(slides.length - 1); }
+    });
+
+    // Touch swipe
+    var touchStartX = 0;
+    var touchStartY = 0;
+    document.addEventListener('touchstart', function(e){
+        touchStartX = e.changedTouches[0].screenX;
+        touchStartY = e.changedTouches[0].screenY;
+    });
+    document.addEventListener('touchend', function(e){
+        var dx = e.changedTouches[0].screenX - touchStartX;
+        var dy = e.changedTouches[0].screenY - touchStartY;
+        if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50){
+            changeSlide(dx > 0 ? -1 : 1);
+        }
+    });
+
+    // Fullscreen
+    window.toggleFullscreen = function(){
+        if(!document.fullscreenElement){
+            document.documentElement.requestFullscreen().catch(function(){});
+        } else {
+            document.exitFullscreen().catch(function(){});
+        }
+    };
+})();
+</script>
+
+<script src="auth.js"></script>
+</body>
+</html>

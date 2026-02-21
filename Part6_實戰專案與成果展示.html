@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Part 6 - 實戰專案與成果展示</title>
+<style>
+  /* ===== Reset & Base ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    background-attachment: fixed;
+  }
+
+  /* ===== Top Navbar ===== */
+  .navbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 60px; z-index: 10000;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .navbar .nav-title {
+    font-size: 18px; font-weight: 700; color: #fff;
+    white-space: nowrap;
+  }
+  .navbar .nav-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .navbar .nav-actions a,
+  .navbar .nav-actions button {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; font-size: 14px; font-weight: 600;
+    padding: 7px 16px; border-radius: 20px;
+    cursor: pointer; text-decoration: none;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .navbar .nav-actions a:hover,
+  .navbar .nav-actions button:hover {
+    background: rgba(255,255,255,0.3); color: #fff;
+  }
+
+  /* ===== Slide Container ===== */
+  .slides-viewport {
+    position: fixed;
+    top: 60px; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .slide {
+    display: none;
+    width: 95%;
+    max-width: 1400px;
+    max-height: 88vh;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1);
+    padding: 52px 60px 48px;
+    overflow-y: auto;
+    animation: fadeSlide 0.4s ease;
+  }
+  .slide.active { display: block; }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Scrollbar */
+  .slide::-webkit-scrollbar { width: 6px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb { background: #c0c6d0; border-radius: 3px; }
+
+  /* ===== Left / Right Arrows ===== */
+  .nav-arrow {
+    position: fixed; top: 50%; z-index: 900;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; font-size: 24px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    transform: translateY(-50%);
+  }
+  .nav-arrow:hover { background: rgba(255,255,255,0.35); transform: translateY(-50%) scale(1.1); }
+  .nav-arrow.left  { left: 18px; }
+  .nav-arrow.right { right: 18px; }
+
+  /* ===== Bottom Dots ===== */
+  .dots {
+    position: fixed; bottom: 18px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 10px; z-index: 900;
+  }
+  .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .dot.active,
+  .dot:hover { background: #fff; transform: scale(1.3); }
+
+  /* ===== Typography ===== */
+  h1 { color: #1e3c72; font-size: 56px; margin-bottom: 16px; line-height: 1.25; }
+  h2 { color: #2a5298; font-size: 38px; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 3px solid #1e3c72; line-height: 1.3; }
+  h3 { color: #1e3c72; font-size: 26px; margin-bottom: 12px; }
+  p, li { font-size: 20px; line-height: 1.8; color: #444; }
+  p  { margin-bottom: 14px; }
+  ul, ol { padding-left: 28px; margin-bottom: 16px; }
+  li { margin-bottom: 6px; }
+  code {
+    background: #f0f2f5; color: #d63384;
+    padding: 2px 8px; border-radius: 5px;
+    font-size: 0.92em; font-family: Consolas, 'Courier New', monospace;
+  }
+  pre {
+    background: #1e1e2e; color: #cdd6f4;
+    padding: 24px 28px; border-radius: 14px;
+    font-size: 17px; line-height: 1.7;
+    font-family: Consolas, 'Courier New', monospace;
+    overflow-x: auto; margin: 20px 0;
+    border: 1px solid #313244;
+  }
+
+  /* ===== Cover Slide ===== */
+  .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 60vh; }
+  .cover .subtitle { font-size: 22px; color: #2a5298; font-weight: 600; margin-bottom: 12px; letter-spacing: 2px; }
+  .cover h1 { font-size: 52px; margin-bottom: 20px; }
+  .cover .desc { font-size: 22px; color: #555; max-width: 820px; margin-bottom: 32px; line-height: 1.7; }
+  .cover .tags { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .cover .tag {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; padding: 8px 22px; border-radius: 30px;
+    font-size: 16px; font-weight: 600;
+  }
+
+  /* ===== Boxes ===== */
+  .box {
+    padding: 18px 24px; border-radius: 12px;
+    border-left: 5px solid; margin: 20px 0;
+    font-size: 19px; line-height: 1.7;
+  }
+  .box.info    { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+  .box.warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+  .box.success { background: #d4edda; border-color: #28a745; color: #155724; }
+
+  /* ===== Highlight ===== */
+  .highlight {
+    background: linear-gradient(120deg, #84fab0, #8fd3f4);
+    padding: 2px 10px; border-radius: 6px;
+    font-weight: 600;
+  }
+
+  /* ===== Concept Grid & Cards ===== */
+  .concept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin: 24px 0;
+  }
+  .concept-card {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 28px 24px;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+  }
+  .concept-card:hover { transform: translateY(-8px); box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+  .concept-card .card-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+  .concept-card h3 { margin-bottom: 10px; }
+  .concept-card p, .concept-card li { font-size: 18px; }
+
+  /* ===== Tables ===== */
+  table {
+    width: 100%; border-collapse: collapse; margin: 20px 0;
+    font-size: 19px;
+  }
+  th, td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+  th {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; font-weight: 600;
+  }
+  tr:nth-child(even) { background: #f8f9ff; }
+  tr:hover { background: #eef2ff; }
+
+  /* ===== Images ===== */
+  .slide-img {
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    margin: 20px 0;
+    display: block;
+  }
+
+  /* ===== Summary Cards ===== */
+  .concept-card.summary-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e8edf5 100%);
+    border-left: 4px solid #1e3c72;
+  }
+  .concept-card.summary-card .card-num {
+    display: inline-block;
+    background: #1e3c72; color: #fff;
+    width: 32px; height: 32px; text-align: center; line-height: 32px;
+    border-radius: 50%; font-size: 16px; font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  /* ===== Next-step box ===== */
+  .next-step {
+    margin-top: 28px; padding: 20px 28px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; border-radius: 14px;
+    font-size: 20px; font-weight: 600;
+    text-align: center;
+    line-height: 1.7;
+  }
+  .next-step span { opacity: 0.85; font-weight: 400; }
+
+  /* ===== Guard card colors ===== */
+  .guard-must    { border-left: 5px solid #28a745; background: linear-gradient(135deg, #f0fff4, #e8f5e9); }
+  .guard-never   { border-left: 5px solid #dc3545; background: linear-gradient(135deg, #fff5f5, #ffebee); }
+
+  /* ===== Checklist ===== */
+  .checklist {
+    list-style: none; padding: 0; margin: 24px 0;
+  }
+  .checklist li {
+    font-size: 22px; font-weight: 600; color: #1e3c72;
+    padding: 16px 24px; margin-bottom: 12px;
+    background: linear-gradient(135deg, #f0f4ff, #e8edf5);
+    border-radius: 14px;
+    border-left: 5px solid #28a745;
+    line-height: 1.6;
+    transition: all 0.3s ease;
+  }
+  .checklist li:hover { transform: translateX(8px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+  /* ===== Five-concept table ===== */
+  .five-table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    margin: 24px 0; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    font-size: 19px;
+  }
+  .five-table th {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; padding: 16px 20px; font-weight: 700; font-size: 18px;
+  }
+  .five-table td {
+    padding: 16px 20px; border-bottom: 1px solid #e8ecf4;
+  }
+  .five-table tr:last-child td { border-bottom: none; }
+  .five-table tr:nth-child(even) { background: #f4f7ff; }
+  .five-table tr:nth-child(odd) { background: #fff; }
+  .five-table tr:hover { background: #e8f0fe; }
+  .five-table .row-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; border-radius: 50%;
+    font-size: 15px; font-weight: 700;
+    margin-right: 8px;
+  }
+
+  /* ===== Ending slide ===== */
+  .ending {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; min-height: 60vh;
+  }
+  .ending h1 { font-size: 56px; margin-bottom: 16px; }
+  .ending .ending-sub { font-size: 24px; color: #555; margin-bottom: 32px; font-weight: 500; }
+  .ending .author-name { font-size: 26px; color: #1e3c72; font-weight: 700; margin-bottom: 20px; }
+  .ending .social-btns { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; }
+  .ending .social-btns a {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px; border-radius: 30px;
+    color: #fff; font-size: 17px; font-weight: 600;
+    text-decoration: none; transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+  .ending .social-btns a:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+  .ending .social-btns .btn-fb { background: linear-gradient(135deg, #1877f2, #0d5bbd); }
+  .ending .social-btns .btn-yt { background: linear-gradient(135deg, #ff0000, #cc0000); }
+  .ending .social-btns .btn-group { background: linear-gradient(135deg, #42a5f5, #1565c0); }
+  .ending .home-btn {
+    display: inline-block;
+    padding: 16px 48px; border-radius: 16px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff; font-size: 22px; font-weight: 700;
+    text-decoration: none; transition: all 0.3s;
+    box-shadow: 0 6px 20px rgba(30,60,114,0.4);
+    margin-bottom: 28px;
+  }
+  .ending .home-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(30,60,114,0.5); }
+  .ending .copyright {
+    font-size: 14px; color: #999; margin-top: 8px;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 900px) {
+    .slide { padding: 32px 24px; }
+    h1 { font-size: 36px; }
+    h2 { font-size: 28px; }
+    .cover h1 { font-size: 34px; }
+    .ending h1 { font-size: 36px; }
+    .concept-grid { grid-template-columns: 1fr; }
+    .nav-arrow { width: 40px; height: 40px; font-size: 18px; }
+    .navbar .nav-actions { gap: 6px; }
+    .navbar .nav-actions a,
+    .navbar .nav-actions button { padding: 5px 10px; font-size: 12px; }
+    pre { font-size: 14px; padding: 16px; }
+    .checklist li { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Navbar ===== -->
+<nav class="navbar">
+  <div class="nav-title">&#x1F3C6; Part 6 - 實戰專案與成果展示</div>
+  <div class="nav-actions">
+    <a href="index.html">&#x1F3E0; 首頁</a>
+    <button onclick="toggleFullscreen()">&#x1F5A5;&#xFE0F; 全螢幕</button>
+    <a href="https://www.facebook.com/?locale=zh_TW" target="_blank">&#x1F4D8; FB</a>
+    <a href="https://www.youtube.com/@Liang-yt02" target="_blank">&#x1F3A5; YT</a>
+    <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">&#x1F465; 3A社團</a>
+  </div>
+</nav>
+
+<!-- ===== Left / Right Arrows ===== -->
+<div class="nav-arrow left" onclick="changeSlide(-1)">&#x276E;</div>
+<div class="nav-arrow right" onclick="changeSlide(1)">&#x276F;</div>
+
+<!-- ===== Slides Viewport ===== -->
+<div class="slides-viewport">
+
+  <!-- ========== Slide 1: 封面 ========== -->
+  <div class="slide active" id="slide-1">
+    <div class="cover">
+      <p class="subtitle">Part 6 &middot; 實戰專案與成果展示</p>
+      <h1>打造「會議紀錄產生器」<br />＋ Day 1 成果回顧</h1>
+      <p class="desc">獨立完成第二個 Skill，展示今日完整成果</p>
+      <div class="tags">
+        <span class="tag">會議紀錄</span>
+        <span class="tag">實戰專案</span>
+        <span class="tag">成果展示</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Slide 2: 會議紀錄產生器需求分析 ========== -->
+  <div class="slide" id="slide-2">
+    <h2>&#x1F4CB; 專案需求分析：會議紀錄產生器</h2>
+
+    <h3>&#x1F4E6; 需求規格</h3>
+    <table>
+      <thead>
+        <tr><th>項目</th><th>內容</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Skill 名稱</strong></td><td><code>meeting-notes-generator</code></td></tr>
+        <tr><td><strong>功能</strong></td><td>將會議逐字稿或摘要轉換為結構化會議紀錄</td></tr>
+        <tr><td><strong>輸入</strong></td><td>會議逐字稿、重點摘要、與會人員名單</td></tr>
+        <tr><td><strong>輸出</strong></td><td>標準會議紀錄（含議題、決議、待辦事項）</td></tr>
+        <tr><td><strong>平台</strong></td><td>Antigravity + Claude Code + Gemini CLI</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top: 24px;">&#x1F4C1; 資料夾結構</h3>
+    <pre>meeting-notes-generator/
+├── SKILL.md              ← 會議紀錄的 AI 指令
+└── assets/
+    └── meeting-template.md  ← 會議紀錄格式範本</pre>
+
+    <div class="box info">
+      &#x1F4A1; <strong>提示：</strong>這是你要獨立完成的第二個 Skill！流程跟 Email 回覆助手一樣。
+    </div>
+  </div>
+
+  <!-- ========== Slide 3: SKILL.md 核心設計 ========== -->
+  <div class="slide" id="slide-3">
+    <h2>&#x270D;&#xFE0F; 撰寫會議紀錄 SKILL.md</h2>
+
+    <h3>&#x1F3AF; 核心段落設計</h3>
+    <div class="concept-grid" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="concept-card" style="border-top: 4px solid #2196f3;">
+        <span class="card-icon">&#x1F4E5;</span>
+        <h3>Step 1：資訊收集</h3>
+        <p><code>Ask user</code> 提供會議日期、與會人員、會議主題</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #ff9800;">
+        <span class="card-icon">&#x1F50D;</span>
+        <h3>Step 2：內容分析</h3>
+        <p>識別討論議題、提取決議事項、歸類待辦事項</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #28a745;">
+        <span class="card-icon">&#x1F4DD;</span>
+        <h3>Step 3：產生紀錄</h3>
+        <p><code>MUST</code> 包含所有決議、<code>MUST</code> 標註負責人和期限、<code>NEVER</code> 遺漏行動項目</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #9c27b0;">
+        <span class="card-icon">&#x2705;</span>
+        <h3>Step 4：品質檢查</h3>
+        <p>完整性、待辦事項、格式、用語、準確性</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 24px;">&#x1F6E1;&#xFE0F; 重要防呆規則</h3>
+    <div class="concept-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="concept-card guard-must">
+        <span class="card-icon">&#x2705;</span>
+        <h3 style="color: #28a745;">MUST 規則</h3>
+        <ul>
+          <li>每個待辦事項標註<strong>負責人</strong>和<strong>截止日期</strong></li>
+          <li>使用分類標籤標示緊急程度（&#x1F534;&#x1F7E1;&#x1F7E2;）</li>
+        </ul>
+      </div>
+      <div class="concept-card guard-never">
+        <span class="card-icon">&#x1F6AB;</span>
+        <h3 style="color: #dc3545;">NEVER 規則</h3>
+        <ul>
+          <li>自行編造未在會議中提及的內容</li>
+          <li>對與會者做出主觀評價</li>
+        </ul>
+      </div>
+    </div>
+
+    <img src="images/01-44_writing_meeting_skill.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="撰寫會議紀錄 SKILL.md" />
+  </div>
+
+  <!-- ========== Slide 4: 測試你的作品 ========== -->
+  <div class="slide" id="slide-4">
+    <h2>&#x1F9EA; 測試會議紀錄產生器</h2>
+
+    <h3>&#x1F4E8; 測試輸入</h3>
+    <div class="box info" style="font-size: 18px; line-height: 1.9;">
+      &#x1F4AC; 「今天早上 10 點在 3 樓會議室開了產品進度會議，<br />
+      參加的人有：陳總、王經理、李工程師、張設計師。<br />
+      主要討論了三件事：<br />
+      1. 新版 App 的上架時間...決定維持 4 月中上架，但先做 Beta 版<br />
+      2. 客戶回饋的 Bug 列表...已修 8 個，剩 3 個下週處理<br />
+      3. 下一季的行銷方案...選了方案 B，張設計師下週五前做完整提案」
+    </div>
+
+    <h3 style="margin-top: 24px;">&#x1F4C4; AI 產出的結構化紀錄包含</h3>
+    <div class="concept-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="concept-card" style="text-align: center; border-top: 4px solid #1e3c72;">
+        <span class="card-icon">&#x1F4CB;</span>
+        <h3>會議基本資訊</h3>
+        <p>日期、時間、地點<br />主持人、與會人員</p>
+      </div>
+      <div class="concept-card" style="text-align: center; border-top: 4px solid #2a5298;">
+        <span class="card-icon">&#x1F4AC;</span>
+        <h3>三個議題</h3>
+        <p>討論重點<br />決議內容</p>
+      </div>
+      <div class="concept-card" style="text-align: center; border-top: 4px solid #28a745;">
+        <span class="card-icon">&#x2705;</span>
+        <h3>待辦事項表格</h3>
+        <p>負責人、截止日<br />優先級、狀態</p>
+      </div>
+    </div>
+
+    <div class="box success">
+      &#x2705; <strong>成功！</strong>AI 完美地將口語化的會議摘要轉換為結構化的正式紀錄！
+    </div>
+
+    <img src="images/01-45_meeting_skill_test.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="會議紀錄測試結果" />
+  </div>
+
+  <!-- ========== Slide 5: Day 1 完整成果 ========== -->
+  <div class="slide" id="slide-5">
+    <h2>&#x1F4C2; Day 1 完整成果展示</h2>
+
+    <h3>&#x1F4E6; 最終資料夾結構</h3>
+    <pre>skills-source/
+├── email-reply-helper/          ← Skill 1
+│   ├── SKILL.md
+│   └── assets/
+│       ├── email-template.md
+│       ├── input-form.html
+│       └── monetize-framework.html
+└── meeting-notes-generator/     ← Skill 2
+    ├── SKILL.md
+    └── assets/
+        └── meeting-template.md</pre>
+
+    <h3 style="margin-top: 28px;">&#x1F3C6; 成果檢查清單</h3>
+    <ul class="checklist">
+      <li>&#x2705; Skill 1：Email 回覆助手（完整 SKILL.md + 防呆機制 + Email 範本 + HTML 生成器）</li>
+      <li>&#x2705; Skill 2：會議紀錄產生器（完整 SKILL.md + 會議範本）</li>
+      <li>&#x2705; 同步腳本：<code>bash sync-skills.sh</code> 一鍵發佈到所有平台</li>
+      <li>&#x2705; 跨平台驗證：Antigravity / Claude Code / Gemini CLI 全部測試通過</li>
+    </ul>
+
+    <img src="images/01-46_day1_final_structure.png" style="width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.25); margin:24px 0;" alt="Day 1 完整成果" />
+  </div>
+
+  <!-- ========== Slide 6: 今日五大觀念 ========== -->
+  <div class="slide" id="slide-6">
+    <h2>&#x1F9E0; 帶走的五個關鍵觀念</h2>
+
+    <table class="five-table">
+      <thead>
+        <tr><th style="width: 60px;">#</th><th style="width: 240px;">觀念</th><th>一句話記憶</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="row-num">1</span></td>
+          <td><strong>&#x1F373; Skills 是 AI 的食譜</strong></td>
+          <td>預先寫好規則，AI 照做不誤</td>
+        </tr>
+        <tr>
+          <td><span class="row-num">2</span></td>
+          <td><strong>&#x1F4C4; SKILL.md 是核心</strong></td>
+          <td>一個 Markdown 檔就是一個 Skill</td>
+        </tr>
+        <tr>
+          <td><span class="row-num">3</span></td>
+          <td><strong>&#x1F310; 跨平台共通</strong></td>
+          <td>寫一次，Antigravity / Claude Code / Gemini CLI 都能用</td>
+        </tr>
+        <tr>
+          <td><span class="row-num">4</span></td>
+          <td><strong>&#x1F6E1;&#xFE0F; 防呆很重要</strong></td>
+          <td>MUST / NEVER / Check if 是你的三大武器</td>
+        </tr>
+        <tr>
+          <td><span class="row-num">5</span></td>
+          <td><strong>&#x1F4B0; 流程&#x2192;Skill&#x2192;表單</strong></td>
+          <td>這是把專業知識變現的路徑</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== Slide 7: Day 2 預告 ========== -->
+  <div class="slide" id="slide-7">
+    <h2>&#x1F4C5; Day 2 預告：更多精彩等著你</h2>
+
+    <div class="concept-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="concept-card" style="border-top: 4px solid #1e3c72;">
+        <span class="card-icon">&#x1F517;</span>
+        <h3>Skill 串接</h3>
+        <p>把大任務拆成多個 Skill，讓它們串接合作</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #2a5298;">
+        <span class="card-icon">&#x1F916;</span>
+        <h3>AI 助理設定</h3>
+        <p>建立角色 + 能力 + 風格設定檔</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #28a745;">
+        <span class="card-icon">&#x1F310;</span>
+        <h3>跨平台進階</h3>
+        <p>同一套 Skill 給不同 AI 跑</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #ff9800;">
+        <span class="card-icon">&#x1F5B1;&#xFE0F;</span>
+        <h3>完整生成器</h3>
+        <p>製作「填表就能用」的完整版本</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #9c27b0;">
+        <span class="card-icon">&#x1F4C1;</span>
+        <h3>專案打包</h3>
+        <p>README + 說明 + 範例，可分享</p>
+      </div>
+      <div class="concept-card" style="border-top: 4px solid #e91e63;">
+        <span class="card-icon">&#x1F4BC;</span>
+        <h3>實戰應用</h3>
+        <p>選一個你的專業場景做出完整作品</p>
+      </div>
+    </div>
+
+    <div class="next-step">
+      &#x1F4DD; <strong>課後小作業：</strong><br />
+      <span>回去想想你工作中最常重複做的 3 件事情，用今天學的「流程拆解表」列出來。<br />
+      明天我們會從中挑一個，做成完整的 AI 工作流程！</span>
+    </div>
+
+    <div style="text-align:center; margin-top:40px;">
+      <a href="Part7_Pencil_AI設計工具.html" style="display:inline-block; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:18px 48px; border-radius:50px; text-decoration:none; font-size:22px; font-weight:700; box-shadow:0 8px 25px rgba(30,60,114,0.4); transition:all 0.3s;">
+        Part 7：Pencil AI 設計工具 &#x2192;
+      </a>
+    </div>
+  </div>
+
+
+</div><!-- /slides-viewport -->
+
+<!-- ===== Bottom Dots ===== -->
+<div class="dots" id="dots"></div>
+
+<!-- ===== JavaScript ===== -->
+<script>
+(function () {
+  var slides = document.querySelectorAll('.slide');
+  var dotsContainer = document.getElementById('dots');
+  var current = 0;
+
+  // Build dots
+  slides.forEach(function (_, i) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', function () { goTo(i); });
+    dotsContainer.appendChild(d);
+  });
+
+  function goTo(index) {
+    if (index < 0 || index >= slides.length) return;
+    slides[current].classList.remove('active');
+    dotsContainer.children[current].classList.remove('active');
+    current = index;
+    slides[current].classList.add('active');
+    dotsContainer.children[current].classList.add('active');
+    slides[current].scrollTop = 0;
+  }
+
+  window.changeSlide = function (dir) { goTo(current + dir); };
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); changeSlide(1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); changeSlide(-1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End')  { e.preventDefault(); goTo(slides.length - 1); }
+  });
+
+  // Touch swipe support
+  var touchStartX = 0;
+  var touchStartY = 0;
+  document.addEventListener('touchstart', function (e) {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+  });
+  document.addEventListener('touchend', function (e) {
+    var dx = e.changedTouches[0].screenX - touchStartX;
+    var dy = e.changedTouches[0].screenY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      changeSlide(dx > 0 ? -1 : 1);
+    }
+  });
+
+  // Fullscreen
+  window.toggleFullscreen = function () {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(function () {});
+    } else {
+      document.exitFullscreen().catch(function () {});
+    }
+  };
+})();
+</script>
+<script src="auth.js"></script>
+</body>
+</html>
