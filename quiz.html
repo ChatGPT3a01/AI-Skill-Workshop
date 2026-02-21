@@ -1083,6 +1083,14 @@ function downloadCertificate() {
     var btn = document.querySelector('.btn-green');
     if (btn) { btn.textContent = '正在生成證書圖片...'; btn.disabled = true; }
 
+    // 暫時隱藏 repeating-gradient 層（Canvas 無法渲染）
+    var sels = ['.cert-guilloche', '.cert-rosette', '.cert-diamond-pattern'];
+    var saved = [];
+    sels.forEach(function(s) {
+        var el = cert.querySelector(s);
+        if (el) { saved.push({ el: el, v: el.style.visibility }); el.style.visibility = 'hidden'; }
+    });
+
     var w = cert.offsetWidth;
     var h = cert.offsetHeight;
 
@@ -1096,6 +1104,7 @@ function downloadCertificate() {
             height: h + 'px'
         }
     }).then(function(dataUrl) {
+        saved.forEach(function(o) { o.el.style.visibility = o.v; });
         var link = document.createElement('a');
         link.download = 'AI_Skill_認證證書.png';
         link.href = dataUrl;
@@ -1104,6 +1113,7 @@ function downloadCertificate() {
         document.body.removeChild(link);
         if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
     }).catch(function(err) {
+        saved.forEach(function(o) { o.el.style.visibility = o.v; });
         alert('下載失敗：' + err);
         if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
     });
