@@ -158,7 +158,6 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
         }
-        .result-label { color: rgba(255,255,255,0.5); font-size: 14px; margin-top: 4px; }
         .result-pass { color: #34d399; font-size: 22px; font-weight: 600; margin: 16px 0; }
         .result-fail { color: #f87171; font-size: 22px; font-weight: 600; margin: 16px 0; }
 
@@ -877,8 +876,7 @@ function submitQuiz() {
 
     var resultDiv = document.getElementById('quizResult');
     resultDiv.classList.remove('hidden');
-    resultDiv.innerHTML = '<div class="result-score">' + score + '</div>' +
-        '<div class="result-label">分</div>' +
+    resultDiv.innerHTML = '<div class="result-score">' + score + ' <span style="font-size:36px;">分</span></div>' +
         (passed
             ? '<div class="result-pass">恭喜通過認證測驗！</div><p style="color:rgba(255,255,255,0.5);">答對 ' + correct + ' / ' + QUIZ_COUNT + ' 題</p>'
             : '<div class="result-fail">未通過（需 ' + PASS_SCORE + ' 分以上）</div><p style="color:rgba(255,255,255,0.5);">答對 ' + correct + ' / ' + QUIZ_COUNT + ' 題，請再接再厲！</p>'
