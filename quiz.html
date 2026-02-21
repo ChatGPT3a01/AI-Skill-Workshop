@@ -570,7 +570,7 @@
             .quiz-section { padding: 32px 20px; }
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
 </head>
 <body>
 
@@ -1083,25 +1083,28 @@ function downloadCertificate() {
     var btn = document.querySelector('.btn-green');
     if (btn) { btn.textContent = '正在生成證書圖片...'; btn.disabled = true; }
 
-    html2canvas(cert, {
-        scale: 2,
-        backgroundColor: '#f5f0e1',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        ignoreElements: function(el) {
-            return el.tagName === 'svg' || el.tagName === 'SVG';
+    var w = cert.offsetWidth;
+    var h = cert.offsetHeight;
+
+    domtoimage.toPng(cert, {
+        width: w * 2,
+        height: h * 2,
+        style: {
+            transform: 'scale(2)',
+            'transform-origin': 'top left',
+            width: w + 'px',
+            height: h + 'px'
         }
-    }).then(function(canvas) {
+    }).then(function(dataUrl) {
         var link = document.createElement('a');
         link.download = 'AI_Skill_認證證書.png';
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
     }).catch(function(err) {
-        alert('下載失敗：' + err.message);
+        alert('下載失敗：' + err);
         if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
     });
 }
