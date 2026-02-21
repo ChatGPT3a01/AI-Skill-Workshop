@@ -1083,38 +1083,16 @@ function downloadCertificate() {
     var btn = document.querySelector('.btn-green');
     if (btn) { btn.textContent = '正在生成證書圖片...'; btn.disabled = true; }
 
-    // 先將 SVG 轉為 img（避免 html2canvas createPattern 錯誤）
-    var svgEls = cert.querySelectorAll('svg');
-    var svgBackups = [];
-    svgEls.forEach(function(svg) {
-        try {
-            var data = new XMLSerializer().serializeToString(svg);
-            var encoded = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(data)));
-            var img = document.createElement('img');
-            img.src = encoded;
-            img.style.width = (svg.getBoundingClientRect().width || 140) + 'px';
-            img.style.height = (svg.getBoundingClientRect().height || 140) + 'px';
-            img.style.position = window.getComputedStyle(svg).position;
-            svgBackups.push({ parent: svg.parentNode, svg: svg, img: img });
-            svg.parentNode.replaceChild(img, svg);
-        } catch(e) {
-            svgBackups.push({ parent: svg.parentNode, svg: svg, img: null });
-            svg.style.display = 'none';
-        }
-    });
-
     html2canvas(cert, {
         scale: 2,
         backgroundColor: '#f5f0e1',
         useCORS: true,
         allowTaint: true,
-        logging: false
+        logging: false,
+        ignoreElements: function(el) {
+            return el.tagName === 'svg' || el.tagName === 'SVG';
+        }
     }).then(function(canvas) {
-        // 還原 SVG
-        svgBackups.forEach(function(b) {
-            if (b.img && b.parent) b.parent.replaceChild(b.svg, b.img);
-            else b.svg.style.display = '';
-        });
         var link = document.createElement('a');
         link.download = 'AI_Skill_認證證書.png';
         link.href = canvas.toDataURL('image/png');
@@ -1123,12 +1101,7 @@ function downloadCertificate() {
         document.body.removeChild(link);
         if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
     }).catch(function(err) {
-        // 還原 SVG
-        svgBackups.forEach(function(b) {
-            if (b.img && b.parent) b.parent.replaceChild(b.svg, b.img);
-            else b.svg.style.display = '';
-        });
-        alert('下載失敗，請使用截圖工具擷取證書。');
+        alert('下載失敗：' + err.message);
         if (btn) { btn.textContent = '下載證書'; btn.disabled = false; }
     });
 }
