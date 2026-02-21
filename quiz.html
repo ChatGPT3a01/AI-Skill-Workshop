@@ -418,7 +418,7 @@
     <div id="quizSection" class="quiz-section">
         <div class="quiz-header">
             <h1>Day 1 課程認證測驗</h1>
-            <p>通過測驗（80 分以上）即可獲得「倉勳科技學院」認證證書</p>
+            <p>題庫 20 題隨機抽 10 題，80 分以上即可獲得「倉勳科技學院」認證證書</p>
         </div>
         <div class="quiz-progress"><div class="quiz-progress-bar" id="progressBar"></div></div>
         <div id="quizContainer"></div>
@@ -531,8 +531,8 @@
 </div>
 
 <script>
-// ========== Day 1 測驗題目 ==========
-var quizQuestions = [
+// ========== 題庫 20 題，每次隨機抽 10 題 ==========
+var questionBank = [
     {
         question: "Agent Skills（SKILL.md）和一般提示詞（Prompt）的核心差異是什麼？",
         options: [
@@ -632,19 +632,136 @@ var quizQuestions = [
             "建立新的 .pen 檔案"
         ],
         answer: 1
+    },
+    {
+        question: "YAML 前言必須用什麼符號包圍？",
+        options: [
+            "三個反引號 ```",
+            "三個破折號 ---",
+            "三個等號 ===",
+            "三個星號 ***"
+        ],
+        answer: 1
+    },
+    {
+        question: "globs 欄位的作用是什麼？",
+        options: [
+            "設定 Skill 的作者名稱",
+            "指定觸發 Skill 的檔案類型匹配規則",
+            "設定 Skill 的版本號",
+            "限制 Skill 的使用次數"
+        ],
+        answer: 1
+    },
+    {
+        question: "description 欄位在 YAML 中的用途是什麼？",
+        options: [
+            "寫程式碼",
+            "讓 AI 判斷何時自動啟用這個 Skill",
+            "設定密碼保護",
+            "定義 CSS 樣式"
+        ],
+        answer: 1
+    },
+    {
+        question: "Skill 的 assets 資料夾通常放什麼內容？",
+        options: [
+            "系統執行檔",
+            "範本、表單、參考文件等輔助資源",
+            "使用者個人照片",
+            "資料庫備份檔"
+        ],
+        answer: 1
+    },
+    {
+        question: "在 Claude Code 中，專案級 Skill 應該放在哪個路徑？",
+        options: [
+            ".agent/skills/",
+            ".claude/skills/",
+            "node_modules/skills/",
+            "public/skills/"
+        ],
+        answer: 1
+    },
+    {
+        question: "為什麼要在 SKILL.md 中加入「輸出格式」規範？",
+        options: [
+            "讓檔案看起來更大",
+            "確保 AI 每次產出的格式一致、可預測",
+            "為了通過語法檢查",
+            "為了節省儲存空間"
+        ],
+        answer: 1
+    },
+    {
+        question: "「AI 生成器表單」（input-form.html）的主要功能是什麼？",
+        options: [
+            "直接執行 AI 模型",
+            "讓非技術人員填空就能產生完整提示詞",
+            "用來訓練 AI 模型",
+            "管理使用者帳號"
+        ],
+        answer: 1
+    },
+    {
+        question: "會議紀錄產生器 Skill 的輸入通常需要什麼資訊？",
+        options: [
+            "只需要會議日期",
+            "會議名稱、參與者、逐字稿或重點筆記",
+            "只需要主持人姓名",
+            "只需要會議室編號"
+        ],
+        answer: 1
+    },
+    {
+        question: "Pencil 的 .pen 檔案本質上是什麼格式？",
+        options: [
+            "二進位圖片格式",
+            "JSON 格式，對 Git 版本控制友好",
+            "Word 文件格式",
+            "PDF 格式"
+        ],
+        answer: 1
+    },
+    {
+        question: "以下哪個平台是免費、不需要 API Key 就能使用 Agent Skills 的？",
+        options: [
+            "Claude Code",
+            "Gemini CLI",
+            "Antigravity",
+            "GitHub Copilot"
+        ],
+        answer: 2
     }
 ];
 
+var QUIZ_COUNT = 10;       // 每次抽幾題
+var PASS_SCORE = 80;       // 及格分數
+var activeQuestions = [];   // 本次抽到的題目
 var userAnswers = [];
 var quizSubmitted = false;
 
+// Fisher-Yates 洗牌
+function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+}
+
 function initQuiz() {
-    var container = document.getElementById('quizContainer');
-    container.innerHTML = '';
-    userAnswers = new Array(quizQuestions.length).fill(-1);
+    // 從 20 題中隨機抽 10 題
+    activeQuestions = shuffle(questionBank).slice(0, QUIZ_COUNT);
+    userAnswers = new Array(QUIZ_COUNT).fill(-1);
+    quizSubmitted = false;
     updateProgress();
 
-    quizQuestions.forEach(function(q, qi) {
+    var container = document.getElementById('quizContainer');
+    container.innerHTML = '';
+
+    activeQuestions.forEach(function(q, qi) {
         var div = document.createElement('div');
         div.className = 'quiz-question';
         div.id = 'q' + qi;
@@ -669,7 +786,7 @@ function selectOption(qi, oi) {
 
 function updateProgress() {
     var answered = userAnswers.filter(function(a) { return a !== -1; }).length;
-    var pct = (answered / quizQuestions.length) * 100;
+    var pct = (answered / QUIZ_COUNT) * 100;
     document.getElementById('progressBar').style.width = pct + '%';
 }
 
@@ -679,7 +796,7 @@ function submitQuiz() {
     quizSubmitted = true;
 
     var correct = 0;
-    quizQuestions.forEach(function(q, idx) {
+    activeQuestions.forEach(function(q, idx) {
         var isCorrect = userAnswers[idx] === q.answer;
         if (isCorrect) correct++;
         var opts = document.querySelectorAll('[data-q="' + idx + '"]');
@@ -690,16 +807,16 @@ function submitQuiz() {
         });
     });
 
-    var score = Math.round(correct / quizQuestions.length * 100);
-    var passed = score >= 80;
+    var score = Math.round(correct / QUIZ_COUNT * 100);
+    var passed = score >= PASS_SCORE;
 
     var resultDiv = document.getElementById('quizResult');
     resultDiv.classList.remove('hidden');
     resultDiv.innerHTML = '<div class="result-score">' + score + '</div>' +
         '<div class="result-label">分</div>' +
         (passed
-            ? '<div class="result-pass">恭喜通過認證測驗！</div><p style="color:rgba(255,255,255,0.5);">答對 ' + correct + ' / ' + quizQuestions.length + ' 題</p>'
-            : '<div class="result-fail">未通過（需 80 分以上）</div><p style="color:rgba(255,255,255,0.5);">答對 ' + correct + ' / ' + quizQuestions.length + ' 題，請再接再厲！</p>'
+            ? '<div class="result-pass">恭喜通過認證測驗！</div><p style="color:rgba(255,255,255,0.5);">答對 ' + correct + ' / ' + QUIZ_COUNT + ' 題</p>'
+            : '<div class="result-fail">未通過（需 ' + PASS_SCORE + ' 分以上）</div><p style="color:rgba(255,255,255,0.5);">答對 ' + correct + ' / ' + QUIZ_COUNT + ' 題，請再接再厲！</p>'
         );
 
     document.getElementById('submitBtn').classList.add('hidden');
@@ -708,12 +825,11 @@ function submitQuiz() {
 }
 
 function resetQuiz() {
-    quizSubmitted = false;
     document.getElementById('quizResult').classList.add('hidden');
     document.getElementById('submitBtn').classList.remove('hidden');
     document.getElementById('retryBtn').classList.add('hidden');
     document.getElementById('certBtn').classList.add('hidden');
-    initQuiz();
+    initQuiz();  // 重新洗牌抽題
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
