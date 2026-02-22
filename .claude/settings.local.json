@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:chatgpt3a01.github.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(cd:*)"
+    ]
+  }
+}
