@@ -4,7 +4,7 @@
 
 ### 專業流程變現為 AI 技能教戰手冊
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-線上簡報-blue?style=for-the-badge&logo=github)](https://chatgpt3a01.github.io/ai-skill-workshop-day1/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-線上簡報-blue?style=for-the-badge&logo=github)](https://chatgpt3a01.github.io/AI-Skill-Workshop/)
 [![License](https://img.shields.io/badge/授權-阿亮老師課程專用-red?style=for-the-badge)](LICENSE)
 
 <img src="https://img.shields.io/badge/Agent_Skills-AI技能模組-667eea?style=flat-square" />
