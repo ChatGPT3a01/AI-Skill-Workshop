@@ -1307,7 +1307,152 @@ git pull  # 同步最新版本
             </div>
         </div>
 
-        <!-- Slide 19: 總結 -->
+        <!-- Slide 19: 一鍵同步腳本 - 超級重要！ -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>⚡ 一鍵同步腳本：skills-source 統一管理</h2>
+
+                <p style="font-size: 20px; color: #2a5298; font-weight: 700; margin-bottom: 20px;">
+                    🔥 這是跨平台部署的核心！您可以寫一次 Skill，自動同步到三個平台！
+                </p>
+
+                <h3>為什麼需要同步腳本？</h3>
+                <p style="margin-bottom: 12px;"><strong>問題：</strong> 如果在多個平台分別管理 Skills，會很容易出現版本不一致。</p>
+                <p><strong>解決方案：</strong> 使用 `skills-source/` 作為單一來源，用腳本一鍵同步到所有平台！</p>
+
+                <h3 style="margin-top: 24px;">📊 同步流程架構</h3>
+                <pre style="background: linear-gradient(135deg, #f8faff, #eef2ff); color: #1e3c72; padding: 20px; border-radius: 12px; margin: 16px 0; border-left: 5px solid #2a5298; font-size: 16px;">
+skills-source/               ← 寫在這裡（單一來源）
+    │
+    ├─ email-reply-helper/
+    ├─ meeting-notes-gen/
+    └─ my-custom-skill/
+         │
+         ↓ bash sync-skills.sh
+         │
+    ├─────────────────────────────────────┤
+    ↓                                     ↓
+.agent/skills/            .claude/skills/
+(Antigravity 用)          (Claude Code 用)</pre>
+
+                <h3 style="margin-top: 24px;">🛠️ 設置步驟</h3>
+
+                <div class="step-box">
+                    <div class="step-number">1</div>
+                    <div class="step-title">建立 skills-source 目錄</div>
+                    <div class="step-desc">
+                        <p>在專案根目錄建立 skills-source 資料夾</p>
+                        <pre style="margin-top: 8px; background: #1e293b; padding: 12px; border-radius: 8px;">mkdir skills-source
+cd skills-source
+# 將您的所有 Skills 放在這裡</pre>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">2</div>
+                    <div class="step-title">建立同步腳本 sync-skills.sh</div>
+                    <div class="step-desc">
+                        <p>在專案根目錄建立 sync-skills.sh 檔案：</p>
+                        <pre style="margin-top: 8px; background: #1e293b; padding: 12px; border-radius: 8px; overflow-x: auto;">#!/bin/bash
+# sync-skills.sh - 一鍵同步 Skill 到所有平台
+
+SKILL_SOURCE="skills-source"
+ANTIGRAVITY_DIR=".agent/skills"
+CLAUDE_DIR=".claude/skills"
+
+# 建立目標資料夾
+mkdir -p "$ANTIGRAVITY_DIR"
+mkdir -p "$CLAUDE_DIR"
+
+# 同步檔案
+cp -r "$SKILL_SOURCE"/* "$ANTIGRAVITY_DIR"/
+cp -r "$SKILL_SOURCE"/* "$CLAUDE_DIR"/
+
+echo "🎉 所有 Skills 已同步完成！"
+echo "✅ Antigravity: $ANTIGRAVITY_DIR"
+echo "✅ Claude Code: $CLAUDE_DIR"</pre>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">3</div>
+                    <div class="step-title">給腳本執行權限並運行</div>
+                    <div class="step-desc">
+                        <p>賦予執行權限並運行腳本</p>
+                        <pre style="margin-top: 8px; background: #1e293b; padding: 12px; border-radius: 8px;">chmod +x sync-skills.sh
+./sync-skills.sh</pre>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 28px;">💡 使用建議</h3>
+                <ul style="margin-left: 20px;">
+                    <li>📝 <strong>每次修改 Skill 後執行：</strong> 確保所有平台都是最新版本</li>
+                    <li>📝 <strong>加入 Git Workflow：</strong> 可在 commit 前自動運行</li>
+                    <li>📝 <strong>團隊協作：</strong> 提交 skills-source，其他人 pull 後執行腳本即可</li>
+                    <li>📝 <strong>備份舊版本：</strong> 同步前可先備份 .agent/ 和 .claude/ 資料夾</li>
+                </ul>
+
+                <div class="box success" style="margin-top: 24px;">
+                    <strong>✅ 一鍵同步的威力：</strong>
+                    <p style="margin-top: 8px;">修改 1 個 Skill → 一行指令 → 自動部署到 3 個平台 = 🚀 超高效率！</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 20: 進階：自動化同步 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🤖 進階：Git Hooks 自動同步</h2>
+
+                <p style="margin-bottom: 20px;">進一步優化工作流：每次 git commit 時自動同步 Skills</p>
+
+                <h3>設置 Pre-commit Hook</h3>
+                <p style="margin-bottom: 12px;">在 .git/hooks/pre-commit 添加以下內容：</p>
+                <pre style="background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 12px; margin: 12px 0; font-family: 'Consolas', monospace; font-size: 15px; overflow-x: auto;">#!/bin/bash
+# .git/hooks/pre-commit - 提交前自動同步 Skills
+
+# 檢查 skills-source 是否有變化
+if git diff --cached --quiet skills-source/; then
+    echo "✅ Skills 無變化，跳過同步"
+    exit 0
+fi
+
+# 執行同步腳本
+echo "🔄 偵測到 Skill 變化，正在同步..."
+./sync-skills.sh
+
+# 將同步後的檔案添加到提交
+git add .agent/skills/
+git add .claude/skills/
+
+echo "✅ 同步完成！"</pre>
+
+                <h3 style="margin-top: 24px;">設置步驟</h3>
+                <ol style="margin-left: 20px;">
+                    <li>建立檔案：<code>.git/hooks/pre-commit</code></li>
+                    <li>複製上面的腳本內容</li>
+                    <li>賦予執行權限：<code>chmod +x .git/hooks/pre-commit</code></li>
+                    <li>完成！之後每次 commit 都會自動同步</li>
+                </ol>
+
+                <div class="box info" style="margin-top: 24px;">
+                    <strong>💡 好處：</strong>
+                    <ul style="margin-left: 20px; margin-top: 12px;">
+                        <li>✨ 無需手動執行同步腳本</li>
+                        <li>✨ 避免遺漏任何 Skill 更新</li>
+                        <li>✨ 確保 Git 提交時所有平台都同步</li>
+                        <li>✨ 團隊協作時自動維持一致性</li>
+                    </ul>
+                </div>
+
+                <div class="box success" style="margin-top: 24px;">
+                    <strong>🎯 最終目標達成：</strong>
+                    <p style="margin-top: 8px;">完全自動化的跨平台 Skill 管理系統！💪</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 21: 總結 -->
         <div class="slide">
             <div class="content-card">
                 <h2>📝 本章節總結</h2>
@@ -1319,10 +1464,12 @@ git pull  # 同步最新版本
                     <li>✅ 如何克隆 Anthropic Skills 倉庫</li>
                     <li>✅ 如何安装所有 16 個官方 Skills</li>
                     <li>✅ 如何驗證 Skills 是否正確安装</li>
-                    <li>✅ 每個 Skill 的基本功能介紹</li>
+                    <li>✅ 每個 Skill 的完整功能詳解</li>
                     <li>✅ 如何在 Claude Code 中使用 Skills</li>
                     <li>✅ 常見問題的解決方案</li>
-                    <li>✅ <strong style="color: #e53935;">🌟 跨平台相容性 - Skills 可用於 Antigravity 和 Gemini CLI</strong></li>
+                    <li>✅ <strong style="color: #e53935;">🌟 跨平台相容性 - Antigravity、Claude Code、Gemini CLI</strong></li>
+                    <li>✅ <strong style="color: #e53935;">⚡ 一鍵同步腳本 - skills-source 統一管理</strong></li>
+                    <li>✅ <strong style="color: #e53935;">🤖 進階自動化 - Git Hooks 自動同步</strong></li>
                 </ul>
 
                 <h3 style="margin-top: 28px; color: #2a5298;">下一步該做什麼？</h3>
@@ -1350,7 +1497,7 @@ git pull  # 同步最新版本
 
     <!-- Slide Counter -->
     <div class="slide-indicator">
-        <span id="slideNumber">1 / 23</span>
+        <span id="slideNumber">1 / 25</span>
     </div>
 
     <script>
