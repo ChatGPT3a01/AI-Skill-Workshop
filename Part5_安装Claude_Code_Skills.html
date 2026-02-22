@@ -1162,7 +1162,152 @@ for dir in */; do claude install "$dir"; done</pre>
             </div>
         </div>
 
-        <!-- Slide 16: 總結 -->
+        <!-- Slide 16: Antigravity 中的 Skills 使用 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🚀 在 Antigravity 中使用 Claude Code Skills</h2>
+
+                <h3>為什麼要在 Antigravity 中使用 Skills？</h3>
+                <p>Antigravity 是免費的 AI 開發平台，可以直接使用您安装的 Claude Code Skills，無需任何修改！</p>
+
+                <h3 style="margin-top: 24px;">📋 三個簡單步驟</h3>
+
+                <div class="step-box">
+                    <div class="step-number">1</div>
+                    <div class="step-title">複製 Skills 文件夾</div>
+                    <div class="step-desc">
+                        <p>從您安装 Claude Code Skills 的位置複製 Skills 文件夾</p>
+                        <pre style="margin-top: 8px;">~/claude-skills/skills/skills</pre>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">2</div>
+                    <div class="step-title">貼到 Antigravity 專案</div>
+                    <div class="step-desc">
+                        <p>在 Antigravity 專案目錄中創建 <code>.agent</code> 文件夾（如果不存在），然後貼上</p>
+                        <pre style="margin-top: 8px;">project-folder/.agent/skills/</pre>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">3</div>
+                    <div class="step-title">刷新並使用</div>
+                    <div class="step-desc">
+                        <p>在 Antigravity 中重新加載專案，Skills 即可使用！</p>
+                        <p style="margin-top: 8px;"><strong>您可以像在 Claude Code 中一樣使用所有 16 個 Skills</strong></p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 28px;">💡 Antigravity 中的 Skills 優勢</h3>
+                <ul style="margin-left: 20px;">
+                    <li>✅ 完全免費使用</li>
+                    <li>✅ 無需額外配置</li>
+                    <li>✅ 與 Claude Code 100% 相容</li>
+                    <li>✅ 支持自動讀取工作區文件</li>
+                </ul>
+
+                <div class="box success" style="margin-top: 24px;">
+                    <strong>✅ 一次投資，多平台使用！</strong>
+                    <p style="margin-top: 8px;">您在這裡安装的 Skills 現在可以在 Claude Code 和 Antigravity 中都使用。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 17: Gemini CLI 中的 Skills 使用 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔄 在 Gemini CLI 中使用 Skills（需轉換）</h2>
+
+                <h3>Gemini CLI Skills 的現況</h3>
+                <p>Gemini CLI 也支持 Skills（2026 年新功能），但格式略有不同。需要使用轉換工具來適配。</p>
+
+                <h3 style="margin-top: 24px;">🔧 推薦方案：使用 skill-porter 工具</h3>
+
+                <div class="step-box">
+                    <div class="step-number">1</div>
+                    <div class="step-title">安装 skill-porter</div>
+                    <div class="step-desc">
+                        <p>這是一個通用工具，可自動轉換 Claude Code Skills ↔ Gemini CLI Extensions</p>
+                        <pre style="margin-top: 8px;">npm install -g skill-porter</pre>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">2</div>
+                    <div class="step-title">轉換 Skills</div>
+                    <div class="step-desc">
+                        <p>指定要轉換的 Skills 目錄</p>
+                        <pre style="margin-top: 8px;">skill-porter convert ./skills --target gemini-cli</pre>
+                    </div>
+                </div>
+
+                <div class="step-box">
+                    <div class="step-number">3</div>
+                    <div class="step-title">在 Gemini CLI 中使用</div>
+                    <div class="step-desc">
+                        <p>轉換後的 Skills 可以在 Gemini CLI 中直接使用</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 28px;">⚡ 轉換工具做什麼？</h3>
+                <ul style="margin-left: 20px;">
+                    <li>✓ 自動翻譯元數據和配置</li>
+                    <li>✓ 適配 API 介面差異</li>
+                    <li>✓ 生成相容性補丁</li>
+                    <li>✓ 建立測試骨架</li>
+                </ul>
+
+                <div class="box info" style="margin-top: 24px;">
+                    <strong>💡 更多信息：</strong>
+                    <p style="margin-top: 8px;"><code>https://github.com/jduncan-rva/skill-porter</code></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 18: 跨平台 Skills 最佳實踐 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>⭐ 跨平台 Skills 共享最佳實踐</h2>
+
+                <h3>1️⃣ 版本管理</h3>
+                <p>使用 Git 管理您的 Skills，方便在不同平台間同步</p>
+                <pre style="margin: 12px 0;">git clone https://github.com/yourusername/my-skills.git
+cd my-skills
+# 在 Claude Code、Antigravity、Gemini CLI 中引用同一個倉庫</pre>
+
+                <h3 style="margin-top: 24px;">2️⃣ 統一配置</h3>
+                <p>將 Skill 的配置文件提取到環境變量，實現跨平台配置一致性</p>
+
+                <h3 style="margin-top: 24px;">3️⃣ 定期更新</h3>
+                <p style="margin-bottom: 12px;">所有平台都使用官方最新版本：</p>
+                <pre style="margin: 12px 0;">cd ~/claude-skills/skills/skills
+git pull  # 同步最新版本
+# 重新部署到 Antigravity、Gemini CLI</pre>
+
+                <h3 style="margin-top: 24px;">4️⃣ 測試策略</h3>
+                <ul style="margin-left: 20px;">
+                    <li>📝 在 Claude Code 中首先測試新 Skill</li>
+                    <li>📝 驗證後部署到 Antigravity</li>
+                    <li>📝 最後使用 skill-porter 轉換給 Gemini CLI</li>
+                </ul>
+
+                <h3 style="margin-top: 24px;">5️⃣ 文檔和共享</h3>
+                <p>建立清晰的文檔，說明每個 Skill 的跨平台相容性狀態：</p>
+                <ul style="margin-left: 20px;">
+                    <li>✅ Claude Code - 完全支持</li>
+                    <li>✅ Antigravity - 完全支持</li>
+                    <li>⚠️ Gemini CLI - 需要轉換</li>
+                </ul>
+
+                <div class="box success" style="margin-top: 28px;">
+                    <strong>🎯 核心原則：</strong>
+                    <p style="margin-top: 8px;">寫一次 Skill，在多個平台上使用。這就是 Skills 的強大之處！</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 19: 總結 -->
         <div class="slide">
             <div class="content-card">
                 <h2>📝 本章節總結</h2>
@@ -1205,7 +1350,7 @@ for dir in */; do claude install "$dir"; done</pre>
 
     <!-- Slide Counter -->
     <div class="slide-indicator">
-        <span id="slideNumber">1 / 20</span>
+        <span id="slideNumber">1 / 23</span>
     </div>
 
     <script>
