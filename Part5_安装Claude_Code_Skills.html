@@ -1454,7 +1454,73 @@ echo "✅ 同步完成！"</pre>
             </div>
         </div>
 
-        <!-- Slide 21: 總結 -->
+        <!-- Slide 21: Pre-commit Hook 完整設置教學 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔗 Pre-commit Hook 完整設置教學</h2>
+
+                <p style="font-size: 18px; color: #2a5298; margin-bottom: 20px;">
+                    <strong>目標：</strong> 每次 git commit 時，自動執行 sync-skills.sh，無需手動操作
+                </p>
+
+                <h3>📋 步驟 1：建立 Hook 檔案</h3>
+                <p style="margin-bottom: 12px;">在您的專案根目錄中，建立 Pre-commit Hook 檔案：</p>
+                <pre style="margin: 12px 0; background: #1e293b; padding: 12px; border-radius: 8px;">touch .git/hooks/pre-commit</pre>
+
+                <h3 style="margin-top: 24px;">📋 步驟 2：複製 Hook 腳本內容</h3>
+                <p style="margin-bottom: 12px;">用文字編輯器打開 `.git/hooks/pre-commit`，複製以下內容：</p>
+                <pre style="margin: 12px 0; background: #1e293b; color: #e2e8f0; padding: 14px; border-radius: 8px; font-size: 14px; overflow-x: auto;">#!/bin/bash
+# .git/hooks/pre-commit - 提交前自動同步 Skills
+
+echo "🔄 檢查 Skills 是否有變化..."
+
+# 執行同步腳本
+./sync-skills.sh
+
+if [ $? -ne 0 ]; then
+    echo "❌ 同步失敗！提交已中斷"
+    exit 1
+fi
+
+# 將同步後的檔案添加到提交
+git add .agent/skills/ .claude/skills/
+
+echo "✅ 同步完成！可以提交了"
+exit 0</pre>
+
+                <h3 style="margin-top: 24px;">📋 步驟 3：賦予執行權限</h3>
+                <pre style="margin: 12px 0; background: #1e293b; padding: 12px; border-radius: 8px;">chmod +x .git/hooks/pre-commit</pre>
+
+                <h3 style="margin-top: 24px;">📋 步驟 4：測試 Hook</h3>
+                <p style="margin-bottom: 12px;">修改一個 Skill 文件後執行：</p>
+                <pre style="margin: 12px 0; background: #1e293b; padding: 12px; border-radius: 8px;">git add .
+git commit -m "測試 Pre-commit Hook"</pre>
+
+                <div class="box success" style="margin-top: 24px;">
+                    <strong>✅ 成功標誌：</strong>
+                    <p style="margin-top: 8px;">您會看到 "🔄 檢查 Skills..." 和 "✅ 同步完成！" 的訊息</p>
+                </div>
+
+                <h3 style="margin-top: 24px;">🐛 常見問題</h3>
+                <p><strong>Q: 說「Permission denied」？</strong></p>
+                <p style="margin-top: 8px; margin-left: 20px;">A: 執行 <code>chmod +x .git/hooks/pre-commit</code></p>
+
+                <p style="margin-top: 16px;"><strong>Q: 如何禁用 Hook（暫時）？</strong></p>
+                <p style="margin-top: 8px; margin-left: 20px;">A: <code>git commit --no-verify -m "訊息"</code></p>
+
+                <div class="box info" style="margin-top: 24px;">
+                    <strong>💡 進階提示：</strong>
+                    <p style="margin-top: 8px;">可以在 .git/hooks/pre-commit 中添加更多檢查，如：</p>
+                    <ul style="margin-left: 20px; margin-top: 8px;">
+                        <li>✨ 檢查代碼風格</li>
+                        <li>✨ 運行單元測試</li>
+                        <li>✨ 掃描安全問題</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 22: 總結 -->
         <div class="slide">
             <div class="content-card">
                 <h2>📝 本章節總結</h2>
@@ -1472,6 +1538,7 @@ echo "✅ 同步完成！"</pre>
                     <li>✅ <strong style="color: #e53935;">🌟 跨平台相容性 - Antigravity、Claude Code、Gemini CLI</strong></li>
                     <li>✅ <strong style="color: #e53935;">⚡ 一鍵同步腳本 - skills-source 統一管理</strong></li>
                     <li>✅ <strong style="color: #e53935;">🤖 進階自動化 - Git Hooks 自動同步</strong></li>
+                    <li>✅ <strong style="color: #e53935;">🔗 Pre-commit Hook - 完整設置教學與故障排除</strong></li>
                 </ul>
 
                 <h3 style="margin-top: 28px; color: #2a5298;">下一步該做什麼？</h3>
@@ -1499,7 +1566,7 @@ echo "✅ 同步完成！"</pre>
 
     <!-- Slide Counter -->
     <div class="slide-indicator">
-        <span id="slideNumber">1 / 25</span>
+        <span id="slideNumber">1 / 26</span>
     </div>
 
     <script>
