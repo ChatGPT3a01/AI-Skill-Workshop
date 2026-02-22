@@ -483,8 +483,10 @@
         <div class="nav-left">📚 Part 5 - 安装 Claude Code Skills</div>
         <div class="nav-right">
             <a href="index.html" class="nav-btn">🏠 首頁</a>
-            <a href="Part4_Claude_Code與CLI跨平台.html" class="nav-btn">⬅️ 上一頁</a>
-            <a href="Part6_進階技巧與流程變現.html" class="nav-btn">下一頁 ➡️</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">📺 全螢幕</button>
+            <a href="https://www.facebook.com/?locale=zh_TW" target="_blank" class="nav-btn">📘 FB</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="nav-btn">🎥 YT</a>
+            <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank" class="nav-btn">👥 3A社團</a>
         </div>
     </div>
 
@@ -1570,6 +1572,20 @@ echo "✅ 同步完成！"</pre>
             // Initialize
             goToSlide(0);
         });
+
+        // Fullscreen toggle function
+        function toggleFullscreen() {
+            var elem = document.documentElement;
+            if (!document.fullscreenElement) {
+                elem.requestFullscreen().catch(function (err) {
+                    alert('無法進入全螢幕模式: ' + err.message);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
 
         // Copy to clipboard function
         function copyToClipboard(text) {
