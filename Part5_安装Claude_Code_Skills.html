@@ -1107,6 +1107,72 @@ for dir in */; do claude install "$dir"; done</pre>
             </div>
         </div>
 
+        <!-- Slide 15: 跨平台相容性 - 重要！ -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🌐 跨平台相容性：Skills 可以用於其他平台！</h2>
+
+                <p style="font-size: 20px; color: #b71c1c; font-weight: 700; margin-bottom: 24px;">
+                    ⚠️ <strong>重要：</strong> 您安装的 Claude Code Skills 不僅可以在 Claude Code 中使用，也可以在 Antigravity 和 Gemini CLI 中使用！
+                </p>
+
+                <h3 style="color: #2a5298; margin-top: 24px;">1️⃣ Claude Code Skills → Antigravity</h3>
+                <div class="box success">
+                    <strong>✅ 完全相容！無需修改！</strong>
+                    <p style="margin-top: 12px;">Antigravity 採用了 Anthropic 開放的 Skills 標準</p>
+                    <p style="margin-top: 8px;"><strong>做法：</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>複製您的 Skills 文件夾</li>
+                        <li>貼到 Antigravity 專案中的 <code>.agent/skills/</code></li>
+                        <li>完成！可以直接使用</li>
+                    </ul>
+                </div>
+
+                <h3 style="color: #2a5298; margin-top: 24px;">2️⃣ Claude Code Skills → Gemini CLI</h3>
+                <div class="box info">
+                    <strong>⚠️ 需要轉換（但很簡單）</strong>
+                    <p style="margin-top: 12px;">Gemini CLI 也支持 Skills（2026 年新功能），兩者都基於 Model Context Protocol (MCP) 標準</p>
+                    <p style="margin-top: 8px;"><strong>轉換工具：</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>✨ <code>skill-porter</code> - 自動轉換工具</li>
+                        <li>✨ <code>gemini-cli-skillz</code> - MCP 伺服器</li>
+                    </ul>
+                </div>
+
+                <h3 style="color: #2a5298; margin-top: 24px;">📊 相容性速查表</h3>
+                <table style="width: 100%; margin-top: 12px;">
+                    <thead style="background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff;">
+                        <tr>
+                            <th style="padding: 12px; text-align: left;">平台</th>
+                            <th style="padding: 12px; text-align: left;">Claude Code Skills</th>
+                            <th style="padding: 12px; text-align: left;">相容性</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #f5f5f5; border-bottom: 1px solid #ddd;">
+                            <td style="padding: 12px;">Claude Code</td>
+                            <td style="padding: 12px;">原生支援</td>
+                            <td style="padding: 12px; color: #43a047; font-weight: 700;">✅ 完全相容</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #ddd;">
+                            <td style="padding: 12px;">Antigravity</td>
+                            <td style="padding: 12px;">複製貼上</td>
+                            <td style="padding: 12px; color: #43a047; font-weight: 700;">✅ 完全相容</td>
+                        </tr>
+                        <tr style="background: #f5f5f5;">
+                            <td style="padding: 12px;">Gemini CLI</td>
+                            <td style="padding: 12px;">用轉換工具</td>
+                            <td style="padding: 12px; color: #f9a825; font-weight: 700;">⚠️ 需轉換</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="box warning" style="margin-top: 24px;">
+                    <strong>💡 學員提示：</strong> 這表示您學的每個 Skill 都是跨平台可用的投資！無論您選擇使用哪個平台，這些 Skills 都能幫您工作。
+                </div>
+            </div>
+        </div>
+
         <!-- Slide 16: 總結 -->
         <div class="slide">
             <div class="content-card">
@@ -1122,17 +1188,20 @@ for dir in */; do claude install "$dir"; done</pre>
                     <li>✅ 每個 Skill 的基本功能介紹</li>
                     <li>✅ 如何在 Claude Code 中使用 Skills</li>
                     <li>✅ 常見問題的解決方案</li>
+                    <li>✅ <strong style="color: #e53935;">🌟 跨平台相容性 - Skills 可用於 Antigravity 和 Gemini CLI</strong></li>
                 </ul>
 
                 <h3 style="margin-top: 28px; color: #2a5298;">下一步該做什麼？</h3>
                 <ul style="margin-left: 20px; font-size: 19px;">
                     <li>→ 前往 Part 6，學習進階技巧和流程變現</li>
-                    <li>→ 嘗試使用不同的 Skills 完成實際任務</li>
+                    <li>→ 嘗試在不同平台（Claude Code、Antigravity）使用 Skills</li>
                     <li>→ 探索 <code>skill-creator</code> 創建自己的 Skill</li>
+                    <li>→ 考慮使用 skill-porter 工具探索 Gemini CLI</li>
                 </ul>
 
-                <div class="box info" style="margin-top: 28px;">
-                    <strong>💡 記住：</strong> Skills 是使 Claude Code 變得更加強大的關鍵。不要害怕探索和實驗不同的 Skills！
+                <div class="box success" style="margin-top: 28px;">
+                    <strong>✅ 重要收穫：</strong>
+                    <p style="margin-top: 12px;">您現在擁有跨越多個 AI 平台的 Skills。這不僅提升了您的技能，也讓您的投資更有價值！</p>
                 </div>
             </div>
         </div>
@@ -1147,7 +1216,7 @@ for dir in */; do claude install "$dir"; done</pre>
 
     <!-- Slide Counter -->
     <div class="slide-indicator">
-        <span id="slideNumber">1 / 17</span>
+        <span id="slideNumber">1 / 18</span>
     </div>
 
     <script>
