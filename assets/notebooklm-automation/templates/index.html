@@ -1,0 +1,847 @@
+{% extends "base.html" %}
+
+{% block title %}執行介面 - 亮言~NotebookLM 自動化Skill{% endblock %}
+
+{% block content %}
+<div class="row g-2">
+    <!-- 左側：筆記本選擇 -->
+    <div class="col-md-2 col-lg-2">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-journal-text me-2"></i>筆記本
+                <button class="btn btn-sm btn-outline-primary float-end" onclick="loadNotebooks()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <select id="notebook-select" class="form-select mb-2" onchange="selectNotebook(this.value)">
+                    <option value="">-- 選擇筆記本 --</option>
+                </select>
+                <button class="btn btn-sm btn-success w-100" onclick="showCreateNotebookModal()">
+                    <i class="bi bi-plus-circle me-1"></i>建立新筆記本
+                </button>
+            </div>
+        </div>
+
+        <!-- 快捷功能 -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-lightning me-2"></i>快捷功能
+            </div>
+            <div class="card-body p-2">
+                <!-- 筆記本管理 -->
+                <div class="mb-2">
+                    <small class="text-muted fw-bold">筆記本</small>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        <button class="btn btn-outline-primary btn-sm" onclick="quickAction('list_notebooks')" title="列出筆記本">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="showCreateNotebookModal()" title="建立筆記本">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 來源管理 -->
+                <div class="mb-2">
+                    <small class="text-muted fw-bold">來源</small>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        <button class="btn btn-outline-info btn-sm" onclick="quickAction('list_sources')" title="列出來源">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="showAddSourceModal()" title="新增來源">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="showResearchModal()" title="網頁研究">
+                            <i class="bi bi-globe"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 內容生成 -->
+                <div class="mb-2">
+                    <small class="text-muted fw-bold">生成</small>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        <button class="btn btn-outline-danger btn-sm" onclick="quickAction('generate_audio')" title="Podcast">
+                            <i class="bi bi-mic-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="quickAction('generate_video')" title="影片">
+                            <i class="bi bi-camera-video-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="quickAction('generate_slides')" title="簡報">
+                            <i class="bi bi-easel-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="quickAction('generate_quiz')" title="測驗">
+                            <i class="bi bi-question-circle-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-primary btn-sm" onclick="quickAction('generate_flashcards')" title="閃卡">
+                            <i class="bi bi-card-text"></i>
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="quickAction('generate_report')" title="報告">
+                            <i class="bi bi-file-text-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="quickAction('generate_mindmap')" title="心智圖">
+                            <i class="bi bi-diagram-3-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-purple btn-sm" onclick="quickAction('generate_infographic')" title="資訊圖表">
+                            <i class="bi bi-bar-chart-fill"></i>
+                        </button>
+                        <button class="btn btn-outline-dark btn-sm" onclick="quickAction('generate_datatable')" title="數據表">
+                            <i class="bi bi-table"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 其他 -->
+                <div class="mb-0">
+                    <small class="text-muted fw-bold">其他</small>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="quickAction('list_artifacts')" title="生成內容">
+                            <i class="bi bi-collection"></i>
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="quickAction('check_status')" title="狀態">
+                            <i class="bi bi-info-circle"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 中間：主要執行區域 -->
+    <div class="col-md-8 col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-chat-dots me-2"></i>自然語言執行
+            </div>
+            <div class="card-body">
+                <!-- 輸入區域 -->
+                <div class="mb-3">
+                    <textarea id="command-input" class="form-control" rows="3"
+                        placeholder="輸入您的需求，例如：&#10;- 建立一個叫做「AI研究」的筆記本&#10;- 幫我生成 Podcast&#10;- 問一下這個筆記本關於機器學習的內容"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary flex-grow-1" onclick="executeCommand()">
+                        <i class="bi bi-play-fill me-1"></i>執行
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="clearOutput()">
+                        <i class="bi bi-trash me-1"></i>清除
+                    </button>
+                </div>
+
+                <!-- 結果顯示區域 -->
+                <hr>
+                <div id="output-area">
+                    <div class="text-muted text-center py-4">
+                        <i class="bi bi-arrow-up-circle fs-1"></i>
+                        <p class="mt-2">輸入指令後按「執行」查看結果</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右側：任務狀態 -->
+    <div class="col-md-2 col-lg-2">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history me-2"></i>任務狀態
+                <button class="btn btn-sm btn-outline-primary float-end" onclick="loadTasks()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="tasks-list">
+                    <div class="text-muted text-center py-3">
+                        <i class="bi bi-inbox fs-4"></i>
+                        <p class="small mt-1">暫無進行中的任務</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 建立筆記本 Modal -->
+<div class="modal fade" id="createNotebookModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-journal-plus me-2"></i>建立新筆記本</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="notebook-name" class="form-label">筆記本名稱</label>
+                    <input type="text" class="form-control" id="notebook-name" placeholder="輸入筆記本名稱">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="createNotebook()">建立</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增來源 Modal -->
+<div class="modal fade" id="addSourceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>新增來源</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">來源類型</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="sourceType" id="sourceTypeUrl" value="url" checked>
+                        <label class="btn btn-outline-primary" for="sourceTypeUrl"><i class="bi bi-link-45deg"></i> 網址</label>
+
+                        <input type="radio" class="btn-check" name="sourceType" id="sourceTypeYoutube" value="youtube">
+                        <label class="btn btn-outline-danger" for="sourceTypeYoutube"><i class="bi bi-youtube"></i> YouTube</label>
+
+                        <input type="radio" class="btn-check" name="sourceType" id="sourceTypeFile" value="file">
+                        <label class="btn btn-outline-secondary" for="sourceTypeFile"><i class="bi bi-file-earmark"></i> 檔案路徑</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="source-value" class="form-label">來源內容</label>
+                    <input type="text" class="form-control" id="source-value" placeholder="輸入網址或檔案路徑">
+                    <div class="form-text">支援：URL、YouTube 網址、PDF/TXT/MD/DOCX 檔案路徑</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="addSource()">新增</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 網頁研究 Modal -->
+<div class="modal fade" id="researchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-search me-2"></i>網頁研究</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="research-query" class="form-label">搜尋關鍵字</label>
+                    <input type="text" class="form-control" id="research-query" placeholder="輸入要研究的主題">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">研究模式</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="researchMode" id="researchModeFast" value="fast" checked>
+                        <label class="btn btn-outline-primary" for="researchModeFast"><i class="bi bi-lightning"></i> 快速 (5-10 來源)</label>
+
+                        <input type="radio" class="btn-check" name="researchMode" id="researchModeDeep" value="deep">
+                        <label class="btn btn-outline-warning" for="researchModeDeep"><i class="bi bi-layers"></i> 深度 (20+ 來源)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="startResearch()">開始研究</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 頁面載入時執行
+document.addEventListener('DOMContentLoaded', function() {
+    loadNotebooks();
+    loadTasks();
+    // 定期更新任務狀態
+    setInterval(loadTasks, 5000);
+});
+
+// 載入筆記本列表
+async function loadNotebooks() {
+    try {
+        const response = await fetch('/api/notebooks');
+        const data = await response.json();
+
+        const select = document.getElementById('notebook-select');
+        select.innerHTML = '<option value="">-- 選擇筆記本 --</option>';
+
+        if (data.success && data.data && data.data.notebooks) {
+            data.data.notebooks.forEach(nb => {
+                const option = document.createElement('option');
+                option.value = nb.id;
+                option.textContent = nb.title;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('載入筆記本失敗:', error);
+    }
+}
+
+// 選擇筆記本
+function selectNotebook(notebookId) {
+    window.currentNotebookId = notebookId;
+    if (notebookId) {
+        showOutput(`已選擇筆記本: ${notebookId}`, 'info');
+    }
+}
+
+// 執行指令
+async function executeCommand() {
+    const command = document.getElementById('command-input').value.trim();
+    if (!command) {
+        showOutput('請輸入指令', 'warning');
+        return;
+    }
+
+    showOutput('執行中...', 'info', true);
+
+    try {
+        const response = await fetch('/api/execute', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                command: command,
+                notebook_id: window.currentNotebookId
+            })
+        });
+
+        const data = await response.json();
+        displayResult(data);
+
+        // 如果有任務 ID，開始追蹤
+        if (data.task_id) {
+            trackTask(data.task_id);
+        }
+    } catch (error) {
+        showOutput(`錯誤: ${error.message}`, 'danger');
+    }
+}
+
+// 快捷功能
+function quickAction(action) {
+    const commands = {
+        // 筆記本管理
+        'list_notebooks': '列出我所有的筆記本',
+        'check_status': '查看目前狀態',
+
+        // 來源管理
+        'list_sources': '列出這個筆記本的來源',
+
+        // 內容生成
+        'generate_audio': '幫我生成 Podcast',
+        'generate_video': '幫我生成影片',
+        'generate_slides': '幫我生成簡報',
+        'generate_quiz': '幫我生成測驗',
+        'generate_flashcards': '幫我生成閃卡',
+        'generate_report': '幫我生成報告',
+        'generate_mindmap': '幫我生成心智圖',
+        'generate_infographic': '幫我生成資訊圖表',
+        'generate_datatable': '幫我生成數據表',
+
+        // 工件管理
+        'list_artifacts': '列出這個筆記本的生成內容'
+    };
+
+    document.getElementById('command-input').value = commands[action] || action;
+    executeCommand();
+}
+
+// 顯示結果
+function displayResult(data) {
+    let html = '';
+
+    if (data.success) {
+        // 成功訊息
+        html = `<div class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i>
+            ${data.message || '執行成功'}
+        </div>`;
+
+        // 根據資料類型格式化顯示
+        if (data.data) {
+            html += formatDataDisplay(data.data);
+        }
+
+        // 任務 ID 提示
+        if (data.task_id) {
+            html += `<div class="alert alert-info mt-2">
+                <i class="bi bi-hourglass-split me-2"></i>
+                任務已建立，ID: <code>${data.task_id}</code>
+                <br><small class="text-muted">可在右側「任務狀態」查看進度</small>
+            </div>`;
+        }
+    } else {
+        // 檢查是否為「未選擇筆記本」錯誤
+        const errorMsg = data.error || '執行失敗';
+        const isNoNotebookError = errorMsg.includes('No notebook specified') ||
+                                   errorMsg.includes('請指定') ||
+                                   errorMsg.includes('未選擇');
+
+        if (isNoNotebookError) {
+            html = `<div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>請先選擇筆記本</strong>
+                <p class="mb-0 mt-2 small">請在左側下拉選單選擇一個筆記本，或點擊「列出筆記本」後從列表中選擇。</p>
+            </div>`;
+        } else {
+            html = `<div class="alert alert-danger">
+                <i class="bi bi-x-circle me-2"></i>
+                ${errorMsg}
+            </div>`;
+        }
+    }
+
+    // 解析詳情（可展開）
+    if (data.parsed) {
+        html += `<details class="mt-2">
+            <summary class="text-muted small"><i class="bi bi-code-slash me-1"></i>技術詳情</summary>
+            <pre class="bg-light p-2 rounded small mt-1">${JSON.stringify(data.parsed, null, 2)}</pre>
+        </details>`;
+    }
+
+    document.getElementById('output-area').innerHTML = html;
+}
+
+// 格式化資料顯示
+function formatDataDisplay(data) {
+    // 筆記本列表
+    if (data.notebooks && Array.isArray(data.notebooks)) {
+        return formatNotebookList(data.notebooks, data.count);
+    }
+
+    // 來源列表
+    if (data.sources && Array.isArray(data.sources)) {
+        return formatSourceList(data.sources);
+    }
+
+    // 工件列表
+    if (data.artifacts && Array.isArray(data.artifacts)) {
+        return formatArtifactList(data.artifacts);
+    }
+
+    // 單一筆記本
+    if (data.id && data.title && !data.notebooks) {
+        return formatSingleNotebook(data);
+    }
+
+    // 對話回答
+    if (data.answer) {
+        return formatChatAnswer(data);
+    }
+
+    // 心智圖
+    if (data.mind_map) {
+        return formatMindMap(data.mind_map);
+    }
+
+    // 其他：顯示友善的 JSON
+    return `<pre class="bg-light p-3 rounded small">${JSON.stringify(data, null, 2)}</pre>`;
+}
+
+// 格式化筆記本列表
+function formatNotebookList(notebooks, count) {
+    let html = `<div class="mb-2"><strong>共 ${count || notebooks.length} 個筆記本</strong></div>`;
+    html += '<div class="table-responsive"><table class="table table-hover table-sm">';
+    html += '<thead class="table-light"><tr><th>#</th><th>標題</th><th>擁有者</th><th>建立日期</th><th>操作</th></tr></thead><tbody>';
+
+    notebooks.forEach((nb, index) => {
+        const ownerBadge = nb.is_owner
+            ? '<span class="badge bg-primary">我的</span>'
+            : '<span class="badge bg-secondary">共用</span>';
+        const date = nb.created_at ? nb.created_at.split('T')[0] : '-';
+
+        html += `<tr>
+            <td>${index + 1}</td>
+            <td><i class="bi bi-journal-text me-1 text-primary"></i>${escapeHtml(nb.title)}</td>
+            <td>${ownerBadge}</td>
+            <td><small class="text-muted">${date}</small></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="selectNotebookFromList('${nb.id}', '${escapeHtml(nb.title)}')">
+                    <i class="bi bi-check2"></i> 選擇
+                </button>
+            </td>
+        </tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    return html;
+}
+
+// 格式化來源列表
+function formatSourceList(sources) {
+    if (sources.length === 0) {
+        return '<div class="text-muted text-center py-3"><i class="bi bi-inbox fs-3"></i><p>此筆記本尚無來源</p></div>';
+    }
+
+    let html = `<div class="mb-2"><strong>共 ${sources.length} 個來源</strong></div>`;
+    html += '<div class="list-group">';
+
+    sources.forEach(src => {
+        const statusBadge = src.status === 'ready'
+            ? '<span class="badge bg-success">就緒</span>'
+            : '<span class="badge bg-warning">處理中</span>';
+
+        html += `<div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi bi-file-earmark me-2 text-secondary"></i>
+                <span>${escapeHtml(src.title || '未命名')}</span>
+            </div>
+            ${statusBadge}
+        </div>`;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+// 格式化工件列表
+function formatArtifactList(artifacts) {
+    if (artifacts.length === 0) {
+        return '<div class="text-muted text-center py-3"><i class="bi bi-inbox fs-3"></i><p>此筆記本尚無生成內容</p></div>';
+    }
+
+    let html = `<div class="mb-2"><strong>共 ${artifacts.length} 個生成內容</strong></div>`;
+    html += '<div class="list-group">';
+
+    const typeIcons = {
+        'Audio Overview': 'bi-mic-fill text-primary',
+        'Video': 'bi-camera-video text-danger',
+        'Quiz': 'bi-question-circle text-info',
+        'Flashcards': 'bi-card-text text-warning',
+        'Report': 'bi-file-text text-success',
+        'Mind Map': 'bi-diagram-3 text-purple'
+    };
+
+    artifacts.forEach(artifact => {
+        const icon = typeIcons[artifact.type] || 'bi-file-earmark';
+        const statusClass = artifact.status === 'completed' ? 'bg-success' : 'bg-warning';
+
+        html += `<div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <i class="bi ${icon} me-2"></i>
+                <span>${escapeHtml(artifact.title || artifact.type)}</span>
+            </div>
+            <span class="badge ${statusClass}">${artifact.status}</span>
+        </div>`;
+    });
+
+    html += '</div>';
+    return html;
+}
+
+// 格式化單一筆記本
+function formatSingleNotebook(nb) {
+    return `<div class="card">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-journal-text me-2 text-primary"></i>${escapeHtml(nb.title)}</h5>
+            <p class="card-text text-muted small">ID: <code>${nb.id}</code></p>
+        </div>
+    </div>`;
+}
+
+// 格式化對話回答
+function formatChatAnswer(data) {
+    let html = `<div class="card">
+        <div class="card-body">
+            <div class="mb-3">${formatMarkdown(data.answer)}</div>`;
+
+    if (data.references && data.references.length > 0) {
+        html += '<hr><div class="small text-muted"><strong>引用來源：</strong><ul>';
+        data.references.forEach(ref => {
+            html += `<li>[${ref.citation_number}] ${escapeHtml(ref.cited_text || '').substring(0, 100)}...</li>`;
+        });
+        html += '</ul></div>';
+    }
+
+    html += '</div></div>';
+    return html;
+}
+
+// 格式化心智圖
+function formatMindMap(mindMap) {
+    let html = `<div class="card">
+        <div class="card-header bg-success text-white">
+            <i class="bi bi-diagram-3 me-2"></i>心智圖：${escapeHtml(mindMap.name || '未命名')}
+        </div>
+        <div class="card-body mindmap-container">
+            <div class="mindmap-tree">`;
+
+    // 遞迴生成樹狀結構
+    html += renderMindMapNode(mindMap, 0);
+
+    html += `</div>
+        </div>
+    </div>`;
+
+    return html;
+}
+
+// 遞迴渲染心智圖節點
+function renderMindMapNode(node, level) {
+    if (!node) return '';
+
+    const colors = ['primary', 'success', 'info', 'warning', 'secondary', 'danger'];
+    const color = colors[level % colors.length];
+    const indent = level * 20;
+
+    let html = `<div class="mindmap-node" style="margin-left: ${indent}px;">
+        <span class="badge bg-${color} me-2">${level === 0 ? '🎯' : '•'}</span>
+        <span class="${level === 0 ? 'fw-bold fs-6' : (level === 1 ? 'fw-semibold' : '')}">${escapeHtml(node.name || '')}</span>
+    </div>`;
+
+    if (node.children && node.children.length > 0) {
+        node.children.forEach(child => {
+            html += renderMindMapNode(child, level + 1);
+        });
+    }
+
+    return html;
+}
+
+// HTML 跳脫
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 簡單 Markdown 轉換
+function formatMarkdown(text) {
+    if (!text) return '';
+    return escapeHtml(text)
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+}
+
+// 從列表選擇筆記本
+function selectNotebookFromList(id, title) {
+    document.getElementById('notebook-select').value = id;
+    window.currentNotebookId = id;
+    showOutput(`已選擇筆記本：${title}`, 'success');
+}
+
+// 顯示輸出
+function showOutput(message, type = 'info', loading = false) {
+    const icons = {
+        'success': 'check-circle',
+        'danger': 'x-circle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+
+    let html = `<div class="alert alert-${type}">
+        <i class="bi bi-${icons[type]} me-2"></i>
+        ${message}
+        ${loading ? '<div class="spinner-border spinner-border-sm ms-2"></div>' : ''}
+    </div>`;
+
+    document.getElementById('output-area').innerHTML = html;
+}
+
+// 清除輸出
+function clearOutput() {
+    document.getElementById('output-area').innerHTML = `
+        <div class="text-muted text-center py-4">
+            <i class="bi bi-arrow-up-circle fs-1"></i>
+            <p class="mt-2">輸入指令後按「執行」查看結果</p>
+        </div>`;
+    document.getElementById('command-input').value = '';
+}
+
+// 載入任務列表
+async function loadTasks() {
+    try {
+        const response = await fetch('/api/tasks');
+        const data = await response.json();
+
+        const tasksList = document.getElementById('tasks-list');
+
+        if (data.success && data.tasks && data.tasks.length > 0) {
+            let html = '';
+            data.tasks.slice(-5).reverse().forEach(task => {
+                const statusClass = {
+                    'pending': 'warning',
+                    'running': 'primary',
+                    'completed': 'success',
+                    'failed': 'danger'
+                }[task.status] || 'secondary';
+
+                const statusIcon = {
+                    'pending': 'hourglass',
+                    'running': 'arrow-repeat',
+                    'completed': 'check-circle',
+                    'failed': 'x-circle'
+                }[task.status] || 'circle';
+
+                html += `<div class="card mb-2">
+                    <div class="card-body py-2 px-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-truncate" style="max-width: 150px;">${task.name}</small>
+                            <span class="badge bg-${statusClass}">
+                                <i class="bi bi-${statusIcon} me-1"></i>
+                                ${task.status}
+                            </span>
+                        </div>
+                        ${task.status === 'running' ? `<div class="progress mt-1" style="height: 4px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: ${task.progress}%"></div>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+            });
+            tasksList.innerHTML = html;
+        } else {
+            tasksList.innerHTML = `<div class="text-muted text-center py-3">
+                <i class="bi bi-inbox fs-4"></i>
+                <p class="small mt-1">暫無進行中的任務</p>
+            </div>`;
+        }
+    } catch (error) {
+        console.error('載入任務失敗:', error);
+    }
+}
+
+// 追蹤任務
+function trackTask(taskId) {
+    loadTasks();
+}
+
+// 顯示建立筆記本 Modal
+function showCreateNotebookModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createNotebookModal'));
+    modal.show();
+}
+
+// 建立筆記本
+async function createNotebook() {
+    const name = document.getElementById('notebook-name').value.trim();
+    if (!name) {
+        alert('請輸入筆記本名稱');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/notebooks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: name })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createNotebookModal')).hide();
+            document.getElementById('notebook-name').value = '';
+            loadNotebooks();
+            showOutput(`筆記本「${name}」建立成功`, 'success');
+        } else {
+            alert(data.error || '建立失敗');
+        }
+    } catch (error) {
+        alert('建立失敗: ' + error.message);
+    }
+}
+
+// 顯示新增來源 Modal
+function showAddSourceModal() {
+    if (!window.currentNotebookId) {
+        alert('請先選擇一個筆記本');
+        return;
+    }
+    const modal = new bootstrap.Modal(document.getElementById('addSourceModal'));
+    modal.show();
+}
+
+// 新增來源
+async function addSource() {
+    const sourceType = document.querySelector('input[name="sourceType"]:checked').value;
+    const sourceValue = document.getElementById('source-value').value.trim();
+
+    if (!sourceValue) {
+        alert('請輸入來源內容');
+        return;
+    }
+
+    if (!window.currentNotebookId) {
+        alert('請先選擇一個筆記本');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/notebooks/${window.currentNotebookId}/sources`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: sourceType, value: sourceValue })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('addSourceModal')).hide();
+            document.getElementById('source-value').value = '';
+            showOutput(`來源新增成功`, 'success');
+        } else {
+            alert(data.error || '新增失敗');
+        }
+    } catch (error) {
+        alert('新增失敗: ' + error.message);
+    }
+}
+
+// 顯示網頁研究 Modal
+function showResearchModal() {
+    if (!window.currentNotebookId) {
+        alert('請先選擇一個筆記本');
+        return;
+    }
+    const modal = new bootstrap.Modal(document.getElementById('researchModal'));
+    modal.show();
+}
+
+// 開始研究
+async function startResearch() {
+    const query = document.getElementById('research-query').value.trim();
+    const mode = document.querySelector('input[name="researchMode"]:checked').value;
+
+    if (!query) {
+        alert('請輸入搜尋關鍵字');
+        return;
+    }
+
+    if (!window.currentNotebookId) {
+        alert('請先選擇一個筆記本');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/notebooks/${window.currentNotebookId}/research`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query, mode: mode })
+        });
+
+        const data = await response.json();
+
+        bootstrap.Modal.getInstance(document.getElementById('researchModal')).hide();
+        document.getElementById('research-query').value = '';
+
+        if (data.success) {
+            showOutput(`已開始「${mode === 'fast' ? '快速' : '深度'}」研究：${query}`, 'success');
+        } else {
+            showOutput(data.error || '研究啟動失敗', 'danger');
+        }
+    } catch (error) {
+        alert('研究啟動失敗: ' + error.message);
+    }
+}
+</script>
+{% endblock %}

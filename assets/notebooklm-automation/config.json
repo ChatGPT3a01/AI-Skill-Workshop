@@ -1,0 +1,9 @@
+{
+  "nlp_mode": "keyword",
+  "gemini_api_key": "",
+  "gemini_model": "gemini-2.5-flash",
+  "openai_api_key": "",
+  "openai_model": "gpt-4o",
+  "theme": "rich",
+  "language": "zh_Hant"
+}
