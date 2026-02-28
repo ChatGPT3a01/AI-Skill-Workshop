@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 10 - NotebookLM 自動化 Skill | AI Skill 實作課 Day 2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); height: 100vh; overflow: hidden; color: #333; }
+  /* ===== 導航列 ===== */
+  .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.2); z-index: 10000; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+  .nav-title { color: white; font-size: 18px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .nav-buttons { display: flex; gap: 10px; align-items: center; }
+  .nav-btn { padding: 6px 16px; border-radius: 20px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; display: inline-block; font-family: inherit; }
+  .nav-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
+  /* ===== 投影片容器 ===== */
+  .slides-container { display: flex; align-items: center; justify-content: center; height: 100vh; padding-top: 60px; }
+  .slide { display: none; width: 95%; max-width: 1400px; max-height: 88vh; background: rgba(255,255,255,0.98); border-radius: 24px; padding: 60px; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: fadeIn 0.4s ease; }
+  .slide.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .slide::-webkit-scrollbar { width: 8px; }
+  .slide::-webkit-scrollbar-track { background: transparent; }
+  .slide::-webkit-scrollbar-thumb { background: rgba(30,60,114,0.3); border-radius: 4px; }
+  .slide::-webkit-scrollbar-thumb:hover { background: rgba(30,60,114,0.5); }
+  .cover-slide { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; text-align: center; flex-direction: column; justify-content: center; align-items: center; }
+  .cover-slide.active { display: flex; }
+  .cover-slide .subtitle { font-size: 20px; opacity: 0.8; margin-bottom: 16px; letter-spacing: 3px; text-transform: uppercase; }
+  .cover-slide h1 { font-size: 48px; font-weight: 800; color: white; line-height: 1.2; margin-bottom: 24px; border: none; }
+  .cover-slide .desc { font-size: 20px; opacity: 0.85; max-width: 700px; line-height: 1.7; margin-bottom: 36px; }
+  h1 { color: #1e3c72; font-size: 48px; font-weight: 800; margin-bottom: 28px; }
+  h2 { color: #2a5298; font-size: 36px; font-weight: 700; border-bottom: 3px solid #1e3c72; padding-bottom: 12px; margin-bottom: 28px; }
+  h3 { color: #1e3c72; font-size: 22px; font-weight: 700; margin: 24px 0 14px; }
+  p { font-size: 20px; line-height: 1.8; color: #444; margin-bottom: 16px; }
+  ul, ol { padding-left: 22px; margin-bottom: 14px; }
+  li { font-size: 20px; line-height: 1.8; color: #444; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 15px; }
+  th { background: #1e3c72; color: white; padding: 12px 14px; text-align: left; font-weight: 600; }
+  td { padding: 11px 14px; border-bottom: 1px solid #e0e0e0; color: #333; vertical-align: top; }
+  tr:hover { background: #f5f7ff; }
+  pre { background: #1e1e2e; color: #cdd6f4; padding: 22px 26px; border-radius: 12px; font-family: "Cascadia Code", "Consolas", monospace; font-size: 14px; line-height: 1.7; overflow-x: auto; margin: 18px 0; white-space: pre-wrap; word-break: break-word; }
+  code { background: #f0f0f0; padding: 2px 8px; border-radius: 5px; font-family: "Cascadia Code", "Consolas", monospace; font-size: 14px; color: #c0392b; }
+  .box { border-radius: 12px; padding: 18px 22px; margin: 18px 0; font-size: 16px; line-height: 1.7; }
+  .box.info { background: #e3f2fd; border-left: 6px solid #2196f3; color: #1565c0; }
+  .box.warning { background: #fff3cd; border-left: 6px solid #ffc107; color: #856404; }
+  .box.success { background: #d4edda; border-left: 6px solid #28a745; color: #155724; }
+  .box.danger { background: #f8d7da; border-left: 6px solid #dc3545; color: #721c24; }
+  .concept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
+  .concept-card { background: #f8f9fa; padding: 28px; border-radius: 15px; border-top: 4px solid #2a5298; }
+  .concept-card h4 { color: #1e3c72; font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+  .concept-card p { font-size: 14px; color: #555; line-height: 1.7; margin: 0; }
+  .step-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
+  .step-card { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); color: white; padding: 28px; border-radius: 15px; }
+  .step-card h4 { font-size: 18px; font-weight: 700; margin-bottom: 12px; color: white; }
+  .step-card p { font-size: 14px; color: rgba(255,255,255,0.85); line-height: 1.7; margin: 0; }
+  .tags { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 10px; }
+  .tag { background: rgba(255,255,255,0.2); padding: 10px 28px; border-radius: 50px; color: white; font-size: 18px; font-weight: 500; }
+  .slide-placeholder { background: #e8f4fd; border: 2px dashed #2196f3; border-radius: 12px; padding: 20px; text-align: center; color: #1565c0; font-size: 16px; margin: 20px 0; }
+  .arch-box { background: #f0f4ff; border: 2px solid #2a5298; border-radius: 12px; padding: 20px; margin: 16px 0; font-family: "Cascadia Code", "Consolas", monospace; font-size: 14px; line-height: 1.9; color: #1e3c72; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 20px 0; }
+  .flow-arrow { text-align: center; font-size: 32px; color: #2a5298; margin: 12px 0; }
+  .arrow-btn { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.25); border: none; color: white; font-size: 32px; width: 56px; height: 56px; border-radius: 50%; cursor: pointer; z-index: 100; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+  .arrow-btn:hover { background: rgba(255,255,255,0.45); }
+  .arrow-btn.arrow-left { left: 16px; }
+  .arrow-btn.arrow-right { right: 16px; }
+  .dots { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.4); cursor: pointer; transition: background 0.2s, transform 0.2s; }
+  .dot.active { background: white; transform: scale(1.3); }
+  .next-btn { display: inline-block; margin-top: 32px; padding: 16px 48px; background: white; color: #1e3c72; border-radius: 50px; font-size: 20px; font-weight: 800; text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+  .next-btn:hover { background: #f0f4ff; transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.3); }
+  .cmd-example { background: #1e1e2e; color: #a6e3a1; padding: 14px 20px; border-radius: 10px; font-family: "Cascadia Code", "Consolas", monospace; font-size: 15px; margin: 10px 0; line-height: 1.6; }
+  .cmd-example .comment { color: #6c7086; }
+  .cmd-example .prompt { color: #89b4fa; }
+  .feature-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-title">🤖 Part 10 - NotebookLM 自動化 Skill</div>
+  <div class="nav-buttons">
+    <a class="nav-btn" href="index.html">🏠 首頁</a>
+    <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+    <a href="Part9_Script自動化進階.html" class="nav-btn">← Part 9</a>
+    <a href="Part11_Firebase_Agent_Skills.html" class="nav-btn">Part 11 →</a>
+    <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">📘 FB</a>
+    <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">🎥 YT</a>
+    <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">👥 3A社團</a>
+  </div>
+</nav>
+
+<button class="arrow-btn arrow-left" onclick="changeSlide(-1)">&#8592;</button>
+<button class="arrow-btn arrow-right" onclick="changeSlide(1)">&#8594;</button>
+
+<div class="slides-container">
+
+<!-- ============================================================ -->
+<!-- Slide 1: Cover -->
+<!-- ============================================================ -->
+<div class="slide cover-slide active">
+  <div class="subtitle">Day 2 &middot; Part 10 &middot; 延伸學習</div>
+  <h1>NotebookLM 自動化<br>Skill 實戰</h1>
+  <p class="desc">用自然語言控制 Google NotebookLM<br>從安裝、登入、到一句話自動建立筆記本、生成 Podcast</p>
+  <div class="tags">
+    <span class="tag">📚 NotebookLM</span>
+    <span class="tag">🐍 Python Flask</span>
+    <span class="tag">🤖 NLP 自然語言</span>
+    <span class="tag">⚡ 全自動化</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 2: 什麼是 NotebookLM？ -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>📚 什麼是 Google NotebookLM？</h2>
+  <p>NotebookLM 是 Google 推出的 <strong>AI 筆記本工具</strong>，基於 RAG（檢索增強生成）架構，能將你的文件轉化為 AI 可查詢、可生成內容的智慧知識庫。</p>
+
+  <!-- 10-01: NotebookLM 首頁模擬 -->
+  <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);margin:20px 0;max-width:720px;margin-left:auto;margin-right:auto;">
+    <!-- 瀏覽器頂部列 -->
+    <div style="background:#e8eaed;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+      <div style="flex:1;background:#fff;border-radius:20px;padding:6px 16px;margin-left:12px;font-size:13px;color:#5f6368;font-family:'Segoe UI',sans-serif;">🔒 notebooklm.google.com</div>
+    </div>
+    <!-- 頁面內容 -->
+    <div style="padding:60px 40px;text-align:center;background:linear-gradient(135deg,#e8f0fe 0%,#fff 60%,#fce4ec 100%);">
+      <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,#4285f4,#34a853);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+          <span style="color:#fff;font-size:24px;font-weight:bold;">N</span>
+        </div>
+        <span style="font-size:32px;font-weight:700;color:#202124;font-family:'Google Sans','Segoe UI',sans-serif;">NotebookLM</span>
+      </div>
+      <p style="font-size:18px;color:#5f6368;margin:12px 0 32px;font-family:'Segoe UI',sans-serif;">Your AI-powered research assistant</p>
+      <button style="background:#4285f4;color:#fff;border:none;padding:14px 36px;border-radius:24px;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(66,133,244,.4);font-family:'Segoe UI',sans-serif;">Try NotebookLM</button>
+      <div style="margin-top:40px;display:flex;justify-content:center;gap:32px;flex-wrap:wrap;">
+        <div style="text-align:center;"><div style="font-size:28px;margin-bottom:4px;">📄</div><span style="font-size:12px;color:#80868b;">Upload PDFs</span></div>
+        <div style="text-align:center;"><div style="font-size:28px;margin-bottom:4px;">🎙️</div><span style="font-size:12px;color:#80868b;">Generate Podcasts</span></div>
+        <div style="text-align:center;"><div style="font-size:28px;margin-bottom:4px;">📝</div><span style="font-size:12px;color:#80868b;">Create Summaries</span></div>
+        <div style="text-align:center;"><div style="font-size:28px;margin-bottom:4px;">❓</div><span style="font-size:12px;color:#80868b;">Ask Questions</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>NotebookLM 能做什麼？</h3>
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4><span class="feature-icon">📎</span>上傳各種來源</h4>
+      <p>PDF、網頁 URL、YouTube 影片、Google Drive 文件、直接貼上文字，全部丟進去就能分析</p>
+    </div>
+    <div class="concept-card">
+      <h4><span class="feature-icon">🎙️</span>自動生成內容</h4>
+      <p>一鍵生成 Podcast、影片、簡報、測驗題、閃卡、報告、心智圖、資訊圖表</p>
+    </div>
+    <div class="concept-card">
+      <h4><span class="feature-icon">🔍</span>智慧問答</h4>
+      <p>對你上傳的文件提問，AI 會引用原文回答，不會亂掰——因為是 RAG 架構，回答都有根據</p>
+    </div>
+  </div>
+
+  <div class="box info">
+    💡 <strong>重要：</strong>NotebookLM 的 AI 回答「只根據你上傳的文件」，不會混入外部資料。這就是 RAG 架構的優勢——每句回答都可追溯到原始來源。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 3: 痛點——為什麼要自動化？ -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>😫 手動操作 NotebookLM 的痛點</h2>
+  <p>NotebookLM 功能很強，但<strong>全部都要手動點、手動選</strong>。如果你有批次需求，這些問題馬上浮現：</p>
+
+  <table>
+    <tr><th>痛點</th><th>具體情境</th><th>浪費時間</th></tr>
+    <tr><td>逐一上傳</td><td>要分析 20 篇 PDF 論文，得一個一個拖拉上傳</td><td>30+ 分鐘</td></tr>
+    <tr><td>手動建立</td><td>每門課程都要手動建立新筆記本、命名、設定</td><td>15+ 分鐘</td></tr>
+    <tr><td>點選生成</td><td>每個筆記本都要手動點「生成 Podcast」、等待、下載</td><td>20+ 分鐘</td></tr>
+    <tr><td>無法匯出</td><td>閃卡、心智圖只能線上看，無法下載為可編輯格式</td><td>無解</td></tr>
+    <tr><td>沒有 API</td><td>Google 至今未開放 NotebookLM 的官方 API</td><td>無法程式化</td></tr>
+  </table>
+
+  <div class="box warning">
+    💡 <strong>核心問題：</strong>Google 沒有提供 NotebookLM API！所有操作都必須透過網頁介面手動完成。如果要處理大量資料，效率極低。
+  </div>
+
+  <div class="flow-arrow">⬇️</div>
+
+  <div class="box success">
+    ✅ <strong>解決方案：</strong>透過 <code>notebooklm-py</code> 逆向工程 + Flask GUI + NLP 解析器，讓你用「自然語言」就能控制 NotebookLM！
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 4: notebooklm-py 是什麼？ -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🔧 notebooklm-py 是什麼？</h2>
+  <p><code>notebooklm-py</code> 是一個開源的 <strong>Python CLI 工具</strong>，透過逆向工程 NotebookLM 的未公開 API，讓你能用程式碼操控 Google NotebookLM 的所有功能。</p>
+
+  <!-- 10-02: GitHub repo 模擬 -->
+  <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);margin:20px 0;max-width:720px;margin-left:auto;margin-right:auto;">
+    <!-- 瀏覽器頂部列 -->
+    <div style="background:#e8eaed;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+      <div style="flex:1;background:#fff;border-radius:20px;padding:6px 16px;margin-left:12px;font-size:13px;color:#5f6368;font-family:'Segoe UI',sans-serif;">🔒 github.com/siddicky/notebooklm-py</div>
+    </div>
+    <!-- GitHub 頁面內容 -->
+    <div style="padding:0;background:#fff;">
+      <!-- Repo header -->
+      <div style="padding:20px 24px;border-bottom:1px solid #d1d5da;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <svg style="width:20px;height:20px;fill:#656d76;" viewBox="0 0 16 16"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Z"/></svg>
+          <span style="font-size:20px;font-family:'Segoe UI',sans-serif;"><span style="color:#656d76;">siddicky</span> / <strong style="color:#0969da;">notebooklm-py</strong></span>
+          <span style="border:1px solid #d1d5da;border-radius:12px;padding:2px 10px;font-size:12px;color:#656d76;margin-left:8px;">Public</span>
+        </div>
+        <p style="font-size:14px;color:#656d76;margin:8px 0 12px;font-family:'Segoe UI',sans-serif;">Python client for Google NotebookLM — Automate notebooks, sources, and audio generation</p>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#656d76;font-family:'Segoe UI',sans-serif;">⭐ <strong>1.2k</strong> stars</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#656d76;font-family:'Segoe UI',sans-serif;">🍴 <strong>89</strong> forks</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#656d76;font-family:'Segoe UI',sans-serif;">📜 MIT License</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#656d76;font-family:'Segoe UI',sans-serif;">🐍 Python</span>
+        </div>
+      </div>
+      <!-- README 預覽 -->
+      <div style="padding:20px 24px;">
+        <div style="border:1px solid #d1d5da;border-radius:8px;padding:16px;">
+          <h3 style="font-size:18px;margin:0 0 12px;font-family:'Segoe UI',sans-serif;border-bottom:1px solid #eee;padding-bottom:8px;">📖 README.md</h3>
+          <p style="font-size:14px;color:#1f2328;margin:0 0 8px;font-family:'Segoe UI',sans-serif;"><strong>notebooklm-py</strong> — A Python client for Google NotebookLM</p>
+          <div style="background:#f6f8fa;border-radius:6px;padding:12px 16px;font-family:'Cascadia Code','Consolas',monospace;font-size:13px;color:#1f2328;">
+            pip install notebooklm-py
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>核心特色</h3>
+  <div class="two-col">
+    <div>
+      <ul>
+        <li><strong>逆向工程：</strong>透過 Playwright 瀏覽器自動化，模擬真實使用者操作</li>
+        <li><strong>完整功能：</strong>涵蓋 NotebookLM 網頁版的所有功能，甚至更多（可匯出閃卡、心智圖等）</li>
+        <li><strong>三種使用方式：</strong>CLI 指令、Python API、Claude Code Skills</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li><strong>Cookie 認證：</strong>不需要儲存帳號密碼，用瀏覽器登入一次後自動保存</li>
+        <li><strong>JSON 輸出：</strong>所有操作結果都以 JSON 格式回傳，方便程式處理</li>
+        <li><strong>開源免費：</strong>完全開源，可自由使用與修改</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>三種使用方式比較</h3>
+  <table>
+    <tr><th>方式</th><th>適用場景</th><th>使用範例</th></tr>
+    <tr><td><strong>CLI 指令</strong></td><td>快速任務、Shell 腳本整合</td><td><code>notebooklm list --json</code></td></tr>
+    <tr><td><strong>Python API</strong></td><td>整合進應用程式、批次自動化</td><td><code>client.list_notebooks()</code></td></tr>
+    <tr><td><strong>Claude Code Skills</strong></td><td>自然語言驅動的文件操作</td><td>「幫我列出所有筆記本」</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 5: 五層技術架構 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🏗️ 系統技術架構（五層堆疊）</h2>
+  <p>整個自動化系統由五個層次堆疊而成，從最上層的「你說的話」到最底層的「NotebookLM 網頁」：</p>
+
+  <div class="arch-box">
+┌─────────────────────────────────────────────────────┐
+│  <strong>第 5 層：Flask Web GUI（前端介面）</strong>              │  ← 你操作的地方
+│  三欄式佈局：功能按鈕 ｜ 輸入指令 ｜ 結果顯示       │
+├─────────────────────────────────────────────────────┤
+│  <strong>第 4 層：NLP Parser（自然語言解析器）</strong>           │  ← 理解你的意思
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
+│  │ 關鍵字   │  │ Gemini   │  │ OpenAI   │           │
+│  │ 匹配     │  │ API      │  │ API      │           │
+│  └──────────┘  └──────────┘  └──────────┘           │
+├─────────────────────────────────────────────────────┤
+│  <strong>第 3 層：notebooklm-py（CLI 封裝層）</strong>           │  ← 轉換成指令
+│  Python subprocess 呼叫 notebooklm CLI              │
+├─────────────────────────────────────────────────────┤
+│  <strong>第 2 層：Playwright（瀏覽器自動化）</strong>            │  ← 模擬人類操作
+│  自動打開 Chromium、點擊按鈕、輸入文字              │
+├─────────────────────────────────────────────────────┤
+│  <strong>第 1 層：NotebookLM 網頁（Google 服務）</strong>        │  ← 實際執行
+│  https://notebooklm.google.com                      │
+└─────────────────────────────────────────────────────┘
+  </div>
+
+  <div class="box info">
+    🔑 <strong>關鍵概念：</strong>你只要在最上層「說人話」，系統就會一層一層往下傳遞，最終在 NotebookLM 網頁上執行操作，再把結果往上回傳給你。整個過程完全自動化！
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 6: 設計模式比較——Pencil vs NotebookLM -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🔄 設計模式：跟 Pencil MCP 一樣的套路！</h2>
+  <p>還記得課堂上用的 <strong>Pencil 網頁設計工具</strong>嗎？NotebookLM 自動化的設計模式<strong>完全一樣</strong>！<br>這是「用自然語言控制外部工具」的通用模式：</p>
+
+  <table>
+    <tr><th></th><th>Pencil 網頁設計</th><th>NotebookLM 自動化</th></tr>
+    <tr><td><strong>底層工具</strong></td><td>Pencil 畫布編輯器（.pen 檔案）</td><td>Google NotebookLM（雲端筆記本）</td></tr>
+    <tr><td><strong>中介層</strong></td><td>Pencil MCP Server</td><td>notebooklm-py CLI + Flask</td></tr>
+    <tr><td><strong>操作方式</strong></td><td>Claude 呼叫 MCP tools</td><td>Claude Skill / Flask GUI + NLP Parser</td></tr>
+    <tr><td><strong>使用者體驗</strong></td><td>說「設計一個登入頁面」→ 自動完成</td><td>說「生成 Podcast」→ 自動完成</td></tr>
+    <tr><td><strong>回傳結果</strong></td><td>畫布上出現設計好的頁面</td><td>產出 Podcast 音訊 / 心智圖 / 報告</td></tr>
+  </table>
+
+  <!-- 10-02b: Pencil vs NotebookLM 對比卡片 -->
+  <div style="display:flex;gap:24px;margin:20px 0;flex-wrap:wrap;justify-content:center;">
+    <!-- 左：Pencil -->
+    <div style="flex:1;min-width:280px;max-width:340px;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1);background:#fff;">
+      <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:20px;text-align:center;">
+        <div style="font-size:36px;margin-bottom:8px;">🎨</div>
+        <h4 style="color:#fff;margin:0;font-size:20px;font-family:'Segoe UI',sans-serif;">Pencil</h4>
+        <span style="color:rgba(255,255,255,.8);font-size:13px;">MCP Server 直連</span>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;font-family:'Segoe UI',sans-serif;">
+          <div style="background:#f0f0ff;border-radius:8px;padding:10px 14px;text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:2px;">使用者指令</div>
+            <strong style="color:#4338ca;">「設計一個登入頁面」</strong>
+          </div>
+          <div style="text-align:center;color:#a78bfa;font-size:18px;">↓</div>
+          <div style="background:#f0f0ff;border-radius:8px;padding:10px 14px;text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:2px;">中介層</div>
+            <strong style="color:#4338ca;">MCP Server（直連 API）</strong>
+          </div>
+          <div style="text-align:center;color:#a78bfa;font-size:18px;">↓</div>
+          <div style="background:#f0f0ff;border-radius:8px;padding:10px 14px;text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:2px;">外部工具</div>
+            <strong style="color:#4338ca;">Pencil 設計畫布</strong>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:10px;background:#e8f5e9;border-radius:8px;text-align:center;font-size:13px;color:#2e7d32;">
+          <strong>優勢：</strong>延遲低、即時回饋
+        </div>
+      </div>
+    </div>
+    <!-- 右：NotebookLM -->
+    <div style="flex:1;min-width:280px;max-width:340px;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1);background:#fff;">
+      <div style="background:linear-gradient(135deg,#4285f4,#34a853);padding:20px;text-align:center;">
+        <div style="font-size:36px;margin-bottom:8px;">📚</div>
+        <h4 style="color:#fff;margin:0;font-size:20px;font-family:'Segoe UI',sans-serif;">NotebookLM</h4>
+        <span style="color:rgba(255,255,255,.8);font-size:13px;">Python API + Playwright 間接</span>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;font-family:'Segoe UI',sans-serif;">
+          <div style="background:#e8f0fe;border-radius:8px;padding:10px 14px;text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:2px;">使用者指令</div>
+            <strong style="color:#1a73e8;">「生成 Podcast」</strong>
+          </div>
+          <div style="text-align:center;color:#4285f4;font-size:18px;">↓</div>
+          <div style="background:#e8f0fe;border-radius:8px;padding:10px 14px;text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:2px;">中介層</div>
+            <strong style="color:#1a73e8;">Python API + Playwright</strong>
+          </div>
+          <div style="text-align:center;color:#4285f4;font-size:18px;">↓</div>
+          <div style="background:#e8f0fe;border-radius:8px;padding:10px 14px;text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:2px;">外部工具</div>
+            <strong style="color:#1a73e8;">Google NotebookLM</strong>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:10px;background:#fff3e0;border-radius:8px;text-align:center;font-size:13px;color:#e65100;">
+          <strong>優勢：</strong>功能完整、批次處理
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>通用設計模式（你可以套用到任何工具！）</h3>
+  <div class="arch-box">
+┌──────────────────────────────────────────────────┐
+│  <strong>你（自然語言）</strong>：「幫我做 XXX」                    │
+├──────────────────────────────────────────────────┤
+│  <strong>AI 中介層</strong>（MCP / Skill / NLP Parser）          │
+│  理解意圖 → 轉換成具體操作指令                    │
+├──────────────────────────────────────────────────┤
+│  <strong>底層工具</strong>（Pencil / NotebookLM / 任何工具）     │
+│  執行操作 → 回傳結果                              │
+└──────────────────────────────────────────────────┘
+  </div>
+
+  <div class="box success">
+    ✅ <strong>核心觀念：</strong>學會這個模式，你就能把<strong>任何</strong>沒有 API 的工具，透過 MCP/Skill 機制包裝成 AI 可控制的自動化工具！這就是 AI Skill 的終極威力。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 7: 安裝步驟一——安裝 notebooklm-py -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>📦 安裝步驟一：安裝 notebooklm-py</h2>
+  <p>首先，我們要安裝核心工具 <code>notebooklm-py</code>。這是整個自動化系統的底層引擎。</p>
+
+  <h3>1-1. 安裝主程式</h3>
+  <div class="cmd-example">
+    <span class="prompt">$</span> pip install notebooklm-py
+  </div>
+  <p>這會安裝 notebooklm-py 的核心 Python API，讓你能在程式碼中呼叫 NotebookLM 功能。</p>
+
+  <!-- 模擬終端機：pip install notebooklm-py -->
+  <div style="background:#1a1b26; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+    <div style="background:#2a2b3d; padding:8px 16px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <span style="color:#888; font-size:12px; margin-left:8px;">Terminal — pip install</span>
+    </div>
+    <div style="padding:18px 24px; font-family:'Cascadia Code','Consolas',monospace; font-size:14px; line-height:1.8; color:#a9b1d6;">
+      <div><span style="color:#7aa2f7;">$</span> <span style="color:#9ece6a;">pip install</span> notebooklm-py</div>
+      <div style="margin-top:8px; color:#565f89;">Collecting notebooklm-py</div>
+      <div style="color:#565f89;">  Downloading notebooklm_py-0.4.2-py3-none-any.whl (45 kB)</div>
+      <div style="margin-top:4px; color:#565f89;">Collecting httpx>=0.24.0</div>
+      <div style="color:#565f89;">  Downloading httpx-0.27.0-py3-none-any.whl (75 kB)</div>
+      <div style="color:#565f89;">Collecting pydantic>=2.0</div>
+      <div style="color:#565f89;">  Downloading pydantic-2.10.3-py3-none-any.whl (456 kB)</div>
+      <div style="margin-top:6px;">
+        <span style="color:#e0af68;">Installing:</span>
+        <span style="display:inline-block; width:260px; background:#2a2b3d; border-radius:4px; height:14px; position:relative; vertical-align:middle;">
+          <span style="display:block; width:100%; background:linear-gradient(90deg,#9ece6a,#7aa2f7); border-radius:4px; height:100%;"></span>
+        </span>
+        <span style="color:#9ece6a;"> 100%</span>
+      </div>
+      <div style="margin-top:8px; color:#9ece6a; font-weight:bold;">Successfully installed notebooklm-py-0.4.2 httpx-0.27.0 pydantic-2.10.3 sniffio-1.3.1</div>
+    </div>
+  </div>
+
+  <h3>1-2. 安裝瀏覽器自動化擴充</h3>
+  <div class="cmd-example">
+    <span class="prompt">$</span> pip install "notebooklm-py[browser]"
+  </div>
+  <p>這會額外安裝 Playwright 瀏覽器自動化套件，讓程式能模擬瀏覽器操作 NotebookLM。</p>
+
+  <h3>1-3. 安裝 Chromium 瀏覽器</h3>
+  <div class="cmd-example">
+    <span class="prompt">$</span> playwright install chromium
+  </div>
+  <p>Playwright 需要一個瀏覽器來執行自動化操作。這個指令會自動下載並安裝 Chromium（約 150MB）。</p>
+
+  <!-- 模擬終端機：playwright install chromium -->
+  <div style="background:#1a1b26; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+    <div style="background:#2a2b3d; padding:8px 16px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <span style="color:#888; font-size:12px; margin-left:8px;">Terminal — playwright install</span>
+    </div>
+    <div style="padding:18px 24px; font-family:'Cascadia Code','Consolas',monospace; font-size:14px; line-height:1.9; color:#a9b1d6;">
+      <div><span style="color:#7aa2f7;">$</span> <span style="color:#9ece6a;">playwright install</span> chromium</div>
+      <div style="margin-top:10px; color:#565f89;">Downloading Chromium 131.0.6778.33 (playwright build v1148)</div>
+      <div style="margin-top:6px;">
+        <span style="color:#e0af68;">Downloading:</span>
+        <span style="display:inline-block; width:280px; background:#2a2b3d; border-radius:4px; height:16px; position:relative; vertical-align:middle;">
+          <span style="display:block; width:100%; background:linear-gradient(90deg,#9ece6a,#7aa2f7); border-radius:4px; height:100%;"></span>
+        </span>
+        <span style="color:#9ece6a; font-weight:bold;"> 154.2 MB / 154.2 MB</span>
+      </div>
+      <div style="color:#a9b1d6; margin-top:6px;">Chromium 131.0.6778.33 downloaded to</div>
+      <div style="color:#7dcfff; font-size:13px;">  C:\Users\user\AppData\Local\ms-playwright\chromium-1148</div>
+      <div style="margin-top:10px; color:#9ece6a; font-weight:bold;">✅ Browsers installed successfully!</div>
+    </div>
+  </div>
+
+  <div class="box warning">
+    ⚠️ <strong>注意事項：</strong>
+    <ul style="margin:8px 0 0 18px;">
+      <li>需要 <strong>Python 3.9 以上</strong> 版本</li>
+      <li>需要穩定的<strong>網路連線</strong>（下載 Chromium 需要約 150MB）</li>
+      <li>Windows 使用者建議使用 <strong>PowerShell</strong> 或 <strong>CMD</strong>，避免 Git Bash 路徑問題</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 7: 安裝步驟二——下載專案與安裝依賴 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>📦 安裝步驟二：下載專案與安裝依賴</h2>
+  <p>接下來，下載「亮言~NotebookLM 自動化 Skill」Flask 專案，並安裝它的 Python 依賴套件。</p>
+
+  <h3>2-1. 下載專案檔案</h3>
+  <p style="font-size:22px; margin-bottom:20px;">
+    <a href="https://github.com/ChatGPT3a01/AI-Skill-Workshop/tree/master/assets/notebooklm-automation" target="_blank" style="display:inline-block; padding:14px 32px; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; border-radius:12px; text-decoration:none; font-weight:700; font-size:20px; box-shadow:0 4px 15px rgba(30,60,114,0.4); transition:all 0.2s;">⬇️ 點此前往 GitHub 下載專案</a>
+  </p>
+  <div class="cmd-example">
+    <span class="comment"># 方式一：點擊上方按鈕 → GitHub 頁面 → Code → Download ZIP</span><br><br>
+    <span class="comment"># 方式二：Git Clone 整個課程倉庫</span><br>
+    <span class="prompt">$</span> git clone https://github.com/ChatGPT3a01/AI-Skill-Workshop.git<br>
+    <span class="prompt">$</span> cd AI-Skill-Workshop/assets/notebooklm-automation
+  </div>
+
+  <h3>2-2. 安裝專案依賴</h3>
+  <div class="cmd-example">
+    <span class="comment"># 進入下載後的專案資料夾</span><br>
+    <span class="prompt">$</span> cd notebooklm-automation<br>
+    <span class="prompt">$</span> pip install -r requirements.txt
+  </div>
+
+  <h3>requirements.txt 包含以下套件：</h3>
+  <table>
+    <tr><th>套件名稱</th><th>用途</th></tr>
+    <tr><td><code>flask</code></td><td>Web 框架，提供網頁介面</td></tr>
+    <tr><td><code>flask-cors</code></td><td>跨來源請求支援</td></tr>
+    <tr><td><code>notebooklm-py</code></td><td>NotebookLM CLI 核心工具</td></tr>
+    <tr><td><code>google-generativeai</code></td><td>Gemini API（NLP 模式選配）</td></tr>
+    <tr><td><code>openai</code></td><td>OpenAI API（NLP 模式選配）</td></tr>
+    <tr><td><code>python-dotenv</code></td><td>環境變數管理（.env 檔案）</td></tr>
+  </table>
+
+  <!-- 10-05: pip install 終端機模擬 -->
+  <div style="background:#1a1b26;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3);margin:20px 0;max-width:720px;margin-left:auto;margin-right:auto;">
+    <!-- 終端機頂部列 -->
+    <div style="background:#2a2b3d;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+      <span style="color:#787c99;font-size:13px;margin-left:12px;font-family:'Cascadia Code','Consolas',monospace;">Terminal — pip install</span>
+    </div>
+    <!-- 終端機內容 -->
+    <div style="padding:20px 24px;font-family:'Cascadia Code','Consolas',monospace;font-size:13px;line-height:1.8;color:#a9b1d6;">
+      <div><span style="color:#7aa2f7;">$</span> pip install flask notebooklm-py</div>
+      <div style="color:#565f89;">Collecting flask</div>
+      <div style="color:#565f89;">  Downloading Flask-3.1.0-py3-none-any.whl (102 kB)</div>
+      <div style="color:#565f89;">Collecting notebooklm-py</div>
+      <div style="color:#565f89;">  Downloading notebooklm_py-0.5.2-py3-none-any.whl (45 kB)</div>
+      <div style="color:#565f89;">Collecting playwright>=1.40</div>
+      <div style="color:#565f89;">  Downloading playwright-1.49.0-py3-none-any.whl (236 kB)</div>
+      <div style="color:#565f89;">Installing collected packages: playwright, flask, notebooklm-py</div>
+      <div style="margin-top:8px;"><span style="color:#9ece6a;">Successfully installed</span> flask-3.1.0 notebooklm-py-0.5.2 playwright-1.49.0</div>
+      <div style="margin-top:12px;"><span style="color:#7aa2f7;">$</span> playwright install chromium</div>
+      <div style="color:#565f89;">Downloading Chromium 131.0.6778.33 ...</div>
+      <div><span style="color:#9ece6a;">Chromium downloaded to</span> ~/.cache/ms-playwright/chromium-1148</div>
+      <div style="margin-top:12px;"><span style="color:#7aa2f7;">$</span> <span style="animation:blink 1s step-end infinite;border-right:2px solid #c0caf5;">&#8203;</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 8: 安裝步驟三——Google 帳號登入 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🔐 安裝步驟三：Google 帳號登入</h2>
+  <p>notebooklm-py 使用<strong>瀏覽器 Cookie 認證</strong>，不需要輸入帳號密碼。只要用瀏覽器登入一次 Google 帳號，之後就會自動記住。</p>
+
+  <h3>3-1. 執行登入指令</h3>
+  <div class="cmd-example">
+    <span class="prompt">$</span> notebooklm login
+  </div>
+
+  <h3>3-2. 登入流程</h3>
+  <ol>
+    <li>執行指令後，系統會<strong>自動開啟 Chromium 瀏覽器</strong></li>
+    <li>瀏覽器會導向 Google NotebookLM 登入頁面</li>
+    <li>用你的 <strong>Google 帳號正常登入</strong>（可以使用 2FA 驗證）</li>
+    <li>登入成功後，看到 NotebookLM 主頁面</li>
+    <li>回到終端機，<strong>按 Enter 確認</strong>登入完成</li>
+  </ol>
+
+  <!-- 模擬：終端機 + 瀏覽器自動開啟 Google 登入 -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0;">
+    <!-- 左側：終端機 -->
+    <div style="background:#1a1b26; border-radius:14px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+      <div style="background:#2a2b3d; padding:8px 14px; display:flex; align-items:center; gap:8px;">
+        <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+        <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+        <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+        <span style="color:#888; font-size:12px; margin-left:8px;">Terminal</span>
+      </div>
+      <div style="padding:16px 20px; font-family:'Cascadia Code','Consolas',monospace; font-size:14px; line-height:1.9; color:#a9b1d6;">
+        <div><span style="color:#7aa2f7;">$</span> <span style="color:#9ece6a;">notebooklm</span> login</div>
+        <div style="margin-top:10px; color:#e0af68;">Opening browser for authentication...</div>
+        <div style="color:#7dcfff;">A Chromium browser window will open.</div>
+        <div style="color:#7dcfff;">Please log in to your Google account.</div>
+        <div style="margin-top:12px; color:#565f89;">Waiting for login... <span style="animation:blink 1s infinite; color:#e0af68;">▋</span></div>
+      </div>
+    </div>
+    <!-- 右側：模擬 Google 登入畫面 -->
+    <div style="background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.15); border:1px solid #ddd;">
+      <!-- 瀏覽器 chrome -->
+      <div style="background:#dee1e6; padding:6px 12px; display:flex; align-items:center; gap:8px;">
+        <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+        <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+        <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+        <div style="flex:1; background:white; border-radius:20px; padding:4px 14px; font-size:12px; color:#555; margin-left:8px;">
+          🔒 accounts.google.com/signin
+        </div>
+      </div>
+      <!-- Google 登入內容 -->
+      <div style="padding:28px 24px; text-align:center; font-family:'Segoe UI',sans-serif;">
+        <!-- Google Logo -->
+        <div style="font-size:28px; font-weight:700; margin-bottom:16px;">
+          <span style="color:#4285F4;">G</span><span style="color:#EA4335;">o</span><span style="color:#FBBC05;">o</span><span style="color:#4285F4;">g</span><span style="color:#34A853;">l</span><span style="color:#EA4335;">e</span>
+        </div>
+        <div style="font-size:20px; font-weight:600; color:#202124; margin-bottom:6px;">選擇帳戶</div>
+        <div style="font-size:13px; color:#5f6368; margin-bottom:20px;">繼續前往 NotebookLM</div>
+        <!-- 帳號選項 -->
+        <div style="border:1px solid #dadce0; border-radius:12px; overflow:hidden; text-align:left; margin:0 auto; max-width:300px;">
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; background:#f8f9fa; border-bottom:1px solid #dadce0;">
+            <div style="width:36px; height:36px; border-radius:50%; background:#1e3c72; color:white; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700;">A</div>
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#202124;">aliang.teacher@gmail.com</div>
+              <div style="font-size:12px; color:#5f6368;">阿亮老師</div>
+            </div>
+          </div>
+          <div style="padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <div style="width:36px; height:36px; border-radius:50%; background:#34A853; color:white; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700;">S</div>
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#202124;">student.demo@gmail.com</div>
+              <div style="font-size:12px; color:#5f6368;">學員測試帳號</div>
+            </div>
+          </div>
+          <div style="padding:12px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; border-top:1px solid #dadce0;">
+            <div style="width:36px; height:36px; border-radius:50%; background:#e8eaed; color:#5f6368; display:flex; align-items:center; justify-content:center; font-size:18px;">+</div>
+            <div style="font-size:14px; color:#1a73e8; font-weight:600;">使用其他帳戶</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>3-3. 登入狀態儲存位置</h3>
+  <div class="cmd-example">
+    <span class="comment"># Cookie 儲存位置（自動產生，不需要手動處理）</span><br>
+    ~/.notebooklm/storage_state.json
+  </div>
+
+  <div class="box info">
+    🔑 <strong>安全提醒：</strong>
+    <ul style="margin:8px 0 0 18px;">
+      <li>不會儲存你的 Google 帳號密碼，只儲存瀏覽器 Cookie</li>
+      <li>Cookie 過期後需要重新執行 <code>notebooklm login</code></li>
+      <li>建議使用<strong>專用帳號</strong>進行測試，避免影響主帳號</li>
+    </ul>
+  </div>
+
+  <!-- 模擬終端機：登入成功 -->
+  <div style="background:#1a1b26; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+    <div style="background:#2a2b3d; padding:8px 16px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <span style="color:#888; font-size:12px; margin-left:8px;">Terminal — notebooklm login</span>
+    </div>
+    <div style="padding:18px 24px; font-family:'Cascadia Code','Consolas',monospace; font-size:14px; line-height:1.9; color:#a9b1d6;">
+      <div><span style="color:#7aa2f7;">$</span> <span style="color:#9ece6a;">notebooklm</span> login</div>
+      <div style="margin-top:8px; color:#e0af68;">Opening browser for authentication...</div>
+      <div style="color:#7dcfff;">A Chromium browser window will open.</div>
+      <div style="color:#7dcfff;">Please log in to your Google account.</div>
+      <div style="margin-top:8px; color:#565f89;">Waiting for login...</div>
+      <div style="color:#a9b1d6;">Press Enter after you have logged in to NotebookLM... <span style="color:#9ece6a;">⏎</span></div>
+      <div style="margin-top:12px; background:#1e2030; border-left:4px solid #9ece6a; padding:12px 16px; border-radius:0 8px 8px 0;">
+        <div style="color:#9ece6a; font-size:16px; font-weight:bold;">✅ Login successful!</div>
+        <div style="margin-top:6px; color:#a9b1d6;">Browser state saved to:</div>
+        <div style="color:#7dcfff;">  ~/.notebooklm/storage_state.json</div>
+        <div style="margin-top:6px; color:#a9b1d6;">You can now use NotebookLM API commands.</div>
+        <div style="color:#a9b1d6;">Session will remain valid until cookies expire.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 9: 安裝步驟四——啟動應用程式 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🚀 安裝步驟四：啟動應用程式</h2>
+  <p>前面三個步驟都完成後，就可以啟動 Flask 應用程式了！</p>
+
+  <h3>4-1. 啟動伺服器</h3>
+  <div class="cmd-example">
+    <span class="prompt">$</span> cd D:\NotebookLM課程\讓NotebookLM自動化<br>
+    <span class="prompt">$</span> python app.py
+  </div>
+
+  <h3>4-2. 成功啟動畫面</h3>
+  <p>看到以下訊息表示伺服器已成功啟動：</p>
+  <pre>==================================================
+   亮言~NotebookLM 自動化Skill
+==================================================
+
+   啟動網頁伺服器...
+   請開啟瀏覽器訪問: http://localhost:5000
+
+==================================================</pre>
+
+  <!-- 10-08: python app.py 啟動終端機模擬 -->
+  <div style="background:#1a1b26;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3);margin:20px 0;max-width:720px;margin-left:auto;margin-right:auto;">
+    <!-- 終端機頂部列 -->
+    <div style="background:#2a2b3d;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+      <span style="color:#787c99;font-size:13px;margin-left:12px;font-family:'Cascadia Code','Consolas',monospace;">Terminal — python app.py</span>
+    </div>
+    <!-- 終端機內容 -->
+    <div style="padding:20px 24px;font-family:'Cascadia Code','Consolas',monospace;font-size:13px;line-height:1.8;color:#a9b1d6;">
+      <div><span style="color:#7aa2f7;">$</span> python app.py</div>
+      <div style="margin-top:8px;color:#bb9af7;">==================================================</div>
+      <div style="color:#bb9af7;">  NotebookLM 自動化系統 v1.0</div>
+      <div style="color:#bb9af7;">==================================================</div>
+      <div style="color:#565f89;margin-top:4px;"> * Serving Flask app 'app'</div>
+      <div style="color:#565f89;"> * Debug mode: off</div>
+      <div style="color:#e0af68;"> * WARNING: This is a development server.</div>
+      <div style="color:#9ece6a;font-weight:bold;margin-top:4px;"> * Running on <span style="text-decoration:underline;">http://127.0.0.1:5000</span></div>
+      <div style="color:#565f89;"> * Press CTRL+C to quit</div>
+      <div style="margin-top:8px;color:#9ece6a;">  啟動網頁伺服器...</div>
+      <div style="color:#9ece6a;">  請開啟瀏覽器訪問: <span style="color:#7aa2f7;text-decoration:underline;">http://localhost:5000</span></div>
+    </div>
+  </div>
+
+  <h3>4-3. 開啟瀏覽器</h3>
+  <p>打開瀏覽器，訪問 <code>http://localhost:5000</code>，你會看到啟動畫面（Splash Page）。</p>
+
+  <!-- 10-09: Splash 歡迎頁模擬 -->
+  <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);margin:20px 0;max-width:720px;margin-left:auto;margin-right:auto;">
+    <!-- 瀏覽器頂部列 -->
+    <div style="background:#e8eaed;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+      <div style="flex:1;background:#fff;border-radius:20px;padding:6px 16px;margin-left:12px;font-size:13px;color:#5f6368;font-family:'Segoe UI',sans-serif;">🔒 localhost:5000</div>
+    </div>
+    <!-- Splash 頁面內容 -->
+    <div style="padding:60px 40px;text-align:center;background:linear-gradient(180deg,#1a1b2e 0%,#2d1b69 50%,#1a1b2e 100%);min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="width:80px;height:80px;background:linear-gradient(135deg,#4285f4,#34a853);border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 8px 32px rgba(66,133,244,.4);">
+        <span style="color:#fff;font-size:40px;font-weight:bold;">N</span>
+      </div>
+      <h2 style="color:#fff;font-size:28px;margin:0 0 8px;font-family:'Segoe UI',sans-serif;font-weight:700;">NotebookLM 自動化系統</h2>
+      <p style="color:rgba(255,255,255,.6);font-size:15px;margin:0 0 32px;font-family:'Segoe UI',sans-serif;">用自然語言操控 Google NotebookLM 的所有功能</p>
+      <button style="background:linear-gradient(135deg,#4285f4,#5e97f6);color:#fff;border:none;padding:14px 40px;border-radius:28px;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(66,133,244,.4);font-family:'Segoe UI',sans-serif;transition:transform .2s;">進入系統</button>
+      <div style="margin-top:32px;display:flex;gap:24px;">
+        <span style="color:rgba(255,255,255,.4);font-size:12px;font-family:'Segoe UI',sans-serif;">v1.0.0</span>
+        <span style="color:rgba(255,255,255,.4);font-size:12px;font-family:'Segoe UI',sans-serif;">Powered by notebooklm-py</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="box success">
+    ✅ <strong>安裝完成！</strong>從下一張投影片開始，我們來看看這個系統的介面與功能。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 10: 完整安裝流程總覽（一張圖搞定） -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>📋 安裝流程總覽（一張圖搞定）</h2>
+  <p>把前面四個步驟串起來，完整安裝流程如下：</p>
+
+  <!-- 垂直四步驟流程 -->
+  <div style="max-width:700px; margin:0 auto;">
+    <!-- 步驟一 -->
+    <div style="background:#fff8e1; border:2px solid #f0ad4e; border-radius:14px; padding:18px 24px;">
+      <div style="font-size:20px; font-weight:800; color:#856404; margin-bottom:8px;">步驟一：安裝核心工具</div>
+      <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:15px; color:#333; line-height:1.8; background:#fffdf0; border-radius:8px; padding:10px 16px;">
+        <code>$ pip install notebooklm-py</code><br>
+        <code>$ pip install "notebooklm-py[browser]"</code><br>
+        <code>$ playwright install chromium</code>
+      </div>
+    </div>
+    <div style="text-align:center; font-size:28px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- 步驟二 -->
+    <div style="background:#e3f2fd; border:2px solid #2196f3; border-radius:14px; padding:18px 24px;">
+      <div style="font-size:20px; font-weight:800; color:#1565c0; margin-bottom:8px;">步驟二：下載專案 + 安裝依賴</div>
+      <div style="font-size:16px; color:#333; margin-bottom:6px;">GitHub 下載：<a href="https://github.com/ChatGPT3a01/AI-Skill-Workshop" target="_blank" style="color:#0969da; font-weight:600;">ChatGPT3a01/AI-Skill-Workshop</a></div>
+      <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:15px; color:#333; line-height:1.8; background:#f0f7ff; border-radius:8px; padding:10px 16px;">
+        <code>$ cd notebooklm-automation</code><br>
+        <code>$ pip install -r requirements.txt</code>
+      </div>
+    </div>
+    <div style="text-align:center; font-size:28px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- 步驟三 -->
+    <div style="background:#e8f5e9; border:2px solid #4caf50; border-radius:14px; padding:18px 24px;">
+      <div style="font-size:20px; font-weight:800; color:#2e7d32; margin-bottom:8px;">步驟三：登入 Google 帳號</div>
+      <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:15px; color:#333; line-height:1.8; background:#f0fff0; border-radius:8px; padding:10px 16px;">
+        <code>$ notebooklm login</code>
+      </div>
+      <div style="font-size:15px; color:#555; margin-top:6px;">→ 瀏覽器自動開啟 → Google 登入 → 按 Enter 確認</div>
+    </div>
+    <div style="text-align:center; font-size:28px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- 步驟四 -->
+    <div style="background:#f3e5f5; border:2px solid #9c27b0; border-radius:14px; padding:18px 24px;">
+      <div style="font-size:20px; font-weight:800; color:#6a1b9a; margin-bottom:8px;">步驟四：啟動並開始使用</div>
+      <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:15px; color:#333; line-height:1.8; background:#faf0ff; border-radius:8px; padding:10px 16px;">
+        <code>$ python app.py</code>
+      </div>
+      <div style="font-size:15px; color:#555; margin-top:6px;">→ 瀏覽器開啟 <strong>http://localhost:5000</strong> 🎉</div>
+    </div>
+  </div>
+
+  <h3>系統需求確認清單</h3>
+  <table>
+    <tr><th>項目</th><th>需求</th><th>檢查方式</th></tr>
+    <tr><td>作業系統</td><td>Windows 10/11、macOS、Linux</td><td>—</td></tr>
+    <tr><td>Python 版本</td><td>3.9 以上</td><td><code>python --version</code></td></tr>
+    <tr><td>pip 版本</td><td>最新版</td><td><code>pip --version</code></td></tr>
+    <tr><td>網路連線</td><td>需要穩定連網</td><td>ping google.com</td></tr>
+    <tr><td>Google 帳號</td><td>需要能登入 NotebookLM</td><td>瀏覽器測試</td></tr>
+    <tr><td>RAM</td><td>建議 8GB 以上</td><td>工作管理員查看</td></tr>
+    <tr><td>硬碟空間</td><td>500MB 以上（含 Chromium）</td><td>—</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 11: 主介面導覽——三欄式佈局 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🖥️ 主介面導覽：三欄式佈局</h2>
+  <p>進入主介面後，你會看到一個<strong>三欄式佈局</strong>的操作介面，每個區域各有功能：</p>
+
+  <!-- 10-10: 主介面三欄式佈局模擬 -->
+  <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);margin:20px 0;max-width:760px;margin-left:auto;margin-right:auto;">
+    <!-- 瀏覽器頂部列 -->
+    <div style="background:#e8eaed;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+      <div style="flex:1;background:#fff;border-radius:20px;padding:6px 16px;margin-left:12px;font-size:13px;color:#5f6368;font-family:'Segoe UI',sans-serif;">🔒 localhost:5000/main</div>
+    </div>
+    <!-- 三欄佈局 -->
+    <div style="display:flex;min-height:320px;font-family:'Segoe UI',sans-serif;">
+      <!-- 左側欄：快捷按鈕 -->
+      <div style="width:64px;background:#1a1b2e;display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:12px;">
+        <div style="width:40px;height:40px;background:#4285f4;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;" title="新增筆記本">+</div>
+        <div style="width:40px;height:40px;background:#34a853;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;" title="列出筆記本">📋</div>
+        <div style="width:40px;height:40px;background:#fbbc04;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;" title="匯入來源">📎</div>
+        <div style="width:40px;height:40px;background:#ea4335;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;" title="生成 Podcast">🎙️</div>
+        <div style="width:40px;height:40px;background:#8b5cf6;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;" title="生成摘要">📝</div>
+        <div style="width:40px;height:40px;background:#06b6d4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;" title="生成測驗">❓</div>
+        <div style="flex:1;"></div>
+        <div style="width:40px;height:40px;background:rgba(255,255,255,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;" title="設定">⚙️</div>
+      </div>
+      <!-- 中間欄：對話區 -->
+      <div style="flex:1;background:#f8f9fa;display:flex;flex-direction:column;">
+        <div style="padding:12px 16px;border-bottom:1px solid #e8eaed;font-size:14px;font-weight:600;color:#202124;">對話互動區</div>
+        <div style="flex:1;padding:16px;overflow:auto;">
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <div style="width:32px;height:32px;background:#e8eaed;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">👤</div>
+            <div style="background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;color:#1f2328;box-shadow:0 1px 3px rgba(0,0,0,.08);max-width:80%;">列出我所有的筆記本</div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:16px;">
+            <div style="background:#4285f4;border-radius:12px;padding:10px 14px;font-size:13px;color:#fff;max-width:80%;">找到 3 個筆記本：<br>1. AI 教學研究<br>2. 期末報告素材<br>3. 會議記錄彙整</div>
+            <div style="width:32px;height:32px;background:#4285f4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0;">N</div>
+          </div>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid #e8eaed;">
+          <div style="background:#fff;border:1px solid #dadce0;border-radius:24px;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+            <span style="color:#9aa0a6;font-size:14px;flex:1;">輸入指令...</span>
+            <div style="width:32px;height:32px;background:#4285f4;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">▶</div>
+          </div>
+        </div>
+      </div>
+      <!-- 右側欄：功能面板 -->
+      <div style="width:180px;background:#fff;border-left:1px solid #e8eaed;padding:16px;font-size:13px;">
+        <div style="font-weight:600;color:#202124;margin-bottom:12px;">功能選單</div>
+        <div style="padding:8px;background:#e8f0fe;border-radius:8px;margin-bottom:8px;color:#1a73e8;cursor:pointer;">📋 筆記本管理</div>
+        <div style="padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:8px;color:#5f6368;">📎 來源管理</div>
+        <div style="padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:8px;color:#5f6368;">🎙️ 音訊生成</div>
+        <div style="padding:8px;background:#f8f9fa;border-radius:8px;margin-bottom:8px;color:#5f6368;">📝 內容生成</div>
+        <div style="font-weight:600;color:#202124;margin:16px 0 8px;">目前筆記本</div>
+        <div style="padding:8px;background:#e8f5e9;border-radius:8px;color:#2e7d32;font-size:12px;">AI 教學研究</div>
+        <div style="font-weight:600;color:#202124;margin:16px 0 8px;">狀態</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#34a853;"><span style="width:8px;height:8px;border-radius:50%;background:#34a853;display:inline-block;"></span> 已連線</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4>📌 左側欄：快捷按鈕</h4>
+      <p>
+        <strong>筆記本選擇器</strong>（下拉選單）<br><br>
+        功能快捷圖示按鈕：<br>
+        🎙️ Podcast ｜ 🎬 影片<br>
+        📊 簡報 ｜ ❓ 測驗<br>
+        🃏 閃卡 ｜ 📄 報告<br>
+        🧠 心智圖 ｜ 📈 資訊圖表<br>
+        📋 數據表<br><br>
+        滑鼠懸停可看功能名稱
+      </p>
+    </div>
+    <div class="concept-card">
+      <h4>💬 中間區：自然語言輸入</h4>
+      <p>
+        這是你<strong>下指令</strong>的地方<br><br>
+        直接用中文輸入需求：<br>
+        「列出我所有的筆記本」<br>
+        「幫我生成 Podcast」<br>
+        「新增這個網址 https://...」<br><br>
+        點擊<strong>「執行」按鈕</strong>送出指令
+      </p>
+    </div>
+    <div class="concept-card">
+      <h4>📊 右側欄：結果顯示</h4>
+      <p>
+        執行結果會在這裡呈現<br><br>
+        不同功能有不同顯示方式：<br>
+        • 筆記本列表 → 表格<br>
+        • 問答結果 → 格式化文字<br>
+        • 心智圖 → 樹狀結構<br>
+        • 背景任務 → 進度狀態<br><br>
+        也可查看<strong>任務執行歷史</strong>
+      </p>
+    </div>
+  </div>
+
+  <!-- 10-11: 主介面標註版 -->
+  <div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.12);margin:20px 0;max-width:760px;margin-left:auto;margin-right:auto;position:relative;">
+    <!-- 瀏覽器頂部列 -->
+    <div style="background:#e8eaed;padding:10px 16px;display:flex;align-items:center;gap:8px;">
+      <span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+      <span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+      <div style="flex:1;background:#fff;border-radius:20px;padding:6px 16px;margin-left:12px;font-size:13px;color:#5f6368;font-family:'Segoe UI',sans-serif;">🔒 localhost:5000/main</div>
+    </div>
+    <!-- 三欄佈局 + 標註 -->
+    <div style="display:flex;min-height:240px;font-family:'Segoe UI',sans-serif;position:relative;">
+      <!-- 左側欄 -->
+      <div style="width:64px;background:#1a1b2e;display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:10px;position:relative;border:3px solid #ea4335;">
+        <div style="width:36px;height:36px;background:#4285f4;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">+</div>
+        <div style="width:36px;height:36px;background:#34a853;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">📋</div>
+        <div style="width:36px;height:36px;background:#fbbc04;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">📎</div>
+        <div style="width:36px;height:36px;background:#ea4335;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;">🎙️</div>
+        <!-- 標註 1 -->
+        <div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#ea4335;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:bold;white-space:nowrap;z-index:2;">① 快捷操作區</div>
+      </div>
+      <!-- 中間欄 -->
+      <div style="flex:1;background:#f8f9fa;display:flex;flex-direction:column;position:relative;border:3px solid #4285f4;">
+        <div style="padding:10px 14px;border-bottom:1px solid #e8eaed;font-size:13px;font-weight:600;color:#202124;">對話互動區</div>
+        <div style="flex:1;padding:14px;">
+          <div style="display:flex;gap:8px;margin-bottom:12px;">
+            <div style="width:28px;height:28px;background:#e8eaed;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">👤</div>
+            <div style="background:#fff;border-radius:10px;padding:8px 12px;font-size:12px;color:#1f2328;box-shadow:0 1px 3px rgba(0,0,0,.08);">列出我所有的筆記本</div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <div style="background:#4285f4;border-radius:10px;padding:8px 12px;font-size:12px;color:#fff;">找到 3 個筆記本...</div>
+            <div style="width:28px;height:28px;background:#4285f4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0;">N</div>
+          </div>
+        </div>
+        <div style="padding:10px 14px;border-top:1px solid #e8eaed;">
+          <div style="background:#fff;border:1px solid #dadce0;border-radius:20px;padding:8px 14px;font-size:12px;color:#9aa0a6;">輸入指令...</div>
+        </div>
+        <!-- 標註 2 -->
+        <div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#4285f4;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:bold;white-space:nowrap;z-index:2;">② 對話互動區</div>
+      </div>
+      <!-- 右側欄 -->
+      <div style="width:160px;background:#fff;border-left:1px solid #e8eaed;padding:14px;font-size:12px;position:relative;border:3px solid #34a853;">
+        <div style="font-weight:600;color:#202124;margin-bottom:10px;">功能選單</div>
+        <div style="padding:6px;background:#e8f0fe;border-radius:6px;margin-bottom:6px;color:#1a73e8;">📋 筆記本管理</div>
+        <div style="padding:6px;background:#f8f9fa;border-radius:6px;margin-bottom:6px;color:#5f6368;">📎 來源管理</div>
+        <div style="padding:6px;background:#f8f9fa;border-radius:6px;margin-bottom:6px;color:#5f6368;">🎙️ 音訊生成</div>
+        <div style="font-weight:600;color:#202124;margin:12px 0 6px;">狀態列</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#34a853;"><span style="width:6px;height:6px;border-radius:50%;background:#34a853;display:inline-block;"></span> 已連線</div>
+        <!-- 標註 3 -->
+        <div style="position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#34a853;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:bold;white-space:nowrap;z-index:2;">③ 資訊顯示區</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 12: NLP Parser 解析機制 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🧠 NLP Parser：自然語言如何變成操作？</h2>
+  <p>這是整個系統最核心的部分——<strong>NLP Parser（自然語言解析器）</strong>負責把你說的話，轉換成系統可執行的指令。</p>
+
+  <h3>解析流程</h3>
+  <!-- 垂直五步驟流程 -->
+  <div style="max-width:680px; margin:0 auto;">
+    <!-- 使用者輸入 -->
+    <div style="background:#e3f2fd; border:2px solid #2196f3; border-radius:14px; padding:14px 20px; text-align:center;">
+      <div style="font-size:14px; color:#1565c0; font-weight:600;">使用者輸入</div>
+      <div style="font-size:20px; font-weight:700; color:#0d47a1; margin-top:4px;">「幫我生成 Podcast」</div>
+    </div>
+    <div style="text-align:center; font-size:24px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- Step 1 -->
+    <div style="background:#fff8e1; border:2px solid #f0ad4e; border-radius:14px; padding:14px 20px;">
+      <div style="font-size:18px; font-weight:800; color:#856404; margin-bottom:6px;">Step 1：NLP Parser 解析</div>
+      <div style="font-size:15px; color:#555; line-height:1.7;">
+        關鍵字匹配：找到「<strong>生成</strong>」+「<strong>Podcast</strong>」<br>
+        → 識別意圖：<code style="font-size:15px;">generate_audio</code>　→ 信心度：<strong>0.9</strong>
+      </div>
+    </div>
+    <div style="text-align:center; font-size:24px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- Step 2 -->
+    <div style="background:#e8f5e9; border:2px solid #4caf50; border-radius:14px; padding:14px 20px;">
+      <div style="font-size:18px; font-weight:800; color:#2e7d32; margin-bottom:6px;">Step 2：Execute API 接收意圖</div>
+      <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:14px; color:#333; background:#f0fff0; border-radius:8px; padding:8px 14px; line-height:1.7;">
+        intent = "generate_audio"<br>
+        → 呼叫 notebooklm_service.<strong>generate_audio()</strong>
+      </div>
+    </div>
+    <div style="text-align:center; font-size:24px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- Step 3 -->
+    <div style="background:#f3e5f5; border:2px solid #9c27b0; border-radius:14px; padding:14px 20px;">
+      <div style="font-size:18px; font-weight:800; color:#6a1b9a; margin-bottom:6px;">Step 3：notebooklm-py 執行 CLI 指令</div>
+      <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:15px; color:#333; background:#faf0ff; border-radius:8px; padding:8px 14px;">
+        $ notebooklm generate audio --json
+      </div>
+    </div>
+    <div style="text-align:center; font-size:24px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- Step 4 -->
+    <div style="background:#fff3e0; border:2px solid #ff9800; border-radius:14px; padding:14px 20px;">
+      <div style="font-size:18px; font-weight:800; color:#e65100; margin-bottom:6px;">Step 4：Playwright 瀏覽器自動化</div>
+      <div style="font-size:15px; color:#555; line-height:1.7;">
+        自動開啟 Chromium → 點擊「生成」按鈕 → 等待完成
+      </div>
+    </div>
+    <div style="text-align:center; font-size:24px; color:#aaa; margin:6px 0;">⬇️</div>
+    <!-- Step 5 -->
+    <div style="background:#e8f5e9; border:2px solid #2e7d32; border-radius:14px; padding:14px 20px; text-align:center;">
+      <div style="font-size:18px; font-weight:800; color:#1b5e20; margin-bottom:6px;">Step 5：結果回傳到前端 ✅</div>
+      <div style="font-family:'Cascadia Code','Consolas',monospace; font-size:14px; color:#333; background:#f0fff0; border-radius:8px; padding:8px 14px; display:inline-block;">
+        { "success": true, "data": {...} }
+      </div>
+    </div>
+  </div>
+
+  <h3>三種 NLP 解析模式比較</h3>
+  <table>
+    <tr><th>模式</th><th>原理</th><th>準確度</th><th>費用</th><th>適用場景</th></tr>
+    <tr><td><strong>關鍵字匹配</strong></td><td>比對預設關鍵字清單</td><td>中等</td><td>免費</td><td>入門使用、確定指令</td></tr>
+    <tr><td><strong>Gemini API</strong></td><td>Google AI 理解語意</td><td>高</td><td>需 API Key</td><td>模糊指令、複雜需求</td></tr>
+    <tr><td><strong>OpenAI API</strong></td><td>GPT 理解語意</td><td>高</td><td>需 API Key</td><td>模糊指令、複雜需求</td></tr>
+  </table>
+
+  <div class="box info">
+    💡 <strong>建議：</strong>先用「關鍵字匹配」模式（免費），熟悉系統後再考慮升級到 Gemini 或 OpenAI 模式。關鍵字匹配在指令明確時就夠用了！
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 13: 關鍵字匹配的意圖分類 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🏷️ NLP 意圖分類：五大操作類別</h2>
+  <p>NLP Parser 會把你的自然語言指令歸類到以下<strong>五大意圖類別</strong>，每個類別對應不同的 notebooklm-py 操作：</p>
+
+  <table>
+    <tr><th>意圖類別</th><th>對應關鍵字</th><th>觸發的 CLI 指令</th></tr>
+    <tr><td><strong>📚 筆記本管理</strong></td><td>列出、建立、刪除、重命名筆記本</td><td><code>notebooklm list / create / delete</code></td></tr>
+    <tr><td><strong>📎 來源管理</strong></td><td>新增網址、加入 YouTube、匯入 PDF</td><td><code>notebooklm source add</code></td></tr>
+    <tr><td><strong>🎙️ 內容生成</strong></td><td>生成 Podcast、影片、簡報、測驗、閃卡、報告、心智圖</td><td><code>notebooklm generate audio/video/...</code></td></tr>
+    <tr><td><strong>🔍 查詢問答</strong></td><td>問、查詢、搜尋、問答</td><td><code>notebooklm chat</code></td></tr>
+    <tr><td><strong>📥 下載匯出</strong></td><td>下載、匯出、儲存</td><td><code>notebooklm download</code></td></tr>
+  </table>
+
+  <h3>關鍵字匹配的程式碼原理</h3>
+  <pre>INTENT_PATTERNS = {
+    "list_notebooks": [
+        "列出筆記本", "顯示筆記本", "我的筆記本", "有哪些筆記本"
+    ],
+    "create_notebook": [
+        "建立筆記本", "新增筆記本", "創建筆記本"
+    ],
+    "generate_audio": [
+        "生成Podcast", "製作音訊", "產生播客", "生成播客"
+    ],
+    "add_source_url": [
+        "新增網址", "加入網頁", "匯入URL"
+    ],
+    # ... 更多意圖模式
+}</pre>
+
+  <div class="box success">
+    ✅ 只要你的指令包含這些關鍵字，系統就能正確識別你的意圖。想要更靈活的語意理解？切換到 Gemini 或 OpenAI 模式！
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 14: 完整功能矩陣 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>📊 完整功能一覽表</h2>
+  <p>以下是這個系統支援的<strong>所有功能</strong>，以及對應的自然語言指令範例：</p>
+
+  <table>
+    <tr><th>功能類別</th><th>支援內容</th><th>自然語言指令範例</th></tr>
+    <tr><td><strong>📚 筆記本管理</strong></td><td>建立、列表、重命名、刪除、分享</td><td>「列出我所有的筆記本」<br>「建立一個叫 AI 研究的筆記本」</td></tr>
+    <tr><td><strong>📎 來源匯入</strong></td><td>URL、YouTube、PDF/TXT/MD/DOCX、Google Drive、貼上文字</td><td>「新增這個網址 https://example.com」<br>「加入這個 YouTube 影片」</td></tr>
+    <tr><td><strong>💬 互動對話</strong></td><td>問答、對話歷史、自訂人設</td><td>「問一下這份文件的主要觀點」<br>「查詢文件中提到的預算」</td></tr>
+    <tr><td><strong>🎙️ 內容生成</strong></td><td>音訊 Podcast、影片、簡報、測驗、閃卡、報告、資訊圖表、腦圖</td><td>「幫我生成 Podcast」<br>「製作心智圖」<br>「生成 10 題測驗」</td></tr>
+    <tr><td><strong>🔬 研究工具</strong></td><td>網頁研究、Drive 研究、自動匯入來源</td><td>「搜尋相關網頁」<br>「從 Drive 匯入資料」</td></tr>
+    <tr><td><strong>📥 下載匯出</strong></td><td>音訊、影片、簡報、資訊圖表、報告、腦圖、數據表、測驗、閃卡</td><td>「下載 Podcast 音訊」<br>「匯出心智圖」</td></tr>
+  </table>
+
+  <!-- 模擬 features.html 功能總覽頁面 -->
+  <div style="border:1px solid #ddd; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.1);">
+    <!-- 瀏覽器 chrome -->
+    <div style="background:#dee1e6; padding:6px 12px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <div style="flex:1; background:white; border-radius:20px; padding:4px 14px; font-size:12px; color:#555; margin-left:8px;">
+        🔒 localhost:5000/features.html
+      </div>
+    </div>
+    <!-- 頁面內容 -->
+    <div style="background:#f8f9fa; padding:24px;">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:22px; font-weight:800; color:#1e3c72;">功能總覽</div>
+        <div style="font-size:14px; color:#888;">NotebookLM 自動化系統支援的所有操作</div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
+        <div style="background:white; border-radius:12px; padding:16px; border-left:4px solid #4285F4; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div style="font-size:22px; margin-bottom:4px;">📚</div>
+          <div style="font-size:16px; font-weight:700; color:#333;">筆記本管理</div>
+          <div style="font-size:13px; color:#777; margin-top:4px; line-height:1.5;">建立 · 列表 · 重命名 · 刪除 · 分享</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; border-left:4px solid #EA4335; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div style="font-size:22px; margin-bottom:4px;">📎</div>
+          <div style="font-size:16px; font-weight:700; color:#333;">來源匯入</div>
+          <div style="font-size:13px; color:#777; margin-top:4px; line-height:1.5;">URL · YouTube · PDF · Google Drive · 貼上文字</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; border-left:4px solid #FBBC05; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div style="font-size:22px; margin-bottom:4px;">💬</div>
+          <div style="font-size:16px; font-weight:700; color:#333;">互動對話</div>
+          <div style="font-size:13px; color:#777; margin-top:4px; line-height:1.5;">問答 · 對話歷史 · 自訂人設</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; border-left:4px solid #34A853; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div style="font-size:22px; margin-bottom:4px;">🎙️</div>
+          <div style="font-size:16px; font-weight:700; color:#333;">內容生成</div>
+          <div style="font-size:13px; color:#777; margin-top:4px; line-height:1.5;">Podcast · 影片 · 簡報 · 測驗 · 閃卡 · 報告 · 腦圖</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; border-left:4px solid #9c27b0; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div style="font-size:22px; margin-bottom:4px;">🔬</div>
+          <div style="font-size:16px; font-weight:700; color:#333;">研究工具</div>
+          <div style="font-size:13px; color:#777; margin-top:4px; line-height:1.5;">網頁研究 · Drive 研究 · 自動匯入</div>
+        </div>
+        <div style="background:white; border-radius:12px; padding:16px; border-left:4px solid #ff9800; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+          <div style="font-size:22px; margin-bottom:4px;">📥</div>
+          <div style="font-size:16px; font-weight:700; color:#333;">下載匯出</div>
+          <div style="font-size:13px; color:#777; margin-top:4px; line-height:1.5;">音訊 · 影片 · 簡報 · 圖表 · 報告 · 數據表</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box info">
+    💡 <strong>提示：</strong>點擊介面上方的「功能總覽」按鈕，可以看到每個功能的詳細說明與示範指令。非常適合初學者參考！
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 15: 實戰操作——筆記本管理 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🎯 實戰操作一：筆記本管理</h2>
+  <p>最基本的操作從<strong>筆記本管理</strong>開始。讓我們實際操作看看：</p>
+
+  <h3>操作 1：列出所有筆記本</h3>
+  <div class="two-col">
+    <div>
+      <p><strong>輸入指令：</strong></p>
+      <div class="cmd-example">列出我所有的筆記本</div>
+      <p>系統會呼叫 <code>notebooklm list --json</code>，回傳你 Google 帳號下所有 NotebookLM 筆記本的清單。</p>
+    </div>
+    <div>
+      <!-- 10-13: 列出筆記本對話模擬 -->
+      <div style="background:#f8f9fa;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);font-family:'Segoe UI',sans-serif;">
+        <div style="padding:12px 16px;background:#fff;border-bottom:1px solid #e8eaed;font-size:13px;font-weight:600;color:#5f6368;">對話紀錄</div>
+        <div style="padding:16px;">
+          <!-- 使用者訊息 -->
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <div style="width:30px;height:30px;background:#e8eaed;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</div>
+            <div style="background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;color:#1f2328;box-shadow:0 1px 3px rgba(0,0,0,.06);">列出我所有的筆記本</div>
+          </div>
+          <!-- AI 回覆 -->
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <div style="background:#4285f4;border-radius:12px;padding:12px 16px;font-size:13px;color:#fff;max-width:85%;">
+              <div style="margin-bottom:10px;">找到 <strong>3</strong> 個筆記本：</div>
+              <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:12px;">
+                <strong>1.</strong> AI 教學研究 <span style="opacity:.7;margin-left:8px;">| 建立：2026-02-15 | 來源：5 個</span>
+              </div>
+              <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:12px;">
+                <strong>2.</strong> 期末報告素材 <span style="opacity:.7;margin-left:8px;">| 建立：2026-02-20 | 來源：8 個</span>
+              </div>
+              <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:8px 12px;font-size:12px;">
+                <strong>3.</strong> 會議記錄彙整 <span style="opacity:.7;margin-left:8px;">| 建立：2026-02-28 | 來源：3 個</span>
+              </div>
+            </div>
+            <div style="width:30px;height:30px;background:#4285f4;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0;">N</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>操作 2：建立新筆記本</h3>
+  <div class="two-col">
+    <div>
+      <p><strong>輸入指令：</strong></p>
+      <div class="cmd-example">建立一個叫做「AI 教學研究」的筆記本</div>
+      <p>系統會呼叫 <code>notebooklm create "AI 教學研究"</code>，在 NotebookLM 中自動建立一個新筆記本。</p>
+    </div>
+    <div>
+      <!-- 10-14: 建立筆記本對話模擬 -->
+      <div style="background:#f8f9fa;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);font-family:'Segoe UI',sans-serif;">
+        <div style="padding:12px 16px;background:#fff;border-bottom:1px solid #e8eaed;font-size:13px;font-weight:600;color:#5f6368;">對話紀錄</div>
+        <div style="padding:16px;">
+          <!-- 使用者訊息 -->
+          <div style="display:flex;gap:8px;margin-bottom:16px;">
+            <div style="width:30px;height:30px;background:#e8eaed;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</div>
+            <div style="background:#fff;border-radius:12px;padding:10px 14px;font-size:13px;color:#1f2328;box-shadow:0 1px 3px rgba(0,0,0,.06);">建立一個叫做「AI 教學研究」的筆記本</div>
+          </div>
+          <!-- AI 回覆 -->
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <div style="background:#34a853;border-radius:12px;padding:12px 16px;font-size:13px;color:#fff;max-width:85%;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:15px;font-weight:600;">&#10003; 筆記本建立成功！</div>
+              <div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.8;">
+                <div><strong>名稱：</strong>AI 教學研究</div>
+                <div><strong>ID：</strong>notebook_a3f8k2m1</div>
+                <div><strong>建立時間：</strong>2026-03-01 14:32:05</div>
+                <div><strong>狀態：</strong>已設為目前使用中的筆記本</div>
+              </div>
+            </div>
+            <div style="width:30px;height:30px;background:#34a853;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;flex-shrink:0;">N</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>操作 3：刪除筆記本</h3>
+  <div class="cmd-example">刪除這個筆記本</div>
+  <p>會刪除目前選中的筆記本（左側下拉選單選擇的那個）。</p>
+
+  <div class="box warning">
+    ⚠️ <strong>注意：</strong>刪除操作無法復原！刪除前請確認已備份重要資料。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 16: 實戰操作——來源匯入與內容生成 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🎯 實戰操作二：來源匯入 + 內容生成</h2>
+  <p>建立筆記本後，接下來要<strong>匯入來源</strong>，然後<strong>生成內容</strong>。這是 NotebookLM 最強大的功能！</p>
+
+  <h3>匯入來源——加入網頁 URL</h3>
+  <div class="cmd-example">
+    新增這個網址 https://example.com/research-paper
+  </div>
+  <p>系統會自動將網頁內容加入目前選中的筆記本作為來源。NotebookLM 會解析網頁內容，讓 AI 能根據它來回答問題。</p>
+
+  <!-- 模擬對話：來源匯入成功 -->
+  <div style="background:#1a1b26; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+    <div style="background:#2a2b3d; padding:8px 16px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <span style="color:#888; font-size:12px; margin-left:8px;">NotebookLM 自動化 — 來源匯入</span>
+    </div>
+    <div style="padding:18px 24px; font-family:'Segoe UI',sans-serif; font-size:15px; line-height:1.8; color:#a9b1d6;">
+      <!-- 使用者輸入 -->
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="width:32px; height:32px; border-radius:50%; background:#7aa2f7; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0;">你</div>
+        <div style="background:#2a2b3d; border-radius:12px; padding:10px 16px; color:#c0caf5;">新增這個網址 https://example.com/ai-research-2026</div>
+      </div>
+      <!-- 系統回應 -->
+      <div style="display:flex; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:50%; background:#9ece6a; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0;">AI</div>
+        <div style="background:#1e2030; border-radius:12px; padding:14px 18px; flex:1;">
+          <div style="color:#9ece6a; font-weight:bold; font-size:16px; margin-bottom:8px;">✅ 來源匯入成功！</div>
+          <div style="background:#11111b; border-radius:8px; padding:12px 16px; margin-top:6px;">
+            <table style="width:100%; font-size:14px; color:#a9b1d6; margin:0;">
+              <tr><td style="color:#565f89; padding:3px 8px; border:none; width:90px;">標題</td><td style="color:#c0caf5; padding:3px 8px; border:none; font-weight:600;">AI Research Trends 2026 — 年度報告</td></tr>
+              <tr><td style="color:#565f89; padding:3px 8px; border:none;">類型</td><td style="padding:3px 8px; border:none;"><span style="background:#2a2b3d; color:#7aa2f7; padding:2px 10px; border-radius:12px; font-size:12px;">🌐 網頁</span></td></tr>
+              <tr><td style="color:#565f89; padding:3px 8px; border:none;">狀態</td><td style="padding:3px 8px; border:none;"><span style="color:#9ece6a;">● 已索引完成</span></td></tr>
+              <tr><td style="color:#565f89; padding:3px 8px; border:none;">內容量</td><td style="color:#a9b1d6; padding:3px 8px; border:none;">約 12,500 字、38 段落</td></tr>
+            </table>
+          </div>
+          <div style="color:#565f89; font-size:13px; margin-top:8px;">現在可以針對這份來源進行提問或生成內容了。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>匯入來源——加入 YouTube 影片</h3>
+  <div class="cmd-example">
+    加入這個 YouTube 影片 https://www.youtube.com/watch?v=xxxx
+  </div>
+  <p>NotebookLM 會自動擷取 YouTube 影片的字幕，作為可查詢的知識來源。</p>
+
+  <h3>生成 Podcast——一鍵產生 AI 對話式音訊</h3>
+  <div class="cmd-example">
+    幫我生成 Podcast
+  </div>
+  <p>NotebookLM 會根據筆記本中的所有來源，自動生成一段<strong>兩人對話式的 Podcast 音訊</strong>。這是 NotebookLM 最受歡迎的功能之一！</p>
+
+  <!-- 模擬對話：生成 Podcast 過程 + 完成 -->
+  <div style="background:#1a1b26; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+    <div style="background:#2a2b3d; padding:8px 16px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <span style="color:#888; font-size:12px; margin-left:8px;">NotebookLM 自動化 — 生成 Podcast</span>
+    </div>
+    <div style="padding:18px 24px; font-family:'Segoe UI',sans-serif; font-size:15px; line-height:1.8; color:#a9b1d6;">
+      <!-- 使用者輸入 -->
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="width:32px; height:32px; border-radius:50%; background:#7aa2f7; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0;">你</div>
+        <div style="background:#2a2b3d; border-radius:12px; padding:10px 16px; color:#c0caf5;">幫我生成 Podcast</div>
+      </div>
+      <!-- 系統回應：進行中 -->
+      <div style="display:flex; gap:10px; margin-bottom:14px;">
+        <div style="width:32px; height:32px; border-radius:50%; background:#9ece6a; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0;">AI</div>
+        <div style="background:#1e2030; border-radius:12px; padding:14px 18px; flex:1;">
+          <div style="color:#e0af68; font-weight:bold; margin-bottom:8px;">🎙️ 正在生成 Podcast...</div>
+          <div style="color:#a9b1d6; font-size:14px; margin-bottom:6px;">使用來源：AI Research Trends 2026（共 1 份來源）</div>
+          <!-- 進度條 -->
+          <div style="background:#11111b; border-radius:8px; padding:12px 16px;">
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+              <span style="color:#565f89;">進度</span>
+              <span style="color:#e0af68;">生成中 — 預計 3-5 分鐘</span>
+            </div>
+            <div style="width:100%; background:#2a2b3d; border-radius:4px; height:14px; overflow:hidden;">
+              <div style="width:65%; background:linear-gradient(90deg,#e0af68,#f9e2af); height:100%; border-radius:4px;"></div>
+            </div>
+            <div style="font-size:12px; color:#565f89; margin-top:6px;">
+              ✅ 分析來源內容... ✅ 產生對話腳本... ⏳ 合成語音音檔...
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 系統回應：完成 -->
+      <div style="display:flex; gap:10px;">
+        <div style="width:32px; height:32px; border-radius:50%; background:#9ece6a; color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0;">AI</div>
+        <div style="background:#1e2030; border-radius:12px; padding:14px 18px; flex:1;">
+          <div style="color:#9ece6a; font-weight:bold; font-size:16px; margin-bottom:8px;">✅ Podcast 生成完成！</div>
+          <div style="background:#11111b; border-radius:8px; padding:12px 16px;">
+            <table style="width:100%; font-size:14px; color:#a9b1d6; margin:0;">
+              <tr><td style="color:#565f89; padding:3px 8px; border:none; width:80px;">格式</td><td style="padding:3px 8px; border:none;"><span style="background:#2a2b3d; color:#f9e2af; padding:2px 10px; border-radius:12px; font-size:12px;">🎙️ MP3 音訊</span></td></tr>
+              <tr><td style="color:#565f89; padding:3px 8px; border:none;">長度</td><td style="color:#c0caf5; padding:3px 8px; border:none;">8 分 42 秒</td></tr>
+              <tr><td style="color:#565f89; padding:3px 8px; border:none;">大小</td><td style="color:#c0caf5; padding:3px 8px; border:none;">12.3 MB</td></tr>
+            </table>
+          </div>
+          <div style="margin-top:10px;">
+            <span style="display:inline-block; background:#9ece6a; color:#1a1b26; padding:6px 18px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer;">⬇️ 下載 MP3</span>
+            <span style="display:inline-block; background:#7aa2f7; color:white; padding:6px 18px; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; margin-left:8px;">▶️ 線上播放</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box info">
+    💡 <strong>提示：</strong>Podcast 生成需要 2-5 分鐘，系統會在右側顯示任務進度。完成後可以直接下載 MP3 音訊。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 17: 實戰操作——更多生成功能 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🎯 實戰操作三：豐富的生成功能</h2>
+  <p>除了 Podcast，還有很多實用的生成功能。每個功能都只需要一句自然語言指令：</p>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4><span class="feature-icon">🧠</span>心智圖</h4>
+      <p><strong>指令：</strong>「製作心智圖」<br><br>自動分析文件結構，產生可視化的心智圖。可匯出為 Markdown 格式，方便後續編輯。</p>
+    </div>
+    <div class="concept-card">
+      <h4><span class="feature-icon">❓</span>測驗題</h4>
+      <p><strong>指令：</strong>「生成 10 題測驗」<br><br>根據文件內容自動出題，含選擇題與簡答題。老師備課神器！</p>
+    </div>
+    <div class="concept-card">
+      <h4><span class="feature-icon">🃏</span>閃卡</h4>
+      <p><strong>指令：</strong>「生成閃卡」<br><br>自動產生問答式閃卡，可匯出為 Anki 格式，方便複習。</p>
+    </div>
+  </div>
+
+  <div class="concept-grid">
+    <div class="concept-card">
+      <h4><span class="feature-icon">📄</span>報告</h4>
+      <p><strong>指令：</strong>「做一份報告」<br><br>自動整理文件重點，產生結構化的研究報告。</p>
+    </div>
+    <div class="concept-card">
+      <h4><span class="feature-icon">📊</span>簡報</h4>
+      <p><strong>指令：</strong>「生成簡報」<br><br>根據文件自動製作投影片內容，省去手動整理時間。</p>
+    </div>
+    <div class="concept-card">
+      <h4><span class="feature-icon">📈</span>資訊圖表</h4>
+      <p><strong>指令：</strong>「生成資訊圖表」<br><br>將數據可視化為資訊圖表，適合簡報或社群分享。</p>
+    </div>
+  </div>
+
+  <!-- 10-17: 快捷按鈕列模擬 -->
+  <div style="background:#1a1b2e;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.25);margin:20px auto;max-width:600px;padding:24px 32px;">
+    <div style="font-size:14px;color:rgba(255,255,255,.5);margin-bottom:16px;font-family:'Segoe UI',sans-serif;text-align:center;">快捷按鈕列（左側欄放大）</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:#4285f4;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;box-shadow:0 2px 8px rgba(66,133,244,.4);">+</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">新增筆記本</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:#34a853;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 8px rgba(52,168,83,.4);">📋</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">列出筆記本</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:#fbbc04;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 8px rgba(251,188,4,.4);">📎</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">匯入來源</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:#ea4335;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 8px rgba(234,67,53,.4);">🎙️</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">生成 Podcast</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:#8b5cf6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 8px rgba(139,92,246,.4);">📝</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">建立摘要</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:#06b6d4;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 8px rgba(6,182,212,.4);">❓</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">生成測驗</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:#f97316;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 2px 8px rgba(249,115,22,.4);">📈</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">資訊圖表</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div style="width:52px;height:52px;background:rgba(255,255,255,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;">⚙️</div>
+        <span style="color:rgba(255,255,255,.7);font-size:11px;font-family:'Segoe UI',sans-serif;">設定</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="box success">
+    ✅ 所有功能都可以透過左側的<strong>快捷按鈕</strong>一鍵執行，不需要記指令！滑鼠懸停即可看到功能名稱。
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 18: 設定頁面介紹 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>⚙️ 設定頁面：NLP 模式與主題切換</h2>
+  <p>進入「設定」頁面，可以調整 NLP 解析模式和介面主題。</p>
+
+  <!-- 模擬設定頁面 -->
+  <div style="border:1px solid #ddd; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.1);">
+    <!-- 瀏覽器 chrome -->
+    <div style="background:#dee1e6; padding:6px 12px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <div style="flex:1; background:white; border-radius:20px; padding:4px 14px; font-size:12px; color:#555; margin-left:8px;">
+        🔒 localhost:5000/settings
+      </div>
+    </div>
+    <!-- 設定頁面內容 -->
+    <div style="background:#f8f9fa; padding:24px 28px;">
+      <div style="font-size:22px; font-weight:800; color:#1e3c72; margin-bottom:20px;">⚙️ 系統設定</div>
+
+      <!-- NLP 模式 -->
+      <div style="background:white; border-radius:12px; padding:18px 22px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <div style="font-size:17px; font-weight:700; color:#333; margin-bottom:12px;">NLP 解析模式</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#e3f2fd; border:2px solid #2196f3; border-radius:10px; cursor:pointer;">
+            <span style="width:20px; height:20px; border-radius:50%; border:2px solid #2196f3; background:#2196f3; display:flex; align-items:center; justify-content:center;">
+              <span style="width:8px; height:8px; border-radius:50%; background:white;"></span>
+            </span>
+            <span style="font-size:15px; font-weight:600; color:#1565c0;">關鍵字匹配</span>
+            <span style="font-size:13px; color:#888; margin-left:auto;">免費 · 不需 API Key</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border:2px solid #e0e0e0; border-radius:10px; cursor:pointer;">
+            <span style="width:20px; height:20px; border-radius:50%; border:2px solid #bbb; background:white;"></span>
+            <span style="font-size:15px; font-weight:600; color:#333;">Gemini API</span>
+            <span style="font-size:13px; color:#888; margin-left:auto;">需 Google AI API Key</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border:2px solid #e0e0e0; border-radius:10px; cursor:pointer;">
+            <span style="width:20px; height:20px; border-radius:50%; border:2px solid #bbb; background:white;"></span>
+            <span style="font-size:15px; font-weight:600; color:#333;">OpenAI API</span>
+            <span style="font-size:13px; color:#888; margin-left:auto;">需 OpenAI API Key</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 其他設定：兩欄 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <!-- 主題 -->
+        <div style="background:white; border-radius:12px; padding:18px 22px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <div style="font-size:17px; font-weight:700; color:#333; margin-bottom:10px;">介面主題</div>
+          <div style="display:flex; gap:10px;">
+            <div style="flex:1; text-align:center; padding:10px; background:#f0f4ff; border:2px solid #2196f3; border-radius:10px; cursor:pointer;">
+              <div style="font-size:20px;">☀️</div>
+              <div style="font-size:13px; font-weight:600; color:#1565c0;">淺色模式</div>
+            </div>
+            <div style="flex:1; text-align:center; padding:10px; background:#fff; border:2px solid #e0e0e0; border-radius:10px; cursor:pointer;">
+              <div style="font-size:20px;">🌙</div>
+              <div style="font-size:13px; font-weight:600; color:#555;">深色模式</div>
+            </div>
+          </div>
+        </div>
+        <!-- 語言 -->
+        <div style="background:white; border-radius:12px; padding:18px 22px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+          <div style="font-size:17px; font-weight:700; color:#333; margin-bottom:10px;">介面語言</div>
+          <div style="padding:10px 14px; background:#f8f9fa; border:2px solid #e0e0e0; border-radius:10px; display:flex; align-items:center; justify-content:space-between;">
+            <span style="font-size:15px; color:#333;">🇹🇼 繁體中文</span>
+            <span style="font-size:12px; color:#aaa;">▼</span>
+          </div>
+          <div style="font-size:17px; font-weight:700; color:#333; margin:14px 0 10px;">API Key 管理</div>
+          <div style="padding:10px 14px; background:#f8f9fa; border:2px solid #e0e0e0; border-radius:10px;">
+            <div style="font-size:13px; color:#888;">Gemini API Key</div>
+            <div style="font-size:14px; color:#333; font-family:monospace;">••••••••••••••••</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>NLP 解析模式設定</h3>
+  <div class="two-col">
+    <div>
+      <h3>選項一：關鍵字匹配（預設）</h3>
+      <ul>
+        <li>不需要 API Key</li>
+        <li>完全免費</li>
+        <li>適合明確的指令用語</li>
+        <li>例：「生成 Podcast」、「列出筆記本」</li>
+      </ul>
+
+      <h3>選項二：Gemini API</h3>
+      <ul>
+        <li>需要 Google AI API Key</li>
+        <li>語意理解更精準</li>
+        <li>能處理模糊、口語化的指令</li>
+        <li>例：「幫我做個音檔出來」也能理解</li>
+      </ul>
+    </div>
+    <div>
+      <h3>選項三：OpenAI API</h3>
+      <ul>
+        <li>需要 OpenAI API Key</li>
+        <li>同樣高精度語意理解</li>
+        <li>適合已有 OpenAI Key 的使用者</li>
+      </ul>
+
+      <h3>介面主題選擇</h3>
+      <table>
+        <tr><th>主題</th><th>風格</th></tr>
+        <tr><td>簡約現代</td><td>預設，乾淨清爽</td></tr>
+        <tr><td>豐富視覺</td><td>更多色彩與動畫</td></tr>
+        <tr><td>深色主題</td><td>暗色背景，護眼</td></tr>
+        <tr><td>淺色主題</td><td>純白背景，簡潔</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 模擬 NLP 模式選擇放大 -->
+  <div style="border:2px solid #2196f3; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(33,150,243,0.15);">
+    <div style="background:#e3f2fd; padding:10px 18px; font-size:14px; font-weight:700; color:#1565c0;">🔍 NLP 解析模式 — 放大檢視</div>
+    <div style="background:white; padding:20px 24px;">
+      <!-- 關鍵字模式 -->
+      <div style="display:flex; gap:16px; margin-bottom:16px;">
+        <div style="flex:1; border:2px solid #4caf50; border-radius:12px; padding:16px; background:#f0fff0;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="width:22px; height:22px; border-radius:50%; border:2px solid #4caf50; background:#4caf50; display:flex; align-items:center; justify-content:center;">
+              <span style="width:8px; height:8px; border-radius:50%; background:white;"></span>
+            </span>
+            <span style="font-size:18px; font-weight:700; color:#2e7d32;">關鍵字比對模式</span>
+            <span style="background:#4caf50; color:white; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:600;">預設</span>
+          </div>
+          <div style="font-size:14px; color:#555; line-height:1.7;">
+            <div style="margin-bottom:4px;">✅ <strong>免費</strong>，不需要任何 API Key</div>
+            <div style="margin-bottom:4px;">✅ 比對預設關鍵字清單（生成 → generate）</div>
+            <div style="margin-bottom:4px;">✅ 速度極快，本地運算</div>
+            <div>⚠️ 只能處理<strong>明確指令</strong>，口語化指令可能失敗</div>
+          </div>
+          <div style="background:#e8f5e9; border-radius:8px; padding:8px 12px; margin-top:10px; font-size:13px; color:#2e7d32;">
+            <strong>範例：</strong>「生成 Podcast」✅ ｜「列出筆記本」✅ ｜「幫我做個音檔出來」❌
+          </div>
+        </div>
+        <!-- AI 語意模式 -->
+        <div style="flex:1; border:2px solid #e0e0e0; border-radius:12px; padding:16px; background:#fafafa;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+            <span style="width:22px; height:22px; border-radius:50%; border:2px solid #bbb; background:white;"></span>
+            <span style="font-size:18px; font-weight:700; color:#333;">AI 語意理解模式</span>
+            <span style="background:#ff9800; color:white; padding:2px 10px; border-radius:12px; font-size:11px; font-weight:600;">進階</span>
+          </div>
+          <div style="font-size:14px; color:#555; line-height:1.7;">
+            <div style="margin-bottom:4px;">✅ 用 AI 理解語意，<strong>模糊指令也能懂</strong></div>
+            <div style="margin-bottom:4px;">✅ 支援 Gemini API 或 OpenAI API</div>
+            <div style="margin-bottom:4px;">✅ 口語化、自然語言都能理解</div>
+            <div>⚠️ 需要 API Key，<strong>每次解析會消耗少量費用</strong></div>
+          </div>
+          <div style="background:#fff3e0; border-radius:8px; padding:8px 12px; margin-top:10px; font-size:13px; color:#e65100;">
+            <strong>範例：</strong>「幫我做個音檔出來」✅ ｜「把這些資料變成可以聽的」✅ ｜「弄個播客」✅
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 19: 專案檔案結構 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>📂 專案檔案結構解析</h2>
+  <p>了解專案結構，才能更深入地客製化與擴充功能。以下是完整的檔案結構與說明：</p>
+
+  <div class="two-col">
+    <div>
+      <pre>讓NotebookLM自動化/
+│
+├── app.py              ← Flask 主程式入口
+├── config.py           ← Flask 設定檔
+├── config.json         ← 使用者設定
+├── requirements.txt    ← Python 依賴
+│
+├── routes/             ← API 路由層
+│   ├── auth.py         ← 認證 API
+│   ├── notebooks.py    ← 筆記本管理
+│   ├── sources.py      ← 來源管理
+│   ├── artifacts.py    ← 工件管理
+│   ├── settings.py     ← 設定 API
+│   └── execute.py      ← 自然語言執行
+│
+├── services/           ← 業務邏輯層
+│   ├── nlp_parser.py   ← NLP 解析器
+│   ├── notebooklm_service.py
+│   │                   ← CLI 封裝
+│   ├── config_manager.py
+│   │                   ← 設定管理
+│   └── task_manager.py ← 背景任務
+│
+├── templates/          ← HTML 模板
+│   ├── base.html
+│   ├── splash.html
+│   ├── index.html
+│   ├── features.html
+│   └── settings.html
+│
+└── static/             ← 靜態資源
+    ├── css/style.css
+    ├── js/main.js
+    └── images/</pre>
+    </div>
+    <div>
+      <h3>四大核心模組</h3>
+
+      <div class="concept-card" style="margin-bottom:12px;">
+        <h4>1. NLP Parser</h4>
+        <p><code>services/nlp_parser.py</code><br>將自然語言 → 意圖（intent）<br>支援三種解析模式</p>
+      </div>
+
+      <div class="concept-card" style="margin-bottom:12px;">
+        <h4>2. NotebookLM Service</h4>
+        <p><code>services/notebooklm_service.py</code><br>封裝 notebooklm CLI 指令<br>subprocess 呼叫 + JSON 解析</p>
+      </div>
+
+      <div class="concept-card" style="margin-bottom:12px;">
+        <h4>3. Execute API</h4>
+        <p><code>routes/execute.py</code><br>接收自然語言 → 解析 → 執行<br>前後端的橋梁</p>
+      </div>
+
+      <div class="concept-card" style="margin-bottom:12px;">
+        <h4>4. Task Manager</h4>
+        <p><code>services/task_manager.py</code><br>背景任務管理（多執行緒）<br>避免前端等待逾時</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 20: Claude Code Skill 整合 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🔗 Claude Code Skill 整合 NotebookLM</h2>
+  <p>除了 Flask GUI，你也可以直接在 <strong>Claude Code</strong> 中用自然語言操控 NotebookLM！<br>這就是我們 Day 1 和 Day 2 學的 <strong>Skill 模組</strong>的實際應用。</p>
+
+  <h3>Skill 安裝位置</h3>
+  <div class="cmd-example">
+    <span class="comment"># Skill 檔案安裝到以下路徑</span><br>
+    C:\Users\user\.claude\commands\notebooklm.md
+  </div>
+
+  <h3>在 Claude Code 中使用</h3>
+  <p>安裝好 Skill 後，你可以直接在 Claude Code 中對話，不需要開 Flask GUI：</p>
+
+  <div class="two-col">
+    <div>
+      <div class="box info" style="font-size:15px;">
+        <strong>你：</strong>「幫我建立一個叫做『教學資料庫』的 NotebookLM 筆記本，然後把這個 PDF 加進去」<br><br>
+        <strong>Claude：</strong>收到！我來幫你執行：<br>
+        1. 建立筆記本「教學資料庫」...<br>
+        2. 新增 PDF 來源...<br>
+        3. 完成！筆記本已建立，PDF 已匯入。
+      </div>
+    </div>
+    <div>
+      <div class="box info" style="font-size:15px;">
+        <strong>你：</strong>「用 NotebookLM 把這份研究報告做成 Podcast」<br><br>
+        <strong>Claude：</strong>好的！執行步驟：<br>
+        1. 上傳研究報告到 NotebookLM...<br>
+        2. 觸發 Podcast 生成...<br>
+        3. 等待生成中（約 3 分鐘）...<br>
+        4. 下載完成！音訊檔案在 ./output/podcast.mp3
+      </div>
+    </div>
+  </div>
+
+  <!-- 模擬 Claude Code 終端機對話 -->
+  <div style="background:#1a1b26; border-radius:14px; overflow:hidden; margin:16px 0; box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+    <div style="background:#2a2b3d; padding:8px 16px; display:flex; align-items:center; gap:8px;">
+      <span style="width:10px; height:10px; border-radius:50%; background:#ff5f57;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></span>
+      <span style="width:10px; height:10px; border-radius:50%; background:#28c840;"></span>
+      <span style="color:#888; font-size:12px; margin-left:8px;">Claude Code — NotebookLM Skill 整合示範</span>
+    </div>
+    <div style="padding:20px 24px; font-family:'Cascadia Code','Consolas',monospace; font-size:14px; line-height:1.9; color:#a9b1d6;">
+      <!-- 使用者指令 -->
+      <div><span style="color:#bb9af7; font-weight:bold;">claude&gt;</span> <span style="color:#c0caf5;">幫我建立一個叫做「教學資料庫」的 NotebookLM 筆記本，然後把這個 PDF 加進去</span></div>
+
+      <!-- Claude 回應 -->
+      <div style="margin-top:12px; background:#1e2030; border-left:4px solid #9ece6a; padding:14px 18px; border-radius:0 8px 8px 0;">
+        <div style="color:#9ece6a; font-weight:bold; margin-bottom:8px;">使用 Skill: notebooklm-automation</div>
+        <div style="color:#a9b1d6;">  1. 建立筆記本「教學資料庫」...</div>
+        <div style="color:#a9b1d6;">     <span style="color:#7aa2f7;">→</span> notebooklm create "教學資料庫" <span style="color:#9ece6a;">✅</span></div>
+        <div style="color:#a9b1d6;">  2. 上傳 PDF 作為來源...</div>
+        <div style="color:#a9b1d6;">     <span style="color:#7aa2f7;">→</span> notebooklm source add ./研究報告.pdf <span style="color:#9ece6a;">✅</span></div>
+        <div style="margin-top:8px; color:#9ece6a; font-weight:bold;">✅ 完成！筆記本「教學資料庫」已建立，PDF 已匯入為來源。</div>
+      </div>
+
+      <!-- 第二個指令 -->
+      <div style="margin-top:18px;"><span style="color:#bb9af7; font-weight:bold;">claude&gt;</span> <span style="color:#c0caf5;">用 NotebookLM 把這份研究報告做成 Podcast</span></div>
+
+      <div style="margin-top:12px; background:#1e2030; border-left:4px solid #e0af68; padding:14px 18px; border-radius:0 8px 8px 0;">
+        <div style="color:#e0af68; font-weight:bold; margin-bottom:8px;">使用 Skill: notebooklm-automation</div>
+        <div style="color:#a9b1d6;">  1. 選取筆記本「教學資料庫」... <span style="color:#9ece6a;">✅</span></div>
+        <div style="color:#a9b1d6;">  2. 觸發 Podcast 生成...</div>
+        <div style="color:#a9b1d6;">     <span style="color:#7aa2f7;">→</span> notebooklm generate audio --json</div>
+        <div style="color:#e0af68;">  3. 生成中... <span style="color:#565f89;">（約 3 分鐘）</span></div>
+        <div style="color:#a9b1d6;">  4. 下載音訊檔案... <span style="color:#9ece6a;">✅</span></div>
+        <div style="margin-top:8px; color:#9ece6a; font-weight:bold;">✅ Podcast 已生成！音訊檔案儲存在 ./output/podcast.mp3（8 分 15 秒）</div>
+      </div>
+
+      <!-- 提示 -->
+      <div style="margin-top:14px; color:#565f89; font-size:13px;">
+        💡 Skill 路徑：~/.claude/skills/notebooklm-automation/SKILL.md
+      </div>
+    </div>
+  </div>
+
+  <div class="box success">
+    ✅ <strong>雙軌使用：</strong>Flask GUI 適合視覺化操作，Claude Code Skill 適合快速指令。兩種方式都能完整控制 NotebookLM！
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 21: 實際應用案例 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>💼 實際應用案例</h2>
+  <p>這套系統可以應用在各種專業場景。以下是三個典型使用案例：</p>
+
+  <div class="step-grid">
+    <div class="step-card">
+      <h4>📖 案例一：學術文獻批次處理</h4>
+      <p>
+        <strong>情境：</strong>研究生需要整理 30 篇 PDF 論文<br><br>
+        <strong>自動化流程：</strong><br>
+        1. 批次上傳所有 PDF 到筆記本<br>
+        2. 自動生成每篇摘要報告<br>
+        3. 建立跨論文主題心智圖<br>
+        4. 匯出閃卡進行複習<br><br>
+        <strong>效果：</strong>原本 2 週的工作 → 1 天完成
+      </p>
+    </div>
+    <div class="step-card">
+      <h4>🏢 案例二：企業知識庫建構</h4>
+      <p>
+        <strong>情境：</strong>公司要建立內部文件知識庫<br><br>
+        <strong>自動化流程：</strong><br>
+        1. 匯入合約範本、技術文件、會議紀錄<br>
+        2. 員工用自然語言查詢<br>
+        3. AI 引用原文回答<br>
+        4. 定期更新來源文件<br><br>
+        <strong>效果：</strong>新人查資料從 30 分鐘 → 30 秒
+      </p>
+    </div>
+    <div class="step-card">
+      <h4>🎓 案例三：教師備課自動化</h4>
+      <p>
+        <strong>情境：</strong>老師要準備一學期的教材<br><br>
+        <strong>自動化流程：</strong><br>
+        1. 上傳課本 PDF、教學影片 URL<br>
+        2. 自動生成每課的測驗題<br>
+        3. 製作學生複習閃卡<br>
+        4. 生成教學 Podcast 讓學生預習<br><br>
+        <strong>效果：</strong>備課時間減少 70%
+      </p>
+    </div>
+  </div>
+
+  <!-- 10-21: 完整使用案例流程模擬 -->
+  <div style="background:linear-gradient(135deg,#f8f9fa,#e8f0fe);border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1);margin:20px auto;max-width:720px;padding:32px;font-family:'Segoe UI',sans-serif;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <h4 style="margin:0 0 4px;font-size:18px;color:#1a73e8;">完整使用案例：老師備課自動化</h4>
+      <p style="margin:0;font-size:13px;color:#5f6368;">上傳教材 PDF → 自動生成 Podcast + 測驗 → 下載成果</p>
+    </div>
+    <!-- 流程步驟 -->
+    <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <!-- Step 1 -->
+      <div style="flex:0 0 150px;text-align:center;">
+        <div style="width:64px;height:64px;background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:28px;">📄</div>
+        <div style="font-size:13px;font-weight:600;color:#202124;margin-bottom:4px;">Step 1</div>
+        <div style="font-size:12px;color:#5f6368;">上傳 3 份 PDF 教材</div>
+        <div style="background:#e8f5e9;color:#2e7d32;font-size:11px;border-radius:4px;padding:2px 8px;margin-top:6px;display:inline-block;">&#10003; 完成</div>
+      </div>
+      <!-- 箭頭 -->
+      <div style="padding-top:28px;color:#4285f4;font-size:24px;">→</div>
+      <!-- Step 2 -->
+      <div style="flex:0 0 150px;text-align:center;">
+        <div style="width:64px;height:64px;background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:28px;">🎙️</div>
+        <div style="font-size:13px;font-weight:600;color:#202124;margin-bottom:4px;">Step 2</div>
+        <div style="font-size:12px;color:#5f6368;">自動生成 Podcast 音訊</div>
+        <div style="background:#e8f5e9;color:#2e7d32;font-size:11px;border-radius:4px;padding:2px 8px;margin-top:6px;display:inline-block;">&#10003; 完成</div>
+      </div>
+      <!-- 箭頭 -->
+      <div style="padding-top:28px;color:#4285f4;font-size:24px;">→</div>
+      <!-- Step 3 -->
+      <div style="flex:0 0 150px;text-align:center;">
+        <div style="width:64px;height:64px;background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:28px;">❓</div>
+        <div style="font-size:13px;font-weight:600;color:#202124;margin-bottom:4px;">Step 3</div>
+        <div style="font-size:12px;color:#5f6368;">自動生成測驗題目</div>
+        <div style="background:#e8f5e9;color:#2e7d32;font-size:11px;border-radius:4px;padding:2px 8px;margin-top:6px;display:inline-block;">&#10003; 完成</div>
+      </div>
+    </div>
+    <!-- 成果下載區 -->
+    <div style="margin-top:24px;background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
+      <div style="font-size:14px;font-weight:600;color:#202124;margin-bottom:12px;">成果下載</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;background:#e8f0fe;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">🎧</span>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1a73e8;">AI_教學_podcast.mp3</div>
+            <div style="font-size:11px;color:#5f6368;">12:34 | 18.5 MB</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:180px;background:#fce4ec;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">📝</span>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#c62828;">測驗題目_20題.pdf</div>
+            <div style="font-size:11px;color:#5f6368;">選擇題 + 問答題</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:180px;background:#e8f5e9;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">📊</span>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#2e7d32;">課程摘要.md</div>
+            <div style="font-size:11px;color:#5f6368;">3 份教材重點整理</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:13px;color:#34a853;font-weight:600;">備課時間減少 70% — 從 2 小時縮短到 30 分鐘</div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 22: 部署與進階設定 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🌐 部署方式與進階設定</h2>
+  <p>除了本機使用，這個系統還支援多種部署方式，讓你在不同場景中都能使用：</p>
+
+  <table>
+    <tr><th>部署方式</th><th>適用場景</th><th>指令 / 說明</th></tr>
+    <tr><td><strong>本機使用</strong></td><td>個人使用，最簡單</td><td><code>python app.py</code> → 訪問 localhost:5000</td></tr>
+    <tr><td><strong>區域網路分享</strong></td><td>團隊共用</td><td>修改 <code>host='0.0.0.0'</code> → 同網段可訪問</td></tr>
+    <tr><td><strong>Waitress（Windows）</strong></td><td>Windows 正式部署</td><td><code>pip install waitress</code> → 穩定的 WSGI 伺服器</td></tr>
+    <tr><td><strong>Gunicorn（Linux/Mac）</strong></td><td>Linux/Mac 正式部署</td><td><code>gunicorn -w 4 app:app</code></td></tr>
+    <tr><td><strong>Docker</strong></td><td>容器化部署</td><td>需掛載 <code>~/.notebooklm</code> 登入狀態</td></tr>
+    <tr><td><strong>開機自動啟動</strong></td><td>長期使用</td><td>建立 <code>start.bat</code> 放入 Windows 啟動資料夾</td></tr>
+  </table>
+
+  <h3>開機自動啟動設定（Windows）</h3>
+  <pre>@echo off
+cd /d D:\NotebookLM課程\讓NotebookLM自動化
+python app.py
+pause</pre>
+  <p>存成 <code>start.bat</code> → 按 <code>Win+R</code> 輸入 <code>shell:startup</code> → 放入啟動資料夾</p>
+
+  <div class="box warning">
+    ⚠️ <strong>重要提醒：</strong>
+    <ul style="margin:8px 0 0 18px;">
+      <li>區域網路分享時，需要先在<strong>伺服器電腦</strong>執行 <code>notebooklm login</code></li>
+      <li>Docker 部署時，需要掛載 <code>~/.notebooklm</code> 目錄以保留登入狀態</li>
+      <li>開放 5000 port 時注意防火牆設定</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 23: 常見問題與疑難排解 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>❓ 常見問題與疑難排解</h2>
+  <p>使用過程中如果遇到問題，可以參考以下解決方案：</p>
+
+  <table>
+    <tr><th>問題</th><th>可能原因</th><th>解決方案</th></tr>
+    <tr>
+      <td><strong>「No notebook specified」錯誤</strong></td>
+      <td>未選擇筆記本就執行需要筆記本的操作</td>
+      <td>先在左側下拉選單選擇筆記本</td>
+    </tr>
+    <tr>
+      <td><strong>登入狀態失效</strong></td>
+      <td>Cookie 過期或被清除</td>
+      <td>重新執行 <code>notebooklm login</code></td>
+    </tr>
+    <tr>
+      <td><strong>Podcast 很久沒反應</strong></td>
+      <td>生成需要 2-5 分鐘</td>
+      <td>檢查右側「任務狀態」欄位，任務在背景執行中</td>
+    </tr>
+    <tr>
+      <td><strong>NLP 解析不準確</strong></td>
+      <td>關鍵字匹配模式有限制</td>
+      <td>使用更明確的關鍵字，或切換到 Gemini/OpenAI 模式</td>
+    </tr>
+    <tr>
+      <td><strong>無法遠端存取</strong></td>
+      <td>防火牆阻擋或 host 設定問題</td>
+      <td>確認 <code>host='0.0.0.0'</code> 並開放 5000 port</td>
+    </tr>
+    <tr>
+      <td><strong>pip install 失敗</strong></td>
+      <td>Python 版本過舊或 pip 版本問題</td>
+      <td>確認 Python 3.9+ 並執行 <code>pip install --upgrade pip</code></td>
+    </tr>
+    <tr>
+      <td><strong>Playwright 安裝失敗</strong></td>
+      <td>網路問題或權限不足</td>
+      <td>使用管理員身分執行，確認網路暢通</td>
+    </tr>
+  </table>
+
+  <div class="box danger">
+    🚨 <strong>風險提醒：</strong>notebooklm-py 是透過逆向工程建立的工具，Google 可能隨時修改 NotebookLM 介面導致工具暫時失效。建議：
+    <ul style="margin:8px 0 0 18px;">
+      <li>使用<strong>專用 Google 帳號</strong>測試，避免影響主帳號</li>
+      <li>定期更新：<code>pip install --upgrade notebooklm-py</code></li>
+      <li>不適合用於需要 100% 穩定性的正式生產環境</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 24: Part 10 關鍵重點總結 -->
+<!-- ============================================================ -->
+<div class="slide">
+  <h2>🎯 Part 10 關鍵重點總結</h2>
+
+  <h3>一、系統架構：五層堆疊</h3>
+  <pre>Flask Web GUI（你操作的地方）
+       ↕
+NLP Parser（理解你的意思：關鍵字 / Gemini / OpenAI）
+       ↕
+notebooklm-py（轉換成 CLI 指令）
+       ↕
+Playwright（模擬瀏覽器操作）
+       ↕
+NotebookLM 網頁（Google 的服務）</pre>
+
+  <h3>二、安裝四步驟</h3>
+  <div class="concept-grid" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="concept-card">
+      <h4>Step 1</h4>
+      <p>安裝 notebooklm-py + Playwright + Chromium</p>
+    </div>
+    <div class="concept-card">
+      <h4>Step 2</h4>
+      <p>下載專案 + pip install -r requirements.txt</p>
+    </div>
+    <div class="concept-card">
+      <h4>Step 3</h4>
+      <p>notebooklm login 登入 Google 帳號</p>
+    </div>
+    <div class="concept-card">
+      <h4>Step 4</h4>
+      <p>python app.py 啟動 → localhost:5000</p>
+    </div>
+  </div>
+
+  <h3>三、核心概念回顧</h3>
+  <div class="two-col">
+    <div>
+      <div class="box success">
+        ✅ <strong>Flask GUI：</strong>提供視覺化的三欄式操作介面，輸入自然語言指令即可操控 NotebookLM
+      </div>
+      <div class="box success">
+        ✅ <strong>NLP Parser：</strong>三種解析模式，從免費的關鍵字匹配到付費的 AI 語意理解
+      </div>
+    </div>
+    <div>
+      <div class="box success">
+        ✅ <strong>notebooklm-py：</strong>逆向工程 NotebookLM 的 CLI 工具，補足 Google 沒有 API 的缺口
+      </div>
+      <div class="box success">
+        ✅ <strong>Claude Code Skill：</strong>在 Claude Code 中也能直接用自然語言操控 NotebookLM
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- Slide 25: 結尾 -->
+<!-- ============================================================ -->
+<div class="slide cover-slide">
+  <div class="subtitle">Part 10 完成！</div>
+  <h1>NotebookLM 自動化<br>= Skill 的無限延伸</h1>
+  <p class="desc">從 Day 1 的第一個 Skill → Day 2 的多 Skill 工作系統<br>→ Part 9 的 Script 自動化 → Part 10 的 NotebookLM 自動化<br><br>你已經掌握了完整的 AI Skill 生態系！</p>
+  <div class="tags">
+    <span class="tag">✅ NotebookLM 自動化</span>
+    <span class="tag">✅ Flask GUI</span>
+    <span class="tag">✅ NLP 自然語言</span>
+    <span class="tag">✅ Claude Code Skill</span>
+  </div>
+  <a href="index.html" class="next-btn">🏠 回到目錄</a>
+</div>
+
+</div><!-- end slides-container -->
+
+<div class="dots" id="dots"></div>
+
+<script>
+(function(){
+    var slides = document.querySelectorAll('.slide');
+    var dotsEl = document.getElementById('dots');
+    var cur = 0;
+    slides.forEach(function(_, i) {
+        var d = document.createElement('div');
+        d.className = 'dot' + (i === 0 ? ' active' : '');
+        d.onclick = function() { showSlide(i); };
+        dotsEl.appendChild(d);
+    });
+    function showSlide(n) {
+        slides[cur].classList.remove('active');
+        dotsEl.children[cur].classList.remove('active');
+        cur = (n + slides.length) % slides.length;
+        slides[cur].classList.add('active');
+        dotsEl.children[cur].classList.add('active');
+        slides[cur].scrollTop = 0;
+    }
+    document.querySelector('.arrow-left').addEventListener('click', function() { showSlide(cur - 1); });
+    document.querySelector('.arrow-right').addEventListener('click', function() { showSlide(cur + 1); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); showSlide(cur + 1); }
+        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); showSlide(cur - 1); }
+    });
+    var touchStartX = 0;
+    document.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e) {
+        var diff = e.changedTouches[0].screenX - touchStartX;
+        if (Math.abs(diff) > 60) { diff < 0 ? showSlide(cur + 1) : showSlide(cur - 1); }
+    });
+    window.changeSlide = function(dir) { showSlide(cur + dir); };
+})();
+function toggleFullscreen() {
+    if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(function(){}); }
+    else { document.exitFullscreen(); }
+}
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

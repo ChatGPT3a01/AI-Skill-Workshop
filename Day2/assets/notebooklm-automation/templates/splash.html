@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>亮言~NotebookLM 自動化Skill</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #f5f0e8;
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            overflow: hidden;
+        }
+
+        .splash-container {
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .splash-image {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .loading-container {
+            width: 80%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .loading-text {
+            color: #5a4a3a;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+
+        .loading-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(90, 74, 58, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loading-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #8b7355, #5a4a3a, #8b7355);
+            background-size: 200% 100%;
+            border-radius: 10px;
+            animation: loadingProgress 4s ease-out forwards, shimmer 1.5s infinite;
+        }
+
+        @keyframes loadingProgress {
+            0% { width: 0%; }
+            20% { width: 25%; }
+            50% { width: 60%; }
+            80% { width: 85%; }
+            100% { width: 100%; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .loading-percentage {
+            color: #5a4a3a;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        /* 淡出動畫 */
+        .fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* 裝飾元素 */
+        .decoration {
+            position: absolute;
+            opacity: 0.1;
+            font-size: 100px;
+            color: #5a4a3a;
+        }
+
+        .decoration.top-left {
+            top: 20px;
+            left: 20px;
+        }
+
+        .decoration.bottom-right {
+            bottom: 20px;
+            right: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-container" id="splash">
+        <img src="/static/images/splash.png" alt="亮言~NotebookLM 自動化Skill" class="splash-image">
+
+        <div class="loading-container">
+            <div class="loading-text">正在啟動系統...</div>
+            <div class="loading-bar-bg">
+                <div class="loading-bar" id="loadingBar"></div>
+            </div>
+            <div class="loading-percentage" id="percentage">0%</div>
+        </div>
+    </div>
+
+    <script>
+        // 進度條動畫
+        let progress = 0;
+        const percentageEl = document.getElementById('percentage');
+        const duration = 4000; // 4秒
+        const startTime = Date.now();
+
+        function updateProgress() {
+            const elapsed = Date.now() - startTime;
+            progress = Math.min(100, Math.round((elapsed / duration) * 100));
+            percentageEl.textContent = progress + '%';
+
+            if (progress < 100) {
+                requestAnimationFrame(updateProgress);
+            }
+        }
+
+        updateProgress();
+
+        // 4秒後跳轉到主頁
+        setTimeout(function() {
+            document.getElementById('splash').classList.add('fade-out');
+            setTimeout(function() {
+                window.location.href = '/main';
+            }, 500);
+        }, duration);
+    </script>
+</body>
+</html>

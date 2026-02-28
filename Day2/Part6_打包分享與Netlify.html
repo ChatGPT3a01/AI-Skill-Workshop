@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 6 - 打包分享與Netlify部署 | AI Skill 實作課 Day 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); height: 100vh; overflow: hidden; color: #333; }
+.nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.2); z-index: 10000; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+.nav-title { color: white; font-size: 18px; font-weight: 700; }
+.nav-buttons { display: flex; gap: 10px; align-items: center; }
+.nav-btn { padding: 6px 16px; border-radius: 20px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; display: inline-block; font-family: inherit; }
+.nav-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
+.slides-container { display: flex; align-items: center; justify-content: center; height: 100vh; padding-top: 60px; }
+.slide { display: none; width: 95%; max-width: 1400px; max-height: 88vh; background: rgba(255,255,255,0.98); border-radius: 24px; padding: 60px; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: fadeIn 0.4s ease; }
+.slide.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-thumb { background: rgba(30,60,114,0.3); border-radius: 4px; }
+h1 { color: #1e3c72; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #2a5298; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #1e3c72; }
+h3 { color: #1e3c72; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #1e3c72; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: #1e3c72; color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f5f7ff; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; color: #d63384; font-size: 0.9em; }
+pre { background: #282c34; color: #abb2bf; padding: 25px; border-radius: 12px; font-size: 18px; line-height: 1.6; overflow-x: auto; margin: 20px 0; white-space: pre-wrap; word-break: break-word; }
+pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+.box { padding: 20px 24px; border-radius: 12px; margin: 20px 0; font-size: 19px; line-height: 1.8; }
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 24px 0; }
+.concept-card { background: #f8f9fa; padding: 28px; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s, box-shadow 0.3s; }
+.concept-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.concept-card h3 { margin-top: 0; }
+.arrow-btn { position: fixed; top: 50%; transform: translateY(-50%); width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 28px; cursor: pointer; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+.arrow-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-50%) scale(1.1); }
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+.dots { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 9999; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.35); cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.5); }
+.dot.active { background: white; transform: scale(1.2); }
+.cover-slide { flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 70vh; }
+.cover-slide.active { display: flex; }
+.cover-slide .subtitle { font-size: 22px; color: #2a5298; font-weight: 600; margin-bottom: 16px; }
+.cover-slide h1 { font-size: 56px; background: linear-gradient(135deg, #1e3c72, #2a5298); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 20px; }
+.cover-slide .desc { font-size: 24px; color: #666; max-width: 800px; line-height: 1.8; margin-bottom: 40px; }
+.tags { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.tag { padding: 10px 28px; border-radius: 50px; color: white; font-size: 18px; font-weight: 700; }
+.slide-placeholder { background: #e8f4fd; border: 2px dashed #2196f3; border-radius: 12px; padding: 20px; text-align: center; color: #1565c0; font-size: 16px; margin: 20px 0; }
+.step-card { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 24px; border-radius: 16px; }
+.step-card h3 { color: white; margin-top: 0; }
+.step-card p { color: rgba(255,255,255,0.9); font-size: 17px; }
+.next-part-btn { display: inline-block; background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 18px 48px; border-radius: 50px; text-decoration: none; font-size: 22px; font-weight: 700; box-shadow: 0 8px 25px rgba(30,60,114,0.4); transition: transform 0.3s, box-shadow 0.3s; margin-top: 20px; }
+.next-part-btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 12px 35px rgba(30,60,114,0.5); }
+.dir-tree { background: #f4f4f8; border-radius: 12px; padding: 20px 26px; font-size: 16px; line-height: 2; color: #333; margin: 18px 0; }
+.step-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 24px 0; }
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+    <div class="nav-title">📦 Part 6 - 打包分享與 Netlify</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="index.html">🏠 首頁</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+        <a href="Part5_完整生成器製作.html" class="nav-btn">&larr; Part 5</a>
+        <a href="Part7_完整流程實戰.html" class="nav-btn">Part 7 &rarr;</a>
+        <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">📘 FB</a>
+        <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">🎥 YT</a>
+        <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">👥 3A社團</a>
+    </div>
+</nav>
+<button class="arrow-btn arrow-left">&#8592;</button>
+<button class="arrow-btn arrow-right">&#8594;</button>
+<div class="slides-container">
+  <div class="slide cover-slide active">
+    <div class="subtitle">Day 2 &middot; Part 6 &middot; 下午 H｜14:00–14:30</div>
+    <h1>打包分享與 Netlify 部署</h1>
+    <p class="desc">建立專業的 Skill 專案資料夾，README、Git 管理、一鍵分享給整個團隊</p>
+    <div class="tags">
+      <span class="tag" style="background: linear-gradient(135deg,#1e3c72,#2a5298);">&#9200; 30 分鐘</span>
+      <span class="tag" style="background: linear-gradient(135deg,#2a5298,#4a90d9);">&#128230; 打包分享</span>
+      <span class="tag" style="background: linear-gradient(135deg,#1565c0,#1e3c72);">&#128295; 實作模組 H</span>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>H-1｜專案資料夾標準結構</h2>
+    <div class="dir-tree">my-skill-project/<br>
+&#9500;&#9472;&#9472; README.md &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; 專案說明與快速開始<br>
+&#9500;&#9472;&#9472; CLAUDE.md &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Claude Code 設定檔<br>
+&#9500;&#9472;&#9472; skill-generator.html &nbsp;&nbsp;&nbsp;&larr; 網頁生成器<br>
+&#9500;&#9472;&#9472; LICENSE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; 授權聲明<br>
+&#9500;&#9472;&#9472; .gitignore &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Git 排除清單<br>
+&#9500;&#9472;&#9472; .agent/<br>
+&#9474;&nbsp;&nbsp; &#9492;&#9472;&#9472; skills/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Antigravity 用 Skill 資料夾<br>
+&#9500;&#9472;&#9472; .claude/<br>
+&#9474;&nbsp;&nbsp; &#9492;&#9472;&#9472; skills/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; Claude Code 用 Skill 資料夾<br>
+&#9500;&#9472;&#9472; scripts/<br>
+&#9474;&nbsp;&nbsp; &#9492;&#9472;&#9472; sync-skills.sh &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; 一鍵同步腳本<br>
+&#9492;&#9472;&#9472; examples/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&larr; 使用範例資料夾</div>
+    <!-- 模擬 VS Code 檔案總管 -->
+    <div style="border:2px solid #333; border-radius:12px; overflow:hidden; margin:20px 0; max-width:420px; box-shadow:0 4px 16px rgba(0,0,0,0.15);">
+      <div style="background:#323233; padding:8px 14px; font-size:13px; color:#ccc; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Explorer</div>
+      <div style="background:#252526; padding:12px 0; font-family:'Consolas',monospace; font-size:14px; line-height:2.0; color:#ccc;">
+        <div style="padding:2px 14px; font-weight:700; color:#fff;">▼ MY-SKILL-PROJECT</div>
+        <div style="padding:2px 14px 2px 28px; color:#dcb67a;">▶ .agent/skills/</div>
+        <div style="padding:2px 14px 2px 28px; color:#dcb67a;">▶ .claude/skills/</div>
+        <div style="padding:2px 14px 2px 28px; color:#dcb67a;">▶ examples/</div>
+        <div style="padding:2px 14px 2px 28px; color:#dcb67a;">▶ scripts/</div>
+        <div style="padding:2px 14px 2px 28px;"><span style="color:#999;">📄</span> .gitignore</div>
+        <div style="padding:2px 14px 2px 28px;"><span style="color:#519aba;">📘</span> CLAUDE.md</div>
+        <div style="padding:2px 14px 2px 28px;"><span style="color:#999;">📄</span> LICENSE</div>
+        <div style="padding:2px 14px 2px 28px;"><span style="color:#519aba;">📘</span> README.md</div>
+        <div style="padding:2px 14px 2px 28px; background:#37373d;"><span style="color:#e37933;">🌐</span> <span style="color:#fff;">skill-generator.html</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>H-2｜撰寫 README.md</h2>
+    <table>
+      <thead><tr><th>README 必備章節</th><th>內容說明</th><th>重要度</th></tr></thead>
+      <tbody>
+        <tr><td><strong>專案標題</strong></td><td>專案名稱與一句話簡介</td><td>&#11088;&#11088;&#11088;&#11088;&#11088;</td></tr>
+        <tr><td><strong>功能简介</strong></td><td>3–5 點說明此 Skill 包能做什麼</td><td>&#11088;&#11088;&#11088;&#11088;&#11088;</td></tr>
+        <tr><td><strong>快速開始</strong></td><td>三個平台的啟動方法</td><td>&#11088;&#11088;&#11088;&#11088;&#11088;</td></tr>
+        <tr><td><strong>Skill 清單</strong></td><td>所有 Skill 的名稱與功能表格</td><td>&#11088;&#11088;&#11088;&#11088;</td></tr>
+        <tr><td><strong>使用範例</strong></td><td>具體的輸入輸出範例</td><td>&#11088;&#11088;&#11088;&#11088;</td></tr>
+        <tr><td><strong>授權聲明</strong></td><td>使用掉件與限制</td><td>&#11088;&#11088;&#11088;</td></tr>
+      </tbody>
+    </table>
+    <!-- 模擬 GitHub README 渲染畫面 -->
+    <div style="border:1px solid #d0d7de; border-radius:12px; overflow:hidden; margin:20px 0; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+      <!-- GitHub 檔案標題列 -->
+      <div style="background:#f6f8fa; padding:10px 20px; border-bottom:1px solid #d0d7de; display:flex; align-items:center; gap:8px; font-size:14px; color:#656d76;">
+        <span style="font-size:16px;">📘</span> <strong style="color:#1f2328;">README.md</strong>
+      </div>
+      <!-- README 內容 -->
+      <div style="background:white; padding:28px 32px; font-family:'Segoe UI',sans-serif; line-height:1.7;">
+        <h1 style="font-size:32px; color:#1f2328; border-bottom:1px solid #d8dee4; padding-bottom:10px; margin-bottom:16px;">📦 My Skill Project</h1>
+        <p style="font-size:17px; color:#656d76; margin-bottom:20px;">我的專業 AI Skill 專案包，包含 Email 回覆、會議紀錄、提案報告三大功能。</p>
+        <div style="display:flex; gap:6px; margin-bottom:20px;">
+          <span style="background:#ddf4ff; color:#0969da; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">AI Skill</span>
+          <span style="background:#dafbe1; color:#1a7f37; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">Antigravity</span>
+          <span style="background:#fff8c5; color:#9a6700; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600;">Claude Code</span>
+        </div>
+        <h2 style="font-size:22px; color:#1f2328; border-bottom:1px solid #d8dee4; padding-bottom:8px; margin-bottom:12px;">✨ 功能</h2>
+        <ul style="margin-left:20px; color:#1f2328; font-size:16px;">
+          <li>📧 <strong>Email 回覆助手</strong> — 一鍵產生專業回覆信</li>
+          <li>📋 <strong>會議紀錄產生器</strong> — 逐字稿自動整理成結構化紀錄</li>
+          <li>📄 <strong>提案報告工作鏈</strong> — 需求分析→撰寫→審查一條龍</li>
+        </ul>
+        <h2 style="font-size:22px; color:#1f2328; border-bottom:1px solid #d8dee4; padding-bottom:8px; margin:20px 0 12px;">🚀 快速開始</h2>
+        <div style="background:#f6f8fa; border:1px solid #d0d7de; border-radius:8px; padding:14px 18px; font-family:'Consolas',monospace; font-size:14px; color:#1f2328; margin-bottom:8px;">
+          <div style="color:#656d76;"># 1. Clone 專案</div>
+          <div>git clone https://github.com/your-name/my-skill-project.git</div>
+          <div style="margin-top:8px; color:#656d76;"># 2. 用 Antigravity 開啟專案資料夾，Skill 自動載入</div>
+          <div style="margin-top:8px; color:#656d76;"># 3. 或用 Claude Code</div>
+          <div>claude --project my-skill-project</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>H-2｜README 快速開始範本</h2>
+    <pre># &#128230; My Skill Project
+
+我的專業 AI Skill 專案包，包含 Email 回覆、會議紀錄、提案報告三大功能。
+
+## &#9889; 快速開始
+
+### 方式一：Antigravity（推薦）
+將 `.agent/skills/` 資料夾放到你的專案目錄，關鍵字即可觸發
+
+### 方式二：Claude Code CLI
+將 `.claude/skills/` 資料夾放到專案目錄，直接對話觸發
+
+### 方式三：網頁表單
+開啟 `skill-generator.html`，填表、產生、複製，不需安裝任何軟體
+
+## &#128203; Skills 清單
+
+| Skill 名稱 | 觸發關鍵字 | 功能說明 |
+|------------|----------|----------|
+| email-reply-helper | Email、回覆 | 自動分析 Email 並產生專業回覆 |
+| meeting-notes-generator | 會議、紀錄 | 將會議逐字稿轉為結構化會議紀錄 |
+| proposal-generator | 提案、報告 | 根據目標與資料自動生成提案報告 |</pre>
+  </div>
+
+  <div class="slide">
+    <h2>H-3｜建立使用範例資料夾</h2>
+    <pre>mkdir -p my-project/examples</pre>
+    <div class="concept-grid">
+      <div class="concept-card">
+        <h3>&#128231; example-email-input.md</h3>
+        <p>包含一封真實的商務 Email 範本，以及建議的回覆專案，都雊業務山略情境</p>
+      </div>
+      <div class="concept-card">
+        <h3>&#128203; example-meeting-input.md</h3>
+        <p>包含一個小型團隊會議的逐字稿範本，可直接用來測試會議紀錄 Skill</p>
+      </div>
+      <div class="concept-card">
+        <h3>&#128202; example-proposal-input.md</h3>
+        <p>包含一個實際專案提案的目標與背景資料，可用來測試提案報告 Skill</p>
+      </div>
+    </div>
+    <div class="box info">
+      <strong>為什麼需要範例？</strong> 讓新團隊成員能就就繪繪地使用，不必從零開始摄寫輸入資料，大幅降低學習門灸
+    </div>
+    <!-- 模擬 VS Code 開啟 examples/ 資料夾 -->
+    <div style="border:2px solid #333; border-radius:12px; overflow:hidden; margin:20px 0; box-shadow:0 4px 16px rgba(0,0,0,0.15);">
+      <!-- VS Code 標題列 -->
+      <div style="background:#323233; padding:6px 14px; display:flex; align-items:center; gap:12px;">
+        <span style="font-size:12px; color:#ccc; font-weight:600; text-transform:uppercase; letter-spacing:1px;">Explorer</span>
+        <span style="font-size:12px; color:#888; margin-left:auto;">examples/</span>
+      </div>
+      <!-- 左側資料夾 + 右側預覽 -->
+      <div style="display:flex; background:#1e1e1e;">
+        <!-- 左側檔案列表 -->
+        <div style="width:220px; background:#252526; padding:10px 0; border-right:1px solid #333; font-family:'Consolas',monospace; font-size:13px; color:#ccc; line-height:2.2;">
+          <div style="padding:2px 14px; font-weight:700; color:#fff;">▼ examples/</div>
+          <div style="padding:2px 14px 2px 28px; background:#37373d; color:#fff;">📧 example-email-input.md</div>
+          <div style="padding:2px 14px 2px 28px;">📋 example-meeting-input.md</div>
+          <div style="padding:2px 14px 2px 28px;">📄 example-proposal-input.md</div>
+        </div>
+        <!-- 右側檔案預覽 -->
+        <div style="flex:1; padding:16px 20px; font-family:'Consolas',monospace; font-size:13px; color:#d4d4d4; line-height:1.8;">
+          <div style="color:#569cd6; font-size:15px; font-weight:700;"># Email 回覆範例輸入</div>
+          <div style="margin:6px 0;"></div>
+          <div style="color:#6a9955;">## 客戶來信</div>
+          <div style="color:#ce9178;">寄件人：chen.wei@example.com</div>
+          <div style="color:#ce9178;">主旨：詢問 Q2 企業方案報價</div>
+          <div style="margin:6px 0;"></div>
+          <div>王經理您好，</div>
+          <div>我們公司近期正在評估導入 AI 輔助客服系統，</div>
+          <div>想請貴司提供 Q2 企業方案的報價資訊，</div>
+          <div>包含基本方案與進階方案的差異說明。</div>
+          <div>希望能在下週三前收到回覆。</div>
+          <div style="margin:6px 0;"></div>
+          <div style="color:#6a9955;">## 預期產出</div>
+          <div>→ 使用 email-reply-helper Skill 產生專業回覆</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>H-4｜Git 版本控制</h2>
+    <pre># 初始化 Git 儲存庫
+git init
+git branch -M main
+
+# 建立 .gitignore
+echo ".DS_Store" &gt; .gitignore
+echo "*.log" &gt;&gt; .gitignore
+echo "node_modules/" &gt;&gt; .gitignore
+
+# 首次提交
+git add README.md CLAUDE.md skill-generator.html
+git add .agent/ .claude/ scripts/ examples/
+git commit -m "feat: 建立完整 Skill 專案 v1.0
+
+- 新增 Email 回覆、會議紀錄、提案報告三大 Skill
+- 建立網頁生成器 skill-generator.html
+- 完善 README 與使用範例"
+
+# 推送到 GitHub
+git remote add origin https://github.com/your-username/my-skill-project.git
+git push -u origin main</pre>
+    <!-- 模擬終端機 git 操作過程 -->
+    <div style="border:2px solid #333; border-radius:12px; overflow:hidden; margin:20px 0; box-shadow:0 4px 16px rgba(0,0,0,0.15);">
+      <div style="background:#323233; padding:6px 14px; display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span><span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span></div>
+        <span style="font-size:13px; color:#999;">Terminal — bash</span>
+      </div>
+      <div style="background:#1e1e1e; padding:18px 20px; font-family:'Consolas',monospace; font-size:14px; color:#d4d4d4; line-height:2.0;">
+        <div><span style="color:#6a9955;">~/my-skill-project $</span> <span style="color:#fff;">git init</span></div>
+        <div style="color:#569cd6;">Initialized empty Git repository in ~/my-skill-project/.git/</div>
+        <div style="margin:4px 0;"></div>
+        <div><span style="color:#6a9955;">~/my-skill-project $</span> <span style="color:#fff;">git branch -M main</span></div>
+        <div style="margin:4px 0;"></div>
+        <div><span style="color:#6a9955;">~/my-skill-project $</span> <span style="color:#fff;">git add .</span></div>
+        <div style="margin:4px 0;"></div>
+        <div><span style="color:#6a9955;">~/my-skill-project $</span> <span style="color:#fff;">git commit -m "feat: 建立完整 Skill 專案 v1.0"</span></div>
+        <div style="color:#dcdcaa;">[main (root-commit) a3b7c2d] feat: 建立完整 Skill 專案 v1.0</div>
+        <div style="color:#dcdcaa;"> 12 files changed, 486 insertions(+)</div>
+        <div style="color:#569cd6;"> create mode 100644 README.md</div>
+        <div style="color:#569cd6;"> create mode 100644 CLAUDE.md</div>
+        <div style="color:#569cd6;"> create mode 100644 skill-generator.html</div>
+        <div style="color:#569cd6;"> create mode 100644 .agent/skills/email-reply-helper/SKILL.md</div>
+        <div style="color:#569cd6;"> create mode 100644 .agent/skills/meeting-notes-generator/SKILL.md</div>
+        <div style="color:#569cd6;"> create mode 100644 ...</div>
+        <div style="margin:4px 0;"></div>
+        <div><span style="color:#6a9955;">~/my-skill-project $</span> <span style="color:#fff;">git remote add origin https://github.com/your-name/my-skill-project.git</span></div>
+        <div><span style="color:#6a9955;">~/my-skill-project $</span> <span style="color:#fff;">git push -u origin main</span></div>
+        <div style="color:#4ec9b0;">✅ Everything up-to-date → https://github.com/your-name/my-skill-project</div>
+      </div>
+    </div>
+    <div class="box success">推到 GitHub 後，團隊成員只要 <code>git clone</code> 就能使用！</div>
+  </div>
+
+  <div class="slide">
+    <h2>H-5｜分享給團隊的三種方式</h2>
+    <div class="concept-grid">
+      <div class="step-card">
+        <h3>&#128279; GitHub 分享</h3>
+        <p>一個連結，團隊成員 git clone 後立即可使用所有 Skill，最適合小團隊</p>
+      </div>
+      <div class="step-card">
+        <h3>&#128230; ZIP 壓縮包</h3>
+        <p>將資料夾打包為 .zip，適合非技術同事，不需安裝 Git 即可使用</p>
+      </div>
+      <div class="step-card">
+        <h3>&#127760; Netlify 網頁</h3>
+        <p>一鍵部署到網路，團隊只需一個連結就能使用網頁生成器</p>
+      </div>
+    </div>
+    <h3>Netlify 部署步驟</h3>
+    <table>
+      <thead><tr><th>步驟</th><th>操作方法</th><th>預計時間</th></tr></thead>
+      <tbody>
+        <tr><td><strong>1. 前往 Netlify</strong></td><td>開瀏覽器進入 netlify.com，登入帳號</td><td>1 分鐘</td></tr>
+        <tr><td><strong>2. 拖曳資料夾</strong></td><td>將專案資料夾直接拖曳到 Netlify 上傳區域</td><td>1 分鐘</td></tr>
+        <tr><td><strong>3. 取得網址分享</strong></td><td>复製自動生成的 URL，分享給團隊</td><td>30 秒</td></tr>
+      </tbody>
+    </table>
+    <!-- 模擬 Netlify 拖曳部署介面 -->
+    <div style="border:1px solid #d0d7de; border-radius:16px; overflow:hidden; margin:20px 0; box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+      <!-- Netlify 頂部導覽 -->
+      <div style="background:#0e1e25; padding:12px 24px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="background:#00c7b7; color:white; font-weight:900; font-size:16px; padding:4px 10px; border-radius:6px;">N</div>
+          <span style="color:white; font-weight:700; font-size:16px;">Netlify</span>
+        </div>
+        <span style="color:#a0aab4; font-size:14px;">netlify.com/drop</span>
+      </div>
+      <!-- 拖曳區域 -->
+      <div style="background:#f7f8f8; padding:40px; text-align:center;">
+        <div style="border:3px dashed #00c7b7; border-radius:16px; padding:40px 30px; background:white;">
+          <div style="font-size:48px; margin-bottom:12px;">📂</div>
+          <div style="font-size:20px; font-weight:700; color:#0e1e25; margin-bottom:8px;">拖曳你的專案資料夾到這裡</div>
+          <div style="font-size:15px; color:#68747d;">或點擊選擇資料夾上傳</div>
+        </div>
+        <!-- 上傳進度 -->
+        <div style="margin-top:24px; max-width:500px; margin-left:auto; margin-right:auto;">
+          <div style="display:flex; justify-content:space-between; font-size:14px; color:#0e1e25; font-weight:600; margin-bottom:6px;">
+            <span>⏳ 部署中...</span>
+            <span>100%</span>
+          </div>
+          <div style="background:#e3e8eb; border-radius:8px; height:10px; overflow:hidden;">
+            <div style="background:linear-gradient(90deg,#00c7b7,#00a99d); width:100%; height:100%; border-radius:8px;"></div>
+          </div>
+        </div>
+        <!-- 部署成功 -->
+        <div style="margin-top:24px; background:#d4edda; border:1px solid #28a745; border-radius:12px; padding:16px 24px; display:inline-block;">
+          <div style="font-size:18px; font-weight:700; color:#155724; margin-bottom:6px;">✅ 部署成功！</div>
+          <div style="font-size:15px; color:#155724;">你的網站已上線：</div>
+          <div style="background:white; border:1px solid #28a745; border-radius:8px; padding:8px 16px; margin-top:8px; display:flex; align-items:center; gap:10px;">
+            <span style="font-size:15px; color:#0969da; font-weight:600;">🔗 https://my-skill-project.netlify.app</span>
+            <span style="background:#28a745; color:white; padding:4px 12px; border-radius:6px; font-size:13px; font-weight:700;">複製</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide cover-slide">
+    <h2 style="color:#1e3c72; border:none; padding:0; margin-bottom:20px;">H｜模組小結</h2>
+    <p class="desc">完整的可分享 Skill 專案包含 6 個要素</p>
+    <table style="max-width:800px; margin:0 auto 24px; text-align:left;">
+      <thead><tr><th>要素</th><th>檔案</th><th>狀態</th></tr></thead>
+      <tbody>
+        <tr><td><strong>專案說明</strong></td><td>README.md</td><td>&#9989; 完成</td></tr>
+        <tr><td><strong>AI 設定檔</strong></td><td>CLAUDE.md</td><td>&#9989; 完成</td></tr>
+        <tr><td><strong>網頁生成器</strong></td><td>skill-generator.html</td><td>&#9989; 完成</td></tr>
+        <tr><td><strong>Skill 包</strong></td><td>.agent/skills/ + .claude/skills/</td><td>&#9989; 完成</td></tr>
+        <tr><td><strong>使用範例</strong></td><td>examples/</td><td>&#9989; 完成</td></tr>
+        <tr><td><strong>Git 版本控制</strong></td><td>.git/ + .gitignore</td><td>&#9989; 完成</td></tr>
+      </tbody>
+    </table>
+    <div class="box success" style="max-width:700px; text-align:left;">
+      &#127881; <strong>恭喜你！</strong>你已完成一個專業等級的 AI Skill 專案，可以立即分享給整個團隊使用！
+    </div>
+    <a href="Part7_完整流程實戰.html" class="next-part-btn">前往 Part 7 &rarr;</a>
+  </div>
+</div>
+<div class="dots">
+  <div class="dot active"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+<script>
+(function(){
+    var slides = document.querySelectorAll('.slide');
+    var dots = document.querySelectorAll('.dot');
+    var cur = 0;
+    function showSlide(n) {
+        slides[cur].classList.remove('active');
+        dots[cur].classList.remove('active');
+        cur = (n + slides.length) % slides.length;
+        slides[cur].classList.add('active');
+        dots[cur].classList.add('active');
+        slides[cur].scrollTop = 0;
+    }
+    document.querySelector('.arrow-left').addEventListener('click', function() { showSlide(cur - 1); });
+    document.querySelector('.arrow-right').addEventListener('click', function() { showSlide(cur + 1); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); showSlide(cur - 1); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); showSlide(cur + 1); }
+    });
+    dots.forEach(function(dot, i) { dot.addEventListener('click', function() { showSlide(i); }); });
+    var touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e){
+        var diff = e.changedTouches[0].screenX - touchStartX;
+        if(Math.abs(diff) > 60){ diff < 0 ? showSlide(cur + 1) : showSlide(cur - 1); }
+    });
+    window.changeSlide = function(dir){ showSlide(cur + dir); };
+})();
+function toggleFullscreen(){
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
+    else { document.exitFullscreen(); }
+}
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

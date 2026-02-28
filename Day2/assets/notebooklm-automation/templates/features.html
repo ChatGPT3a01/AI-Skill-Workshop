@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}功能總覽 - 亮言~NotebookLM 自動化Skill{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">
+    <i class="bi bi-grid-3x3-gap me-2"></i>功能總覽
+</h2>
+
+<div class="row">
+    <!-- 筆記本管理 -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-primary">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-journal-text me-2"></i>筆記本管理
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-3 text-muted">支援功能</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success me-2"></i>建立筆記本</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>列出筆記本</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>重命名筆記本</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>刪除筆記本</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>分享筆記本</li>
+                </ul>
+                <hr>
+                <h6 class="card-subtitle mb-2 text-muted">自然語言範例</h6>
+                <div class="bg-light p-2 rounded mb-2">
+                    <code class="text-dark">"建立一個叫做「AI研究」的筆記本"</code>
+                </div>
+                <div class="bg-light p-2 rounded">
+                    <code class="text-dark">"列出我所有的筆記本"</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 來源匯入 -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-success">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-cloud-upload me-2"></i>來源匯入
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-3 text-muted">支援格式</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-link-45deg text-success me-2"></i>URL 網頁</li>
+                    <li><i class="bi bi-youtube text-danger me-2"></i>YouTube 影片</li>
+                    <li><i class="bi bi-file-pdf text-danger me-2"></i>PDF / TXT / MD / DOCX</li>
+                    <li><i class="bi bi-google text-primary me-2"></i>Google Drive</li>
+                    <li><i class="bi bi-clipboard text-secondary me-2"></i>貼上文字</li>
+                </ul>
+                <hr>
+                <h6 class="card-subtitle mb-2 text-muted">自然語言範例</h6>
+                <div class="bg-light p-2 rounded mb-2">
+                    <code class="text-dark">"把這個 YouTube 影片加到筆記本 https://..."</code>
+                </div>
+                <div class="bg-light p-2 rounded">
+                    <code class="text-dark">"新增這個網址 https://example.com"</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 互動對話 -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-info">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-chat-dots me-2"></i>互動對話
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-3 text-muted">支援功能</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success me-2"></i>問答查詢</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>對話歷史</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>自訂人設</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>來源引用</li>
+                </ul>
+                <hr>
+                <h6 class="card-subtitle mb-2 text-muted">自然語言範例</h6>
+                <div class="bg-light p-2 rounded mb-2">
+                    <code class="text-dark">"問一下這個筆記本關於機器學習的內容"</code>
+                </div>
+                <div class="bg-light p-2 rounded">
+                    <code class="text-dark">"查詢文件中提到的預算數字"</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 內容生成 -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-warning">
+                <i class="bi bi-magic me-2"></i>內容生成
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-3 text-muted">可生成類型</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-mic-fill text-primary me-2"></i>音訊 Podcast</li>
+                    <li><i class="bi bi-camera-video text-danger me-2"></i>影片</li>
+                    <li><i class="bi bi-easel text-success me-2"></i>簡報</li>
+                    <li><i class="bi bi-question-circle text-info me-2"></i>測驗</li>
+                    <li><i class="bi bi-card-text text-warning me-2"></i>閃卡</li>
+                    <li><i class="bi bi-file-text text-secondary me-2"></i>報告</li>
+                    <li><i class="bi bi-image text-primary me-2"></i>資訊圖表</li>
+                    <li><i class="bi bi-diagram-3 text-success me-2"></i>心智圖</li>
+                </ul>
+                <hr>
+                <h6 class="card-subtitle mb-2 text-muted">自然語言範例</h6>
+                <div class="bg-light p-2 rounded mb-2">
+                    <code class="text-dark">"幫我生成 Podcast"</code>
+                </div>
+                <div class="bg-light p-2 rounded">
+                    <code class="text-dark">"產生 10 題測驗"</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 研究工具 -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-search me-2"></i>研究工具
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-3 text-muted">支援功能</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-globe text-primary me-2"></i>網頁研究 (快速/深度)</li>
+                    <li><i class="bi bi-google text-success me-2"></i>Drive 研究</li>
+                    <li><i class="bi bi-download text-info me-2"></i>自動匯入來源</li>
+                </ul>
+                <hr>
+                <h6 class="card-subtitle mb-2 text-muted">自然語言範例</h6>
+                <div class="bg-light p-2 rounded mb-2">
+                    <code class="text-dark">"搜尋關於量子運算的資料"</code>
+                </div>
+                <div class="bg-light p-2 rounded">
+                    <code class="text-dark">"研究 AI 在醫療領域的應用"</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下載匯出 -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-dark">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-download me-2"></i>下載匯出
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-3 text-muted">可下載類型</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-file-music text-primary me-2"></i>音訊 (.mp3)</li>
+                    <li><i class="bi bi-file-play text-danger me-2"></i>影片 (.mp4)</li>
+                    <li><i class="bi bi-file-earmark-pdf text-success me-2"></i>簡報 (.pdf)</li>
+                    <li><i class="bi bi-file-image text-warning me-2"></i>資訊圖表 (.png)</li>
+                    <li><i class="bi bi-file-text text-info me-2"></i>報告 (.md)</li>
+                    <li><i class="bi bi-file-code text-secondary me-2"></i>心智圖 (.json)</li>
+                    <li><i class="bi bi-file-spreadsheet text-success me-2"></i>數據表 (.csv)</li>
+                    <li><i class="bi bi-file-text text-primary me-2"></i>測驗/閃卡 (.json/.md)</li>
+                </ul>
+                <hr>
+                <h6 class="card-subtitle mb-2 text-muted">自然語言範例</h6>
+                <div class="bg-light p-2 rounded mb-2">
+                    <code class="text-dark">"下載剛才的 Podcast"</code>
+                </div>
+                <div class="bg-light p-2 rounded">
+                    <code class="text-dark">"匯出報告為 Markdown"</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 使用提示 -->
+<div class="alert alert-info mt-4">
+    <h5><i class="bi bi-lightbulb me-2"></i>使用提示</h5>
+    <ul class="mb-0">
+        <li>在<a href="/">執行介面</a>輸入上述自然語言範例即可執行對應功能</li>
+        <li>部分功能（如 Podcast、影片生成）需要較長時間，會在背景執行</li>
+        <li>可在<a href="/settings">設定頁</a>切換 NLP 解析方式和介面主題</li>
+        <li>建議先選擇要操作的筆記本，再執行相關功能</li>
+    </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 5 - 完整生成器製作 | AI Skill 實作課 Day 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); height: 100vh; overflow: hidden; color: #333; }
+.nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.2); z-index: 10000; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+.nav-title { color: white; font-size: 18px; font-weight: 700; }
+.nav-buttons { display: flex; gap: 10px; align-items: center; }
+.nav-btn { padding: 6px 16px; border-radius: 20px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; display: inline-block; font-family: inherit; }
+.nav-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
+.slides-container { display: flex; align-items: center; justify-content: center; height: 100vh; padding-top: 60px; }
+.slide { display: none; width: 95%; max-width: 1400px; max-height: 88vh; background: rgba(255,255,255,0.98); border-radius: 24px; padding: 60px; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: fadeIn 0.4s ease; }
+.slide.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-thumb { background: rgba(30,60,114,0.3); border-radius: 4px; }
+h1 { color: #1e3c72; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #2a5298; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #1e3c72; }
+h3 { color: #1e3c72; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #1e3c72; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: #1e3c72; color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f5f7ff; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; color: #d63384; font-size: 0.9em; }
+pre { background: #282c34; color: #abb2bf; padding: 25px; border-radius: 12px; font-size: 18px; line-height: 1.6; overflow-x: auto; margin: 20px 0; white-space: pre-wrap; word-break: break-word; }
+pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+.box { padding: 20px 24px; border-radius: 12px; margin: 20px 0; font-size: 19px; line-height: 1.8; }
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 24px 0; }
+.concept-card { background: #f8f9fa; padding: 28px; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s, box-shadow 0.3s; }
+.concept-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.concept-card h3 { margin-top: 0; }
+.arrow-btn { position: fixed; top: 50%; transform: translateY(-50%); width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 28px; cursor: pointer; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+.arrow-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-50%) scale(1.1); }
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+.dots { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 9999; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.35); cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.5); }
+.dot.active { background: white; transform: scale(1.2); }
+.cover-slide { flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 70vh; }
+.cover-slide.active { display: flex; }
+.cover-slide .subtitle { font-size: 22px; color: #2a5298; font-weight: 600; margin-bottom: 16px; }
+.cover-slide h1 { font-size: 56px; background: linear-gradient(135deg, #1e3c72, #2a5298); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 20px; }
+.cover-slide .desc { font-size: 24px; color: #666; max-width: 800px; line-height: 1.8; margin-bottom: 40px; }
+.tags { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.tag { padding: 10px 28px; border-radius: 50px; color: white; font-size: 18px; font-weight: 700; }
+.slide-placeholder { background: #e8f4fd; border: 2px dashed #2196f3; border-radius: 12px; padding: 20px; text-align: center; color: #1565c0; font-size: 16px; margin: 20px 0; }
+.step-card { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 24px; border-radius: 16px; }
+.step-card h3 { color: white; margin-top: 0; }
+.step-card p { color: rgba(255,255,255,0.9); font-size: 17px; }
+.next-part-btn { display: inline-block; background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 18px 48px; border-radius: 50px; text-decoration: none; font-size: 22px; font-weight: 700; box-shadow: 0 8px 25px rgba(30,60,114,0.4); transition: transform 0.3s, box-shadow 0.3s; margin-top: 20px; }
+.next-part-btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 12px 35px rgba(30,60,114,0.5); }
+.dir-tree { background: #f4f4f8; border-radius: 12px; padding: 20px 26px; font-size: 16px; line-height: 2; color: #333; margin: 18px 0; }
+.step-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 24px 0; }
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+    <div class="nav-title">🛠️ Part 5 - 完整生成器製作</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="index.html">🏠 首頁</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+        <a href="Part4_跨平台與生態系.html" class="nav-btn">&larr; Part 4</a>
+        <a href="Part6_打包分享與Netlify.html" class="nav-btn">Part 6 &rarr;</a>
+        <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">📘 FB</a>
+        <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">🎥 YT</a>
+        <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">👥 3A社團</a>
+    </div>
+</nav>
+<button class="arrow-btn arrow-left">&#8592;</button>
+<button class="arrow-btn arrow-right">&#8594;</button>
+<div class="slides-container">
+  <div class="slide cover-slide active">
+    <div class="subtitle">Day 2 &middot; Part 5 &middot; 下午 G｜13:30–14:00</div>
+    <h1>完整生成器製作</h1>
+    <p class="desc">打造多功能三合一 Skill 工作台，讓同事不需懂 AI 也能直接使用</p>
+    <div class="tags">
+      <span class="tag" style="background: linear-gradient(135deg,#1e3c72,#2a5298);">&#9200; 30 分鐘</span>
+      <span class="tag" style="background: linear-gradient(135deg,#2a5298,#4a90d9);">&#128433;&#65039; 填表就能用</span>
+      <span class="tag" style="background: linear-gradient(135deg,#1565c0,#1e3c72);">&#128295; 實作模組 G</span>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>G-1｜生成器設計理念</h2>
+    <table>
+      <thead><tr><th>比較項目</th><th>Day 1 的做法</th><th>Day 2 的進化</th></tr></thead>
+      <tbody>
+        <tr><td><strong>使用者</strong></td><td>自己（懂 SKILL.md）</td><td>整個團隊（不需懂 AI）</td></tr>
+        <tr><td><strong>操作方式</strong></td><td>開 AI 平台、貼指令</td><td>開瀏覽器、填表單、點按鈕</td></tr>
+        <tr><td><strong>Skill 入口</strong></td><td>Antigravity / Claude Code CLI</td><td>網頁生成器（skill-generator.html）</td></tr>
+        <tr><td><strong>維護難度</strong></td><td>需手動更新每個 Skill</td><td>集中在一個 HTML 檔案管理</td></tr>
+        <tr><td><strong>分享方式</strong></td><td>複製 SKILL.md 給對方</td><td>傳一個連結（或 HTML 檔案）</td></tr>
+      </tbody>
+    </table>
+    <div class="box info"><strong>核心理念：</strong>讓同事只需「開網頁 &rarr; 選功能 &rarr; 填表單 &rarr; 產生 &rarr; 複製」，完全不需要知道 SKILL.md 是什麼！</div>
+  </div>
+
+  <div class="slide">
+    <h2>G-1｜生成器使用流程（5 步）</h2>
+    <div class="step-grid">
+      <div class="step-card"><h3>Step 01</h3><p>開啟網頁<br><br>瀏覽器打開 skill-generator.html，不需要安裝任何軟體</p></div>
+      <div class="step-card"><h3>Step 02</h3><p>選擇功能<br><br>點選頁面頂部的功能標籤：Email 回覆 / 會議紀錄 / 提案報告</p></div>
+      <div class="step-card"><h3>Step 03</h3><p>填寫表單<br><br>在對應欄位填入情境資訊、選擇語氣與優先度</p></div>
+      <div class="step-card"><h3>Step 04</h3><p>點擊產生<br><br>按下「產生 Prompt」按鈕，系統自動組合最佳指令</p></div>
+      <div class="step-card"><h3>Step 05</h3><p>複製使用<br><br>複製產生的 Prompt，貼入任何 AI 平台立即使用</p></div>
+    </div>
+    <!-- 視覺化流程箭頭圖 -->
+    <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0; margin:24px 0 8px;">
+      <div style="background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:14px 20px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">🌐 開啟網頁</div>
+      <div style="font-size:26px; color:#1e3c72; margin:0 8px;">→</div>
+      <div style="background:linear-gradient(135deg,#2a5298,#4a90d9); color:white; padding:14px 20px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">🏷️ 選擇功能</div>
+      <div style="font-size:26px; color:#1e3c72; margin:0 8px;">→</div>
+      <div style="background:linear-gradient(135deg,#4a90d9,#64b5f6); color:white; padding:14px 20px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">📝 填寫表單</div>
+      <div style="font-size:26px; color:#1e3c72; margin:0 8px;">→</div>
+      <div style="background:linear-gradient(135deg,#ff9800,#f57c00); color:white; padding:14px 20px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">⚡ 產生 Prompt</div>
+      <div style="font-size:26px; color:#1e3c72; margin:0 8px;">→</div>
+      <div style="background:#28a745; color:white; padding:14px 20px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">📋 複製使用</div>
+    </div>
+    <p style="text-align:center; font-size:16px; color:#666;">同事只需要「開網頁 → 填表 → 複製」，完全不需要懂 SKILL.md</p>
+  </div>
+
+  <div class="slide">
+    <h2>G-2｜建立 skill-generator.html</h2>
+    <h3>建立生成器檔案</h3>
+    <pre>touch my-project/skill-generator.html</pre>
+    <h3>HTML 核心架構說明</h3>
+    <p>生成器由三個核心區塊組成：</p>
+    <pre>&lt;!-- 1. 頂部 Tab 導覽列 --&gt;
+&lt;div class="tab-bar"&gt;
+  &lt;button class="tab active" onclick="switchTab('email')"&gt;&#128231; Email 回覆&lt;/button&gt;
+  &lt;button class="tab" onclick="switchTab('meeting')"&gt;&#128203; 會議紀錄&lt;/button&gt;
+  &lt;button class="tab" onclick="switchTab('proposal')"&gt;&#128202; 提案報告&lt;/button&gt;
+&lt;/div&gt;
+&lt;div id="panel-email" class="skill-panel active"&gt;&lt;/div&gt;
+&lt;div id="panel-meeting" class="skill-panel"&gt;&lt;/div&gt;
+&lt;div id="panel-proposal" class="skill-panel"&gt;&lt;/div&gt;
+&lt;button class="generate-btn" onclick="generate()"&gt;&#9889; 產生 Prompt&lt;/button&gt;
+&lt;div id="output-area"&gt;
+  &lt;textarea id="output" readonly&gt;&lt;/textarea&gt;
+  &lt;button onclick="copyOutput()"&gt;&#128203; 複製&lt;/button&gt;
+&lt;/div&gt;</pre>
+  </div>
+
+  <div class="slide">
+    <h2>G-2｜Email 回覆面板程式碼</h2>
+    <pre>&lt;div id="panel-email" class="skill-panel active"&gt;
+  &lt;h3&gt;&#128231; Email 回覆助手&lt;/h3&gt;
+  &lt;label&gt;收到的 Email 內容：&lt;/label&gt;
+  &lt;textarea id="email-content" rows="5" placeholder="請貼上或輸入收到的 Email 全文..."&gt;&lt;/textarea&gt;
+  &lt;label&gt;我方立場與背景：&lt;/label&gt;
+  &lt;textarea id="email-context" rows="3" placeholder="例如：我是PM，對方要求縮短時程..."&gt;&lt;/textarea&gt;
+  &lt;label&gt;優先處理目標：&lt;/label&gt;
+  &lt;div class="radio-group"&gt;
+    &lt;label&gt;&lt;input type="radio" name="priority" value="maintain_schedule"&gt; 維持原時程&lt;/label&gt;
+    &lt;label&gt;&lt;input type="radio" name="priority" value="negotiate" checked&gt; 尋求折衷方案&lt;/label&gt;
+    &lt;label&gt;&lt;input type="radio" name="priority" value="accept"&gt; 接受對方要求&lt;/label&gt;
+  &lt;/div&gt;
+  &lt;label&gt;回覆語氣：&lt;/label&gt;
+  &lt;div class="radio-group"&gt;
+    &lt;label&gt;&lt;input type="radio" name="tone" value="formal" checked&gt; 正式專業&lt;/label&gt;
+    &lt;label&gt;&lt;input type="radio" name="tone" value="friendly"&gt; 親切友善&lt;/label&gt;
+    &lt;label&gt;&lt;input type="radio" name="tone" value="assertive"&gt; 積極主動&lt;/label&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</pre>
+  </div>
+
+  <div class="slide">
+    <h2>G-2｜JavaScript 切換與產生邏輯</h2>
+    <pre>// Tab 切換函式
+function switchTab(tabName) {
+  document.querySelectorAll('.skill-panel').forEach(p =&gt; {
+    p.classList.remove('active');
+  });
+  document.querySelectorAll('.tab').forEach(t =&gt; {
+    t.classList.remove('active');
+  });
+  document.getElementById('panel-' + tabName).classList.add('active');
+  event.target.classList.add('active');
+  currentTab = tabName;
+}
+
+// Email Prompt 產生函式
+function generateEmailPrompt() {
+  const content  = document.getElementById('email-content').value;
+  const context  = document.getElementById('email-context').value;
+  const priority = document.querySelector('input[name="priority"]:checked').value;
+  const tone     = document.querySelector('input[name="tone"]:checked').value;
+
+  const priorityMap = {
+    maintain_schedule: '維持原定時程，說明原因',
+    negotiate:         '尋求雙方都能接受的折衷方案',
+    accept:            '接受對方要求，但提出配套條件'
+  };
+  const toneMap = {
+    formal:    '正式、專業的商務語氣',
+    friendly:  '親切友善、保持良好關係',
+    assertive: '積極主動、展現執行力'
+  };
+
+  return `你是一位專業的商務溝通顧問。
+
+【收到的 Email】
+${content}
+
+【我方背景與立場】
+${context}
+
+【處理目標】：${priorityMap[priority]}
+【回覆語氣】：${toneMap[tone]}
+
+請撰寫一封完整的回覆 Email，包含主旨與正文。`;
+}</pre>
+  </div>
+
+  <div class="slide">
+    <h2>G-2｜完成畫面預覽</h2>
+    <!-- 模擬生成器 UI：Email 回覆 Tab -->
+    <div style="border:2px solid #ddd; border-radius:16px; overflow:hidden; margin:20px 0; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+      <!-- 瀏覽器框 -->
+      <div style="background:#f0f0f0; padding:8px 16px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #ddd;">
+        <div style="display:flex; gap:6px;"><span style="width:12px;height:12px;border-radius:50%;background:#ff5f57;display:inline-block;"></span><span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span><span style="width:12px;height:12px;border-radius:50%;background:#28c840;display:inline-block;"></span></div>
+        <div style="background:white; border-radius:6px; padding:4px 16px; flex:1; font-size:13px; color:#666;">file:///my-project/skill-generator.html</div>
+      </div>
+      <!-- Tab 列 -->
+      <div style="background:#1e3c72; padding:12px 20px; display:flex; gap:8px;">
+        <div style="background:white; color:#1e3c72; padding:8px 20px; border-radius:8px 8px 0 0; font-weight:700; font-size:15px;">📧 Email 回覆</div>
+        <div style="background:rgba(255,255,255,0.2); color:white; padding:8px 20px; border-radius:8px 8px 0 0; font-weight:600; font-size:15px;">📋 會議紀錄</div>
+        <div style="background:rgba(255,255,255,0.2); color:white; padding:8px 20px; border-radius:8px 8px 0 0; font-weight:600; font-size:15px;">🌐 網頁設計</div>
+      </div>
+      <!-- 表單內容 -->
+      <div style="background:white; padding:24px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#333; margin-bottom:4px;">寄件人名稱</div>
+            <div style="background:#f5f7fa; border:1px solid #ddd; border-radius:8px; padding:10px 14px; color:#999; font-size:14px;">例：王小明</div>
+          </div>
+          <div>
+            <div style="font-size:14px; font-weight:600; color:#333; margin-bottom:4px;">回覆語氣</div>
+            <div style="background:#f5f7fa; border:1px solid #ddd; border-radius:8px; padding:10px 14px; color:#666; font-size:14px;">▼ 專業親切</div>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div style="font-size:14px; font-weight:600; color:#333; margin-bottom:4px;">客戶原始來信內容</div>
+          <div style="background:#f5f7fa; border:1px solid #ddd; border-radius:8px; padding:10px 14px; min-height:60px; color:#999; font-size:14px;">請貼上客戶來信...</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="display:inline-block; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:12px 40px; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer;">⚡ 產生 Prompt</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模擬生成器 UI：會議紀錄 Tab -->
+    <p>📋 <strong>切換到「會議紀錄」Tab：</strong>表單自動變成會議相關欄位</p>
+    <div style="border:2px solid #ddd; border-radius:16px; overflow:hidden; margin:12px 0; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+      <div style="background:#1e3c72; padding:12px 20px; display:flex; gap:8px;">
+        <div style="background:rgba(255,255,255,0.2); color:white; padding:8px 20px; border-radius:8px 8px 0 0; font-weight:600; font-size:15px;">📧 Email 回覆</div>
+        <div style="background:white; color:#1e3c72; padding:8px 20px; border-radius:8px 8px 0 0; font-weight:700; font-size:15px;">📋 會議紀錄</div>
+        <div style="background:rgba(255,255,255,0.2); color:white; padding:8px 20px; border-radius:8px 8px 0 0; font-weight:600; font-size:15px;">🌐 網頁設計</div>
+      </div>
+      <div style="background:white; padding:24px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div><div style="font-size:14px; font-weight:600; color:#333; margin-bottom:4px;">會議主題</div><div style="background:#f5f7fa; border:1px solid #ddd; border-radius:8px; padding:10px 14px; color:#999; font-size:14px;">例：Q2 行銷策略會議</div></div>
+          <div><div style="font-size:14px; font-weight:600; color:#333; margin-bottom:4px;">參與者</div><div style="background:#f5f7fa; border:1px solid #ddd; border-radius:8px; padding:10px 14px; color:#999; font-size:14px;">例：王經理、李主管</div></div>
+          <div><div style="font-size:14px; font-weight:600; color:#333; margin-bottom:4px;">會議日期</div><div style="background:#f5f7fa; border:1px solid #ddd; border-radius:8px; padding:10px 14px; color:#999; font-size:14px;">2026-02-28</div></div>
+        </div>
+        <div style="margin-bottom:16px;"><div style="font-size:14px; font-weight:600; color:#333; margin-bottom:4px;">會議逐字稿或摘要</div><div style="background:#f5f7fa; border:1px solid #ddd; border-radius:8px; padding:10px 14px; min-height:50px; color:#999; font-size:14px;">請貼上會議內容...</div></div>
+        <div style="text-align:center;"><div style="display:inline-block; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:12px 40px; border-radius:10px; font-weight:700; font-size:16px;">⚡ 產生 Prompt</div></div>
+      </div>
+    </div>
+
+    <!-- 模擬產出結果 -->
+    <p>✅ <strong>按下「產生 Prompt」後的輸出：</strong></p>
+    <div style="border:2px solid #28a745; border-radius:16px; overflow:hidden; margin:12px 0;">
+      <div style="background:#d4edda; padding:10px 20px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:700; color:#155724; font-size:16px;">📄 產生的 Prompt</span>
+        <div style="background:#28a745; color:white; padding:6px 18px; border-radius:8px; font-weight:700; font-size:14px;">✅ 已複製到剪貼簿！</div>
+      </div>
+      <div style="background:#f8f9fa; padding:20px; font-family:'Consolas',monospace; font-size:14px; line-height:1.8; color:#333;">
+        <div style="color:#6a9955;"># 角色設定</div>
+        <div>你是一位專業的會議紀錄整理助手。</div>
+        <div style="margin:6px 0;"></div>
+        <div style="color:#6a9955;"># 會議資訊</div>
+        <div>- 會議主題：Q2 行銷策略會議</div>
+        <div>- 參與者：王經理、李主管、張專員</div>
+        <div>- 日期：2026-02-28</div>
+        <div style="margin:6px 0;"></div>
+        <div style="color:#6a9955;"># 任務要求</div>
+        <div>請將以下會議逐字稿整理為結構化會議紀錄，</div>
+        <div>MUST 包含：決議事項、行動項目（含負責人與截止日）...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide cover-slide">
+    <h2 style="color:#1e3c72; border:none; padding:0; margin-bottom:20px;">G-3｜模組 G 小結</h2>
+    <p class="desc">在這個模組中，你完成了三合一 Skill 網頁生成器的完整製作</p>
+    <table style="max-width:860px; margin:0 auto 30px; text-align:left;">
+      <thead><tr><th>角色</th><th>以前的做法</th><th>現在的做法</th></tr></thead>
+      <tbody>
+        <tr><td><strong>業務</strong></td><td>自己摸索怎麼問 AI</td><td>開網頁填表單，30 秒產生 Email</td></tr>
+        <tr><td><strong>行政</strong></td><td>手動整理會議記錄</td><td>貼上逐字稿，自動產生結構化紀錄</td></tr>
+        <tr><td><strong>主管</strong></td><td>等下屬交初稿再修改</td><td>團隊各自使用生成器，品質一致</td></tr>
+      </tbody>
+    </table>
+    <div class="box info" style="max-width:700px; text-align:left;">
+      <strong>接下來 Part 6：</strong>學習如何把這個生成器連同所有 Skill，打包成可以分享給整個部門的完整專案包，並透過 Netlify 一鍵部署到網路上！
+    </div>
+    <a href="Part6_打包分享與Netlify.html" class="next-part-btn">前往 Part 6 &rarr;</a>
+  </div>
+</div>
+<div class="dots">
+  <div class="dot active"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+  <div class="dot"></div>
+</div>
+<script>
+(function(){
+    var slides = document.querySelectorAll('.slide');
+    var dots = document.querySelectorAll('.dot');
+    var cur = 0;
+    function showSlide(n) {
+        slides[cur].classList.remove('active');
+        dots[cur].classList.remove('active');
+        cur = (n + slides.length) % slides.length;
+        slides[cur].classList.add('active');
+        dots[cur].classList.add('active');
+        slides[cur].scrollTop = 0;
+    }
+    document.querySelector('.arrow-left').addEventListener('click', function() { showSlide(cur - 1); });
+    document.querySelector('.arrow-right').addEventListener('click', function() { showSlide(cur + 1); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); showSlide(cur - 1); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); showSlide(cur + 1); }
+    });
+    dots.forEach(function(dot, i) { dot.addEventListener('click', function() { showSlide(i); }); });
+    var touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e){
+        var diff = e.changedTouches[0].screenX - touchStartX;
+        if(Math.abs(diff) > 60){ diff < 0 ? showSlide(cur + 1) : showSlide(cur - 1); }
+    });
+    window.changeSlide = function(dir){ showSlide(cur + dir); };
+})();
+function toggleFullscreen(){
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
+    else { document.exitFullscreen(); }
+}
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

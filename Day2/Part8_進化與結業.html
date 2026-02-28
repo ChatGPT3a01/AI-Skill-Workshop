@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 8 - Skill 優化與總結 | AI Skill 實作課 Day 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); height: 100vh; overflow: hidden; color: #333; }
+.nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.2); z-index: 10000; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+.nav-title { color: white; font-size: 18px; font-weight: 700; }
+.nav-buttons { display: flex; gap: 10px; align-items: center; }
+.nav-btn { padding: 6px 16px; border-radius: 20px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; display: inline-block; font-family: inherit; }
+.nav-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
+.slides-container { display: flex; align-items: center; justify-content: center; height: 100vh; padding-top: 60px; }
+.slide { display: none; width: 95%; max-width: 1400px; max-height: 88vh; background: rgba(255,255,255,0.98); border-radius: 24px; padding: 60px; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: fadeIn 0.4s ease; }
+.slide.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-thumb { background: rgba(30,60,114,0.3); border-radius: 4px; }
+h1 { color: #1e3c72; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #2a5298; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #1e3c72; }
+h3 { color: #1e3c72; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #1e3c72; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: #1e3c72; color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f5f7ff; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; color: #d63384; font-family: 'Consolas', monospace; font-size: 0.9em; }
+pre { background: #282c34; color: #abb2bf; padding: 25px; border-radius: 12px; font-size: 18px; line-height: 1.6; overflow-x: auto; margin: 20px 0; font-family: 'Consolas', monospace; white-space: pre-wrap; word-break: break-word; }
+pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+.box { padding: 20px 24px; border-radius: 12px; margin: 20px 0; font-size: 19px; line-height: 1.8; }
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 24px 0; }
+.concept-card { background: #f8f9fa; padding: 28px; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s, box-shadow 0.3s; }
+.concept-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+.concept-card h3 { margin-top: 0; }
+.arrow-btn { position: fixed; top: 50%; transform: translateY(-50%); width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 28px; cursor: pointer; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+.arrow-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-50%) scale(1.1); }
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+.dots { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 9999; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.35); cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.5); }
+.dot.active { background: white; transform: scale(1.2); }
+.cover-slide { flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 70vh; }
+.cover-slide.active { display: flex; }
+.cover-slide .subtitle { font-size: 22px; color: #2a5298; font-weight: 600; margin-bottom: 16px; }
+.cover-slide h1 { font-size: 56px; background: linear-gradient(135deg, #1e3c72, #2a5298); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 20px; }
+.cover-slide .desc { font-size: 24px; color: #666; max-width: 800px; line-height: 1.8; margin-bottom: 40px; }
+.tags { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.tag { padding: 10px 28px; border-radius: 50px; color: white; font-size: 18px; font-weight: 700; }
+.slide-placeholder { background: #e8f4fd; border: 2px dashed #2196f3; border-radius: 12px; padding: 20px; text-align: center; color: #1565c0; font-size: 16px; margin: 20px 0; }
+.step-card { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 24px; border-radius: 16px; }
+.step-card h3 { color: white; margin-top: 0; }
+.step-card p { color: rgba(255,255,255,0.9); font-size: 17px; }
+.next-part-btn { display: inline-block; background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 18px 48px; border-radius: 50px; text-decoration: none; font-size: 22px; font-weight: 700; box-shadow: 0 8px 25px rgba(30,60,114,0.4); transition: transform 0.3s, box-shadow 0.3s; margin-top: 20px; }
+.next-part-btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 12px 35px rgba(30,60,114,0.5); }
+.scenario-card { border-radius: 12px; padding: 20px; border: 2px solid #e0e0e0; background: #fff; }
+.scenario-card .letter { font-size: 28px; font-weight: 800; color: #1e3c72; margin-bottom: 6px; }
+.scenario-card h4 { color: #1e3c72; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.scenario-card p { font-size: 14px; color: #666; line-height: 1.6; margin: 0; }
+.checklist { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.check-item { display: flex; align-items: center; gap: 12px; font-size: 18px; color: #333; }
+.check-item input[type=checkbox] { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; }
+.timeline { display: flex; flex-direction: column; gap: 14px; margin: 20px 0; }
+.timeline-item { display: flex; gap: 16px; align-items: flex-start; }
+.timeline-dot { width: 14px; height: 14px; border-radius: 50%; background: #2a5298; flex-shrink: 0; margin-top: 4px; }
+.timeline-content h4 { color: #1e3c72; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.timeline-content p { font-size: 16px; color: #555; margin: 0; }
+.blueprint-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 20px 0; }
+.blueprint-card { border-radius: 12px; padding: 20px; }
+.blueprint-card.layer1 { background: #d4edda; border-left: 5px solid #28a745; }
+.blueprint-card.layer2 { background: #cce5ff; border-left: 5px solid #0066cc; }
+.blueprint-card.layer3 { background: #fff3cd; border-left: 5px solid #ffc107; }
+.blueprint-card.layer4 { background: #f8d7da; border-left: 5px solid #dc3545; }
+.blueprint-card h4 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.blueprint-card ul { font-size: 14px; padding-left: 16px; margin: 0; }
+.blueprint-card li { margin-bottom: 4px; color: #333; }
+.cert-box { border: 3px solid #1e3c72; border-radius: 16px; padding: 36px; text-align: center; background: linear-gradient(135deg, #f8f9ff 0%, #e8f0fe 100%); margin: 20px 0; }
+.step-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin: 24px 0; }
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+    <div class="nav-title">🎓 Part 8 - Skill 優化與總結</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="index.html">🏠 首頁</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+        <a href="Part7_完整流程實戰.html" class="nav-btn">&larr; Part 7</a>
+        <a href="Part9_Script自動化進階.html" class="nav-btn">Part 9 →</a>
+        <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">📘 FB</a>
+        <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">🎥 YT</a>
+        <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">👥 3A社團</a>
+    </div>
+</nav>
+<button class="arrow-btn arrow-left" onclick="showSlide(currentSlide - 1)">&#8249;</button>
+<button class="arrow-btn arrow-right" onclick="showSlide(currentSlide + 1)">&#8250;</button>
+<div class="slides-container">
+  <div class="slide cover-slide active">
+    <div class="subtitle">Day 2 &middot; Part 8 &middot; &#19979;&#21320; K+L&#65372;15:45&ndash;16:30</div>
+    <h1>Skill 持續優化策略</h1>
+    <p class="desc">讓 Skill 越用越聰明的方法，十大核心觀念總整理</p>
+    <div class="tags">
+      <span class="tag" style="background: linear-gradient(135deg,#1e3c72,#2a5298);">&#9200; 45 &#20998;&#37912;</span>
+      <span class="tag" style="background: linear-gradient(135deg,#28a745,#20c997);">&#128200; &#25345;&#32396;&#36914;&#21270;</span>
+      <span class="tag" style="background: linear-gradient(135deg,#e91e63,#c2185b);">&#127891; &#27169;&#32068; K+L</span>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>K-1&#65372;Skill &#30340;&#25345;&#32396;&#20778;&#21270;&#24490;&#29872;&#65288;PDCA&#65289;</h2>
+    <div class="concept-grid">
+      <div class="step-card"><h3>Plan &#35215;&#21123;</h3><p>&#35373;&#35336; SKILL.md&#65292;&#23450;&#32681;&#30446;&#27161;&#33287;&#35215;&#21063;</p></div>
+      <div class="step-card"><h3>Do &#22519;&#34892;</h3><p>&#23526;&#38555;&#20351;&#29992;&#65292;&#35264;&#23519; AI &#36664;&#20986;&#21697;&#36074;</p></div>
+      <div class="step-card"><h3>Check &#27298;&#26597;</h3><p>&#35352;&#37636;&#37679;&#35492;&#21644;&#36986;&#28431;&#30340;&#35215;&#21063;</p></div>
+      <div class="step-card"><h3>Act &#25913;&#21892;</h3><p>&#26356;&#26032; SKILL.md&#65292;&#21152;&#20837;&#26032;&#30340; MUST/NEVER</p></div>
+    </div>
+    <div class="box info"><strong>1 &#20998;&#37912;&#21453;&#24605;&#32722;&#24931;&#65306;</strong>&#27599;&#27425;&#20351;&#29992; Skill &#24460;&#21839;&#33258;&#24049;&#65306;&#12300;&#36889;&#27425;&#36664;&#20986;&#21738;&#35041;&#19981;&#22816;&#22909;&#65311;&#12301;&#25226;&#31572;&#26696;&#30452;&#25509;&#21152;&#36914; SKILL.md&#12290;</div>
+  </div>
+
+  <div class="slide">
+    <h2>K-1&#65372;&#19977;&#22823;&#23526;&#21209;&#20778;&#21270;&#25216;&#24039;</h2>
+    <h3>&#25216;&#24039;&#19968;&#65306;&#24314;&#31435;&#24120;&#35211;&#37679;&#35492;&#25991;&#20214;</h3>
+<pre># common-mistakes.md
+
+## &#24050;&#30693;&#21839;&#38988;
+1. &#21839;&#38988;&#65306;&#36664;&#20986;&#26684;&#24335;&#19981;&#19968;&#33268;  &#35299;&#27861;&#65306;&#22312;&#36664;&#20986;&#26684;&#24335;&#31456;&#31680;&#21152;&#20837;&#20855;&#39636;&#31684;&#20363;
+2. &#21839;&#38988;&#65306;&#35486;&#27683;&#22826;&#27491;&#24335;  &#35299;&#27861;&#65306;MUST &#20351;&#29992;&#36629;&#39686;&#21475;&#35486;&#35486;&#27683;
+3. &#21839;&#38988;&#65306;&#24573;&#30053;&#23383;&#25976;&#38480;&#21046;  &#35299;&#27861;&#65306;NEVER &#36229;&#36942; 150 &#23383;</pre>
+    <h3>&#25216;&#24039;&#20108;&#65306;&#22312; SKILL.md &#24341;&#29992;</h3>
+<pre>## &#20363;&#22806;&#34389;&#29702;
+@assets/common-mistakes.md
+&#36935;&#21040;&#19978;&#36848;&#24050;&#30693;&#21839;&#38988;&#26178;&#65292;&#22871;&#29992;&#23565;&#25033;&#35299;&#27861;&#12290;</pre>
+    <h3>&#25216;&#24039;&#19977;&#65306;&#29256;&#26412;&#21270;&#31649;&#29702;</h3>
+<pre>git add SKILL.md
+git commit -m &quot;fix: &#21152;&#20837;&#23383;&#25976;&#38480;&#21046;&#35215;&#21063; v1.2&quot;</pre>
+    <!-- SKILL.md 初版 vs 優化版對比 -->
+    <h3>📊 SKILL.md 前後對比：reply-composer 為例</h3>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0;">
+      <!-- 初版 -->
+      <div style="border:2px solid #dc3545; border-radius:12px; overflow:hidden;">
+        <div style="background:#dc3545; color:white; padding:8px 16px; font-weight:700; font-size:15px;">❌ 初版 v1.0 — 只有基本規則</div>
+        <div style="background:#1e1e1e; padding:16px; font-family:'Consolas',monospace; font-size:13px; color:#d4d4d4; line-height:1.8;">
+          <div style="color:#569cd6;">## 執行步驟</div>
+          <div>### Step 1：讀取客訴分類</div>
+          <div>### Step 2：撰寫回覆</div>
+          <div style="margin:6px 0;"></div>
+          <div style="color:#569cd6;">## 安全規則</div>
+          <div>- MUST 使用禮貌語氣</div>
+          <div>- NEVER 推卸責任</div>
+          <div style="margin:10px 0;"></div>
+          <div style="color:#f44747; font-style:italic;">⚠️ 沒有例外處理</div>
+          <div style="color:#f44747; font-style:italic;">⚠️ 沒有輸出範例</div>
+          <div style="color:#f44747; font-style:italic;">⚠️ 規則太籠統</div>
+        </div>
+      </div>
+      <!-- 優化版 -->
+      <div style="border:2px solid #28a745; border-radius:12px; overflow:hidden;">
+        <div style="background:#28a745; color:white; padding:8px 16px; font-weight:700; font-size:15px;">✅ 優化版 v1.2 — 完整實戰版</div>
+        <div style="background:#1e1e1e; padding:16px; font-family:'Consolas',monospace; font-size:13px; color:#d4d4d4; line-height:1.8;">
+          <div style="color:#569cd6;">## 執行步驟</div>
+          <div>### Step 1：讀取客訴分類<span style="color:#4ec9b0;">+情緒等級</span></div>
+          <div>### Step 2：<span style="color:#4ec9b0;">依情緒等級選擇語氣模板</span></div>
+          <div>### Step 3：撰寫回覆<span style="color:#4ec9b0;">+附解決時程</span></div>
+          <div style="margin:6px 0;"></div>
+          <div style="color:#569cd6;">## 例外處理 <span style="color:#4ec9b0;">← 新增</span></div>
+          <div style="color:#4ec9b0;">- Check if 涉及法律糾紛 → 轉法務</div>
+          <div style="color:#4ec9b0;">- Check if 金額 > 5萬 → 需主管審批</div>
+          <div style="margin:6px 0;"></div>
+          <div style="color:#569cd6;">## 安全規則 <span style="color:#4ec9b0;">← 更具體</span></div>
+          <div>- MUST <span style="color:#4ec9b0;">先同理再提方案（第一段必須致歉）</span></div>
+          <div>- NEVER <span style="color:#4ec9b0;">使用「這不是我們的問題」等12個禁用語</span></div>
+          <div>- <span style="color:#4ec9b0;">MUST 附上預計處理時間</span></div>
+          <div style="margin:6px 0;"></div>
+          <div style="color:#569cd6;">## 範例 <span style="color:#4ec9b0;">← 新增</span></div>
+          <div style="color:#4ec9b0;">@assets/reply-examples.md</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>K-2&#65372;Skill &#25345;&#32396;&#23416;&#32722;&#27231;&#21046;</h2>
+    <div class="concept-grid">
+      <div class="concept-card"><h3>&#26041;&#27861;&#19968;&#65306;&#25163;&#21205;&#21453;&#24605;</h3><ul><li>&#37679;&#35492;&#36664;&#20986; &rarr; NEVER</li><li>&#36986;&#28431;&#38917;&#30446; &rarr; MUST</li><li>&#22909;&#30340;&#32080;&#26524; &rarr; &#31684;&#20363;</li></ul></div>
+      <div class="concept-card"><h3>&#26041;&#27861;&#20108;&#65306;&#20559;&#22909;&#35373;&#23450;</h3><ul><li>&#24120;&#29992;&#29992;&#35486;&#21644;&#35486;&#27683;</li><li>&#20559;&#22909;&#30340;&#36664;&#20986;&#26684;&#24335;</li><li>&#29305;&#23450;&#26989;&#21209;&#27969;&#31243;</li></ul></div>
+      <div class="concept-card"><h3>&#26041;&#27861;&#19977;&#65306;/reflect &#25351;&#20196;</h3><ul><li>Claude Code &#36914;&#38542;&#21151;&#33021;</li><li>&#33258;&#21205;&#25972;&#21512;&#20462;&#27491;&#24314;&#35696;</li><li>&#35352;&#37636;&#20351;&#29992;&#27511;&#31243;</li></ul></div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4>Week 1 &mdash; &#22522;&#26412;&#29256;</h4><p>&#23436;&#25104;&#26680;&#24515;&#35215;&#21063;&#65292;&#33021;&#31337;&#23450;&#22519;&#34892;&#22522;&#26412;&#20219;&#21209;</p></div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4>Week 2-4 &mdash; &#32047;&#31309;&#20462;&#27491;</h4><p>&#27599;&#27425;&#20351;&#29992;&#24460;&#21152;&#20837; 1-2 &#26781;&#26032;&#35215;&#21063;</p></div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4>Month 2 &mdash; &#31337;&#23450;&#29256;</h4><p>&#22823;&#24133;&#28187;&#23569;&#38656;&#35201;&#20154;&#24037;&#20462;&#25913;&#30340;&#24773;&#27841;</p></div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-content"><h4>Month 3+ &mdash; &#23560;&#23478;&#29256;</h4><p>Skill &#27604;&#26032;&#20154;&#26356;&#20102;&#35299;&#20320;&#30340;&#24037;&#20316;&#38656;&#27714;</p></div></div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>K-3&#65372;AI &#24037;&#20316;&#31995;&#32113;&#22235;&#23652;&#34253;&#22294;</h2>
+    <div class="blueprint-grid">
+      <div class="blueprint-card layer1"><h4>&#10003; &#31532;&#19968;&#23652;&#65306;&#20491;&#20154;&#25928;&#29575;</h4><ul><li>Email &#22238;&#35206;&#21161;&#25163;</li><li>&#26371;&#35696;&#32000;&#37636;&#29986;&#29983;&#22120;</li><li>&#25552;&#26696;&#26360;&#29983;&#25104;&#22120;</li><li>&#20491;&#20154; AI &#21161;&#29702;</li></ul></div>
+      <div class="blueprint-card layer2"><h4>&#127919; &#31532;&#20108;&#23652;&#65306;&#22296;&#38538;&#27161;&#28310;&#21270;</h4><ul><li>&#20849;&#29992; Skill &#24235;</li><li>&#24037;&#20316;&#35215;&#31684;&#25991;&#20214;&#21270;</li><li>&#35282;&#33394;&#32068;&#21512;&#35373;&#35336;</li><li>&#21697;&#36074;&#23529;&#26597;&#27969;&#31243;</li></ul></div>
+      <div class="blueprint-card layer3"><h4>&#128640; &#31532;&#19977;&#23652;&#65306;&#27969;&#31243;&#33258;&#21205;&#21270;</h4><ul><li>MCP &#24037;&#20855;&#25972;&#21512;</li><li>Webhook &#35320;&#30332;</li><li>&#25490;&#31243;&#22519;&#34892;</li><li>&#25976;&#25818;&#36861;&#36452;</li></ul></div>
+      <div class="blueprint-card layer4"><h4>&#128142; &#31532;&#22235;&#23652;&#65306;&#30693;&#35672;&#36039;&#29986;&#21270;</h4><ul><li>&#27969;&#31243;&#25991;&#20214;&#21270;</li><li>&#26032;&#20154;&#20837;&#32887;&#24037;&#20855;&#21253;</li><li>&#23395;&#24230; Review</li><li>&#30693;&#35672;&#31038;&#32676;</li></ul></div>
+    </div>
+    <!-- 30 天升級路線圖 -->
+    <h3>🗓️ 你的 30 天升級路線圖</h3>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin:16px 0;">
+      <!-- Week 1 -->
+      <div style="background:linear-gradient(180deg,#e3f2fd,#bbdefb); padding:20px 16px; border-radius:16px 0 0 16px; border:1px solid #90caf9; text-align:center;">
+        <div style="background:#1e3c72; color:white; display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:700; margin-bottom:10px;">Week 1</div>
+        <h4 style="color:#1565c0; margin:8px 0; font-size:18px;">🔧 鞏固</h4>
+        <ul style="text-align:left; font-size:14px; color:#1565c0; margin:0; padding-left:18px; line-height:2;">
+          <li>每天用課堂 Skill 1 次</li>
+          <li>記錄問題加 NEVER</li>
+          <li>好結果加入範例</li>
+        </ul>
+        <div style="text-align:right; font-size:20px; margin-top:8px;">→</div>
+      </div>
+      <!-- Week 2 -->
+      <div style="background:linear-gradient(180deg,#e8f5e9,#c8e6c9); padding:20px 16px; border:1px solid #a5d6a7; text-align:center;">
+        <div style="background:#2e7d32; color:white; display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:700; margin-bottom:10px;">Week 2</div>
+        <h4 style="color:#2e7d32; margin:8px 0; font-size:18px;">📈 擴展</h4>
+        <ul style="text-align:left; font-size:14px; color:#2e7d32; margin:0; padding-left:18px; line-height:2;">
+          <li>新增 2 個工作 Skill</li>
+          <li>建立 CLAUDE.md</li>
+          <li>加入 @assets 範本</li>
+        </ul>
+        <div style="text-align:right; font-size:20px; margin-top:8px;">→</div>
+      </div>
+      <!-- Week 3 -->
+      <div style="background:linear-gradient(180deg,#fff3e0,#ffe0b2); padding:20px 16px; border:1px solid #ffcc80; text-align:center;">
+        <div style="background:#e65100; color:white; display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:700; margin-bottom:10px;">Week 3</div>
+        <h4 style="color:#e65100; margin:8px 0; font-size:18px;">🔗 串接</h4>
+        <ul style="text-align:left; font-size:14px; color:#e65100; margin:0; padding-left:18px; line-height:2;">
+          <li>串成工作鏈（workflow）</li>
+          <li>分享給 1-2 位同事</li>
+          <li>收集回饋優化</li>
+        </ul>
+        <div style="text-align:right; font-size:20px; margin-top:8px;">→</div>
+      </div>
+      <!-- Week 4 -->
+      <div style="background:linear-gradient(180deg,#fce4ec,#f8bbd0); padding:20px 16px; border-radius:0 16px 16px 0; border:1px solid #f48fb1; text-align:center;">
+        <div style="background:#c2185b; color:white; display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:700; margin-bottom:10px;">Week 4</div>
+        <h4 style="color:#c2185b; margin:8px 0; font-size:18px;">🚀 上線</h4>
+        <ul style="text-align:left; font-size:14px; color:#c2185b; margin:0; padding-left:18px; line-height:2;">
+          <li>建立 Skill 資料庫</li>
+          <li>部署生成器到 Netlify</li>
+          <li>版本管理 + README</li>
+        </ul>
+        <div style="text-align:right; font-size:20px; margin-top:8px;">🎉</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>K-3&#65372;&#36914;&#38542;&#25972;&#21512;&#24037;&#20855; + 30&#22825;&#34892;&#21205;&#35336;&#30059;</h2>
+    <table><thead><tr><th>&#24037;&#20855;</th><th>&#29992;&#36884;</th><th>&#38627;&#24230;</th></tr></thead><tbody>
+      <tr><td>MCP Server</td><td>&#35731; AI &#30452;&#25509;&#35712;&#23531;&#22806;&#37096;&#31995;&#32113;</td><td>&#11088;&#11088;&#11088;</td></tr>
+      <tr><td>Custom Commands</td><td>&#23553;&#35037;&#24120;&#29992;&#25351;&#20196;&#28858; slash commands</td><td>&#11088;&#11088;</td></tr>
+      <tr><td>Hooks</td><td>&#22312;&#29305;&#23450;&#20107;&#20214;&#24460;&#33258;&#21205;&#22519;&#34892;&#21205;&#20316;</td><td>&#11088;&#11088;&#11088;</td></tr>
+      <tr><td>n8n</td><td>&#28961;&#31243;&#24335;&#30908;&#24037;&#20316;&#27969;&#31243;&#33258;&#21205;&#21270;</td><td>&#11088;&#11088;</td></tr>
+    </tbody></table>
+    <h3>&#25105;&#30340; 30 &#22825;&#34892;&#21205;&#35336;&#30059;</h3>
+    <div class="concept-grid">
+      <div class="concept-card"><h3>Week 1 &mdash; &#38799;&#22266;&#22522;&#30990;</h3><p>&#27599;&#22825;&#20351;&#29992;&#35506;&#22530; Skill &#19968;&#27425;&#65292;&#35352;&#37636;&#21839;&#38988;</p></div>
+      <div class="concept-card"><h3>Week 2 &mdash; &#25844;&#23637; Skill</h3><p>&#26032;&#22686; 2 &#20491;&#24037;&#20316;&#22580;&#26223;&#30340; Skill</p></div>
+      <div class="concept-card"><h3>Week 3 &mdash; &#22296;&#38538;&#25512;&#24291;</h3><p>&#20998;&#20139;&#32102; 1-2 &#20301;&#21516;&#20107;&#65292;&#25910;&#38598;&#21453;&#39243;</p></div>
+      <div class="concept-card"><h3>Week 4 &mdash; &#31995;&#32113;&#21270;</h3><p>&#24314;&#31435;&#20491;&#20154; Skill &#36039;&#26009;&#24235;&#65292;&#29256;&#26412;&#31649;&#29702;</p></div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <h2>L-1&#65372;Part 1–8 &#23416;&#32722;&#23567;&#32080;</h2>
+    <div class="concept-grid">
+      <div class="concept-card"><h3>Day 1 &#25104;&#21697;</h3><ul><li>email-reply-helper</li><li>meeting-notes-generator</li><li>&#36328;&#24179;&#21488;&#37096;&#32626;</li><li>&#38450;&#21574;&#35215;&#21063;&#35373;&#35336;</li><li>Skill &#34920;&#21934;&#21270;</li></ul></div>
+      <div class="concept-card"><h3>Day 2 &#25104;&#21697;</h3><ul><li>need-analyzer</li><li>proposal &#31995;&#21015;</li><li>&#20491;&#20154;&#23526;&#25136;&#20316;&#21697;</li></ul></div>
+      <div class="concept-card"><h3>Day 2 &#25216;&#33021;</h3><ul><li>&#27969;&#31243;&#25286;&#35299;</li><li>Skill Chain</li><li>AI &#21161;&#29702;&#35373;&#35336;</li><li>&#29983;&#25104;&#22120;&#35069;&#20316;</li><li>&#25171;&#21253;&#20998;&#20139;</li></ul></div>
+      <div class="concept-card"><h3>&#24118;&#36208;&#30340;&#36039;&#29986;</h3><ul><li>&#20491;&#20154; Skill &#23560;&#26696;&#36039;&#26009;&#22846;</li><li>Skill &#29983;&#25104;&#22120;</li><li>&#35373;&#23450;&#27284;&#31684;&#26412;</li><li>Git &#29256;&#26412;&#24235;</li><li>30 &#22825;&#34892;&#21205;&#35336;&#30059;</li></ul></div>
+    </div>
+    <div class="box info">💡 <strong>接下來還有 Part 9–12 的進階內容</strong>：Script 自動化、NotebookLM、Firebase Agent、企劃行銷實戰。繼續加油！</div>
+  </div>
+
+  <div class="slide">
+    <h2>L-1&#65372;30 &#31186; Skill &#38651;&#26799;&#31777;&#22577;</h2>
+    <p>&#35531;&#29992;&#20197;&#19979;&#26684;&#24335;&#20998;&#20139;&#20320;&#30340; Skill&#65292;&#25511;&#21046;&#22312; 30 &#31186;&#20839;&#65306;</p>
+    <div class="box success" style="font-size:22px; line-height:2.2;">
+      &#25105;&#20570;&#20102;&#19968;&#20491;&#21483;&#12300;___&#12301;&#30340; Skill&#65292;<br>
+      &#23427;&#21487;&#20197;&#24171;&#25105;&#20570;&#12300;___&#12301;&#65292;<br>
+      &#36664;&#20837;&#12300;___&#12301;&#65292;<br>
+      &#36664;&#20986;&#12300;___&#12301;&#65292;<br>
+      &#22238;&#21435;&#20043;&#24460;&#25105;&#35201;&#29992;&#22312;___&#12290;
+    </div>
+    <div class="box info"><strong>&#28858;&#20160;&#40636;&#29992;&#38651;&#26799;&#31777;&#22577;&#26684;&#24335;&#65311;</strong><br>30 &#31186;&#33021;&#35498;&#28165;&#26970;&#30340; Skill&#65292;&#25165;&#26159;&#30495;&#27491;&#12300;&#21934;&#19968;&#32887;&#36012;&#12301;&#30340;&#22909; Skill&#12290;&#22914;&#26524;&#35498;&#19981;&#28165;&#26970;&#65292;&#20195;&#34920;&#36996;&#38656;&#35201;&#32380;&#32396;&#25286;&#35299;&#12290;</div>
+    <!-- 電梯簡報範例示範 -->
+    <h3>🎤 老師示範：30 秒電梯簡報</h3>
+    <div style="background:linear-gradient(135deg,#1e3c72,#2a5298); border-radius:16px; padding:28px 32px; margin:16px 0; color:white; font-size:19px; line-height:2.2; position:relative;">
+      <div style="position:absolute; top:12px; right:16px; background:rgba(255,255,255,0.2); padding:4px 14px; border-radius:20px; font-size:13px;">⏱️ 30 秒</div>
+      <div>我做了一個叫「<strong style="color:#ffd54f;">complaint-handler</strong>」的 Skill，</div>
+      <div>它可以幫我做「<strong style="color:#ffd54f;">自動分類客訴信件並產生專業回覆</strong>」，</div>
+      <div>輸入「<strong style="color:#81d4fa;">客戶的客訴原文</strong>」，</div>
+      <div>輸出「<strong style="color:#81d4fa;">分類報告 + 客製化回覆信</strong>」，</div>
+      <div>回去之後我要用在「<strong style="color:#a5d6a7;">我們客服團隊每天 80 封客訴的回覆流程</strong>」。</div>
+    </div>
+    <div class="box warning">💡 <strong>換你試試！</strong>照著上面的格式，在心裡默念一次你的版本，等等上台分享！</div>
+  </div>
+
+  <div class="slide">
+    <h2>L-2&#65372;&#20841;&#22825;&#35506;&#31243;&#21313;&#22823;&#38364;&#37749;&#35264;&#24565;</h2>
+    <table><thead><tr><th>#</th><th>&#38364;&#37749;&#35264;&#24565;</th></tr></thead><tbody>
+      <tr><td>1</td><td>Skill = &#39135;&#35676;&#65306;&#21487;&#37325;&#35079;&#22519;&#34892;&#30340; AI &#24037;&#20316;&#37197;&#26041;</td></tr>
+      <tr><td>2</td><td>SKILL.md &#26159;&#26680;&#24515;&#65306;YAML frontmatter + Markdown &#35215;&#21063;</td></tr>
+      <tr><td>3</td><td>&#22235;&#22823;&#38364;&#37749;&#35422;&#65306;MUST / NEVER / Check if / Ask user</td></tr>
+      <tr><td>4</td><td>&#36328;&#24179;&#21488;&#20849;&#36890;&#65306;Antigravity&#12289;Claude Code&#12289;Gemini CLI &#21516;&#19968;&#20221; SKILL.md</td></tr>
+      <tr><td>5</td><td>&#21934;&#19968;&#32887;&#36012;&#65306;&#19968;&#20491; Skill &#21482;&#20570;&#19968;&#20214;&#20107;</td></tr>
+      <tr><td>6</td><td>Skill Chain&#65306;&#22810;&#20491; Skill &#20018;&#25509;&#25104;&#23436;&#25972;&#24037;&#20316;&#27969;&#31243;</td></tr>
+      <tr><td>7</td><td>AI &#21161;&#29702;&#35373;&#23450;&#27284;&#65306;personaprofile.md &#23450;&#32681;&#35282;&#33394;&#20154;&#26684;</td></tr>
+      <tr><td>8</td><td>&#34920;&#21934;&#21270;&#65306;&#29992;&#32080;&#27083;&#21270;&#36664;&#20837;&#38477;&#20302;&#20351;&#29992;&#38272;&#27323;</td></tr>
+      <tr><td>9</td><td>&#25345;&#32396;&#20778;&#21270;&#65306;&#27599;&#27425;&#20351;&#29992;&#24460;&#26356;&#26032; SKILL.md</td></tr>
+      <tr><td>10</td><td>&#27969;&#31243;&#35722;&#29694;&#65306;&#23560;&#26989;&#30693;&#35672; &#8594; SKILL.md &#8594; AI &#24037;&#20316;&#31995;&#32113;</td></tr>
+    </tbody></table>
+  </div>
+
+  <div class="slide cover-slide">
+    <div class="subtitle">Part 8 完成！</div>
+    <h1>核心課程告一段落</h1>
+    <p class="desc">接下來進入進階單元——<br>Script 自動化、NotebookLM、Firebase Agent、企劃行銷實戰！</p>
+    <div class="tags">
+      <span class="tag" style="background:linear-gradient(135deg,#1e3c72,#2a5298);">✅ 基礎 + 進階完成</span>
+      <span class="tag" style="background:linear-gradient(135deg,#28a745,#20c997);">🔗 下一步：進階自動化</span>
+    </div>
+    <a href="Part9_Script自動化進階.html" class="next-part-btn">前往 Part 9 →</a>
+  </div>
+
+</div><!-- /.slides-container -->
+
+<div class="dots">
+  <div class="dot active" onclick="showSlide(0)"></div>
+  <div class="dot" onclick="showSlide(1)"></div>
+  <div class="dot" onclick="showSlide(2)"></div>
+  <div class="dot" onclick="showSlide(3)"></div>
+  <div class="dot" onclick="showSlide(4)"></div>
+  <div class="dot" onclick="showSlide(5)"></div>
+  <div class="dot" onclick="showSlide(6)"></div>
+  <div class="dot" onclick="showSlide(7)"></div>
+  <div class="dot" onclick="showSlide(8)"></div>
+  <div class="dot" onclick="showSlide(9)"></div>
+</div>
+
+<script>
+(function(){
+    var slides = document.querySelectorAll('.slide');
+    var dots = document.querySelectorAll('.dot');
+    var cur = 0;
+    function showSlide(n) {
+        slides[cur].classList.remove('active');
+        dots[cur].classList.remove('active');
+        cur = (n + slides.length) % slides.length;
+        slides[cur].classList.add('active');
+        dots[cur].classList.add('active');
+        slides[cur].scrollTop = 0;
+    }
+    document.querySelector('.arrow-left').addEventListener('click', function() { showSlide(cur - 1); });
+    document.querySelector('.arrow-right').addEventListener('click', function() { showSlide(cur + 1); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); showSlide(cur - 1); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); showSlide(cur + 1); }
+    });
+    dots.forEach(function(dot, i) { dot.addEventListener('click', function() { showSlide(i); }); });
+    var touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e){
+        var diff = e.changedTouches[0].screenX - touchStartX;
+        if(Math.abs(diff) > 60){ diff < 0 ? showSlide(cur + 1) : showSlide(cur - 1); }
+    });
+    window.showSlide = showSlide;
+})();
+function toggleFullscreen(){
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
+    else { document.exitFullscreen(); }
+}
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

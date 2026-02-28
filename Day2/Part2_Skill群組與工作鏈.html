@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 2 Part 2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); height: 100vh; overflow: hidden; color: #333; }
+.nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.2); z-index: 10000; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+.nav-title { color: white; font-size: 18px; font-weight: 700; }
+.nav-buttons { display: flex; gap: 10px; align-items: center; }
+.nav-btn { padding: 6px 16px; border-radius: 20px; background: rgba(255,255,255,0.2); color: white; text-decoration: none; font-size: 14px; font-weight: 600; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; transition: all 0.3s; display: inline-block; font-family: inherit; }
+.nav-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-1px); }
+.slides-container { display: flex; align-items: center; justify-content: center; height: 100vh; padding-top: 60px; }
+.slide { display: none; width: 95%; max-width: 1400px; max-height: 88vh; background: rgba(255,255,255,0.98); border-radius: 24px; padding: 60px; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: fadeIn 0.4s ease; }
+.slide.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-thumb { background: rgba(30,60,114,0.3); border-radius: 4px; }
+h1 { color: #1e3c72; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #2a5298; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #1e3c72; }
+h3 { color: #1e3c72; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #1e3c72; }
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: #1e3c72; color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f5f7ff; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; color: #d63384; font-family: 'Consolas', monospace; font-size: 0.9em; }
+pre { background: #282c34; color: #abb2bf; padding: 25px; border-radius: 12px; font-size: 18px; line-height: 1.6; overflow-x: auto; margin: 20px 0; font-family: 'Consolas', monospace; }
+pre code { background: transparent; color: inherit; padding: 0; font-size: inherit; }
+.box { padding: 20px 24px; border-radius: 12px; margin: 20px 0; font-size: 19px; line-height: 1.8; }
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin: 24px 0; }
+.concept-card { background: #f8f9fa; padding: 28px; border-radius: 15px; border: 1px solid #e9ecef; }
+.arrow-btn { position: fixed; top: 50%; transform: translateY(-50%); width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.3); color: white; font-size: 28px; cursor: pointer; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+.arrow-btn:hover { background: rgba(255,255,255,0.35); transform: translateY(-50%) scale(1.1); }
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+.dots { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 9999; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,0.35); cursor: pointer; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.5); }
+.dot.active { background: white; transform: scale(1.2); }
+.cover-slide { flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 70vh; }
+.cover-slide.active { display: flex; }
+.cover-slide .subtitle { font-size: 22px; color: #2a5298; font-weight: 600; margin-bottom: 16px; }
+.cover-slide h1 { font-size: 56px; background: linear-gradient(135deg, #1e3c72, #2a5298); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 20px; }
+.cover-slide .desc { font-size: 24px; color: #666; max-width: 800px; line-height: 1.8; margin-bottom: 40px; }
+.tags { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+.tag { padding: 10px 28px; border-radius: 50px; color: white; font-size: 18px; font-weight: 700; }
+.slide-placeholder { background: #e8f4fd; border: 2px dashed #2196f3; border-radius: 12px; padding: 20px; text-align: center; color: #1565c0; font-size: 16px; margin: 20px 0; }
+.step-card { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 24px; border-radius: 16px; }
+.step-card h3 { color: white; margin-top: 0; }
+.step-card p { color: rgba(255,255,255,0.9); font-size: 17px; }
+</style>
+</head>
+<body>
+
+<nav class="nav-bar">
+    <div class="nav-title">🔗 Part 2 - Skill 群組與工作鏈</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="index.html">🏠 首頁</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+        <a href="Part1_Day1回顧與多Skill思維.html" class="nav-btn">← Part 1</a>
+        <a href="Part3_AI助理設定檔.html" class="nav-btn">Part 3 →</a>
+        <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">📘 FB</a>
+        <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">🎥 YT</a>
+        <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">👥 3A社團</a>
+    </div>
+</nav>
+
+<div class="slides-container">
+
+  <div class="slide active cover-slide">
+    <div class="subtitle">Day 2 &middot; Part 2</div>
+    <h1>Skill 群組<br>+ 工作鏈串接</h1>
+    <p class="desc">建立三個互相關聯的 Skill，再用流程編排 Skill 串成完整自動化工作鏈</p>
+    <div class="tags">
+      <span class="tag" style="background:linear-gradient(135deg,#1e3c72,#2a5298)">上午 B+C</span>
+      <span class="tag" style="background:linear-gradient(135deg,#667eea,#764ba2)">⏰ 09:30–10:30</span>
+      <span class="tag" style="background:linear-gradient(135deg,#43e97b,#38f9d7); color:#1a1a1a;">🔗 Skill Chain</span>
+    </div>
+  </div>
+  <div class="slide">
+    <h2>📋 客戶提案流程：三 Skill 設計</h2>
+    <pre>客戶提案流程：
+
+📥 收到客戶需求                Skill 1: need-analyzer
+      ↓                       分析客戶需求，產出需求摘要
+🔍 分析需求 + 匹配方案
+      ↓                       Skill 2: proposal-drafter
+📝 撰寫提案書                  根據摘要撰寫提案書草稿
+      ↓
+✅ 最終審查 + 輸出              Skill 3: proposal-reviewer
+                               審查品質，輸出最終版本</pre>
+    <h3>📂 資料夾規劃</h3>
+    <pre>.agent/skills/
+├── need-analyzer/
+│   └── SKILL.md
+├── proposal-drafter/
+│   ├── SKILL.md
+│   └── assets/
+│       └── proposal-template.md
+└── proposal-reviewer/
+    └── SKILL.md</pre>
+  </div>
+  <div class="slide">
+    <h2>🔨 建立 Skill 1：need-analyzer</h2>
+    <pre>mkdir -p my-project/.agent/skills/need-analyzer</pre>
+    <h3>SKILL.md 核心內容</h3>
+    <pre>---
+name: need-analyzer
+description: &gt;
+  分析客戶需求文件或來信，提取關鍵需求並分類。
+  當使用者提供客戶的需求描述、RFP 文件、
+  或詢問函時，使用此技能進行需求分析。
+---
+
+# 客戶需求分析器
+
+## 執行步驟
+### Step 1：需求識別
+- 識別所有明確提出的需求項目
+- 識別隱含的（未直接說明但可推斷的）需求
+
+### Step 2：需求分類
+- 核心需求：客戶明確要求，必須滿足
+- 期望需求：客戶希望有，但非必要
+- 潛在需求：AI 建議的加分項目
+
+### Step 3：風險標記
+- Check if 需求涉及第三方整合 → 標記「需協調」
+- Check if 時程低於 2 週 → 標記「時程風險」
+
+### Step 4：產出結構化摘要（此格式供 proposal-drafter 使用）
+- MUST 包含核心需求表格（含優先級）
+- NEVER 遗漏客戶明確提到的任何需求</pre>
+    <img src="images/02-04_need_analyzer_skill.png" alt="need-analyzer SKILL.md" style="width:100%; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.15); margin:16px 0;">
+  </div>
+  <div class="slide">
+    <h2>🔨 建立 Skill 2：proposal-drafter</h2>
+    <pre>---
+name: proposal-drafter
+description: &gt;
+  根據需求分析摘要撰寫客戶提案書草稿。
+  當使用者提供需求分析結果或要求撰寫提案書時使用。
+---
+
+# 客戶提案撰寫器
+
+## 前置條件
+- MUST 確認已有需求分析摘要（來自 need-analyzer 的輸出）
+- Check if 使用者直接提供原始需求 → 建議先執行 need-analyzer
+- Ask user 提供公司名稱和方案定價範圍
+
+## 執行步驟
+### Step 2：撰寫提案架構
+依照 @assets/proposal-template.md 的範本結構撰寫
+
+### Step 3：填充內容
+- MUST 针對每個核心需求提出具體解決方案
+- MUST 包含時程規劃（甘特圖式表格）
+- MUST 包含報價概估（以範圍呈現）
+- NEVER 承諾未確認的技術細節
+- NEVER 使用過多技術術語</pre>
+    <img src="images/02-05_proposal_drafter_skill.png" alt="proposal-drafter SKILL.md" style="width:100%; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.15); margin:16px 0;">
+  </div>
+  <div class="slide">
+    <h2>🔨 建立 Skill 3：proposal-reviewer</h2>
+    <pre>---
+name: proposal-reviewer
+description: &gt;
+  審查提案書草稿的品質，找出問題並改善。
+  當使用者提供提案書草稿，要求審查或優化時使用。
+---
+
+# 提案審查器
+
+## 審查項目
+| 面向 | 檢查重點 |
+|------|----------|
+| 完整性 | 是否涵蓋所有核心需求？ |
+| 說服力 | 是否有明確的價値主張？ |
+| 可行性 | 時程和預算是否合理？ |
+| 格式 | 是否符合專業商務文件格式？ |
+
+## 執行步驟
+- 逐項檢查上表的四個面向
+- MUST 列出發現的所有問題（按嚴重程度排序）
+- MUST 提供每個問題的具體修改建議
+- 自動修正明確的錯誤（錯字、格式不一致）
+- Ask user 確認需要人工判斷的重大修改
+- NEVER 降低提案書的專業水準</pre>
+    <img src="images/02-06_proposal_reviewer_skill.png" alt="proposal-reviewer SKILL.md" style="width:100%; border-radius:12px; box-shadow:0 4px 16px rgba(0,0,0,0.15); margin:16px 0;">
+  </div>
+  <div class="slide">
+    <h2>🔗 Skill Chain 三大設計模式</h2>
+    <div class="concept-grid">
+      <div class="concept-card">
+        <h3>模式一：線性鏈 (Sequential)</h3>
+        <p>A → B → C → 最終輸出</p>
+        <p>適用：步驟明確、順序固定的流程</p>
+        <p>範例：需求分析 → 提案撰寫 → 審查提案</p>
+      </div>
+      <div class="concept-card">
+        <h3>模式二：分支鏈 (Branching)</h3>
+        <p>A（分類）→ 條件判斷 → B1 或 B2</p>
+        <p>適用：根據條件選擇不同處理路徑</p>
+        <p>範例：分類來信，詢問/客訴走不同 Skill</p>
+      </div>
+      <div class="concept-card">
+        <h3>模式三：匯聚鏈 (Aggregation)</h3>
+        <p>A1 + A2 + A3 → B（整合）→ 最終輸出</p>
+        <p>適用：需要整合多個來源的資訊</p>
+        <p>範例：各部門數據 → 整合報告</p>
+      </div>
+    </div>
+    <!-- 視覺化流程圖 -->
+    <div style="display:grid; grid-template-columns:1fr; gap:28px; margin:20px 0;">
+      <!-- 模式一：線性鏈 -->
+      <div style="background:#f8f9fa; border-radius:16px; padding:24px 30px; border:1px solid #e0e0e0;">
+        <h3 style="margin-top:0; font-size:22px;">模式一：線性鏈 Sequential</h3>
+        <div style="display:flex; align-items:center; justify-content:center; gap:0; margin:16px 0 8px;">
+          <div style="background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:12px 22px; border-radius:12px; font-weight:700; font-size:17px; text-align:center;">need-analyzer<br><span style="font-size:13px; opacity:0.85;">需求分析</span></div>
+          <div style="font-size:28px; color:#1e3c72; margin:0 8px;">→</div>
+          <div style="background:linear-gradient(135deg,#2a5298,#4a90d9); color:white; padding:12px 22px; border-radius:12px; font-weight:700; font-size:17px; text-align:center;">proposal-drafter<br><span style="font-size:13px; opacity:0.85;">撰寫提案</span></div>
+          <div style="font-size:28px; color:#1e3c72; margin:0 8px;">→</div>
+          <div style="background:linear-gradient(135deg,#4a90d9,#64b5f6); color:white; padding:12px 22px; border-radius:12px; font-weight:700; font-size:17px; text-align:center;">proposal-reviewer<br><span style="font-size:13px; opacity:0.85;">審查提案</span></div>
+          <div style="font-size:28px; color:#28a745; margin:0 8px;">→</div>
+          <div style="background:#28a745; color:white; padding:12px 18px; border-radius:12px; font-weight:700; font-size:17px;">完成提案</div>
+        </div>
+        <p style="font-size:16px; color:#666; margin:8px 0 0; text-align:center;">適用：步驟明確、順序固定的流程</p>
+      </div>
+      <!-- 模式二：分支鏈 -->
+      <div style="background:#f8f9fa; border-radius:16px; padding:24px 30px; border:1px solid #e0e0e0;">
+        <h3 style="margin-top:0; font-size:22px;">模式二：分支鏈 Branching</h3>
+        <div style="display:flex; align-items:center; justify-content:center; margin:16px 0 8px;">
+          <div style="background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:12px 22px; border-radius:12px; font-weight:700; font-size:17px; text-align:center;">mail-classifier<br><span style="font-size:13px; opacity:0.85;">信件分類</span></div>
+          <div style="font-size:28px; color:#1e3c72; margin:0 8px;">→</div>
+          <div style="background:#ff9800; color:white; padding:14px 18px; border-radius:50%; font-weight:700; font-size:15px;">條件<br>判斷</div>
+          <div style="display:flex; flex-direction:column; gap:12px; margin-left:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="color:#ff9800; font-weight:700; font-size:15px;">詢價 →</span>
+              <div style="background:linear-gradient(135deg,#2a5298,#4a90d9); color:white; padding:10px 18px; border-radius:12px; font-weight:700; font-size:16px;">quote-replier<br><span style="font-size:12px; opacity:0.85;">報價回覆</span></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="color:#e53935; font-weight:700; font-size:15px;">客訴 →</span>
+              <div style="background:linear-gradient(135deg,#c62828,#e53935); color:white; padding:10px 18px; border-radius:12px; font-weight:700; font-size:16px;">complaint-handler<br><span style="font-size:12px; opacity:0.85;">客訴處理</span></div>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:16px; color:#666; margin:8px 0 0; text-align:center;">適用：根據條件選擇不同處理路徑</p>
+      </div>
+      <!-- 模式三：匯聚鏈 -->
+      <div style="background:#f8f9fa; border-radius:16px; padding:24px 30px; border:1px solid #e0e0e0;">
+        <h3 style="margin-top:0; font-size:22px;">模式三：匯聚鏈 Aggregation</h3>
+        <div style="display:flex; align-items:center; justify-content:center; margin:16px 0 8px;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:10px 18px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">sales-data<br><span style="font-size:12px; opacity:0.85;">業務數據</span></div>
+            <div style="background:linear-gradient(135deg,#2a5298,#4a90d9); color:white; padding:10px 18px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">finance-data<br><span style="font-size:12px; opacity:0.85;">財務數據</span></div>
+            <div style="background:linear-gradient(135deg,#4a90d9,#64b5f6); color:white; padding:10px 18px; border-radius:12px; font-weight:700; font-size:16px; text-align:center;">hr-data<br><span style="font-size:12px; opacity:0.85;">人事數據</span></div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; margin:0 10px;">
+            <div style="font-size:20px; color:#1e3c72;">↘</div>
+            <div style="font-size:20px; color:#1e3c72;">→</div>
+            <div style="font-size:20px; color:#1e3c72;">↗</div>
+          </div>
+          <div style="background:linear-gradient(135deg,#6a1b9a,#9c27b0); color:white; padding:16px 22px; border-radius:12px; font-weight:700; font-size:17px; text-align:center;">report-generator<br><span style="font-size:13px; opacity:0.85;">整合報告產生器</span></div>
+          <div style="font-size:28px; color:#28a745; margin:0 8px;">→</div>
+          <div style="background:#28a745; color:white; padding:12px 18px; border-radius:12px; font-weight:700; font-size:17px;">月報完成</div>
+        </div>
+        <p style="font-size:16px; color:#666; margin:8px 0 0; text-align:center;">適用：需要整合多個來源的資訊</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide">
+    <h2>🎯 建立流程編排 Skill：proposal-workflow</h2>
+    <div class="box info">
+      「流程編排 Skill」不自己做任何處理——它的工作是「指揮」其他 Skill 的執行順序。就像餐廳的「領班」：他不炒菜，但他決定哪道菜先做、誰來做。
+    </div>
+    <pre>---
+name: proposal-workflow
+description: &gt;
+  客戶提案全流程自動化工作鏈。
+  當使用者要求「走完提案流程」「從需求到提案」時使用。
+  此技能依序呼叫 need-analyzer、proposal-drafter、
+  proposal-reviewer 完成完整提案流程。
+---
+
+# 客戶提案工作流程
+
+## 執行流程（5個階段）
+
+### Phase 1：需求收集與確認
+- Ask user 提供客戶的原始需求描述
+- MUST 確認資訊足夠才能繼續
+
+### Phase 2：需求分析（need-analyzer 邏輯）
+- 依照 need-analyzer 規則分析需求
+- 展示結果 → Ask user 確認
+
+### Phase 3：撰寫提案（proposal-drafter 邏輯）
+- Ask user 補充公司優勢和報價範圍
+- 依照 proposal-drafter 規則撰寫提案
+
+### Phase 4：審查定稿（proposal-reviewer 邏輯）
+- 依照 proposal-reviewer 規則審查
+- 自動修正明確問題，人工判斷大改動
+
+### Phase 5：輸出交付
+- MUST 產出最終版提案書（完整 Markdown）
+
+## 進度顯示（每個階段都要顯示）
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📍 目前進度：Phase N/5 - [階段名稱]
+[■■■□□] 60%
+━━━━━━━━━━━━━━━━━━━━━━━━━━━</pre>
+    <!-- 視覺化流程圖：5 階段指揮鏈 -->
+    <div style="display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0; margin:24px 0 8px;">
+      <div style="background:linear-gradient(135deg,#ff9800,#f57c00); color:white; padding:10px 16px; border-radius:12px; font-weight:700; font-size:15px; text-align:center;">Phase 1<br><span style="font-size:12px; opacity:0.9;">需求收集</span></div>
+      <div style="font-size:24px; color:#1e3c72; margin:0 6px;">→</div>
+      <div style="background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; padding:10px 16px; border-radius:12px; font-weight:700; font-size:15px; text-align:center;">Phase 2<br><span style="font-size:12px; opacity:0.9;">need-analyzer</span></div>
+      <div style="font-size:24px; color:#1e3c72; margin:0 6px;">→</div>
+      <div style="background:linear-gradient(135deg,#2a5298,#4a90d9); color:white; padding:10px 16px; border-radius:12px; font-weight:700; font-size:15px; text-align:center;">Phase 3<br><span style="font-size:12px; opacity:0.9;">proposal-drafter</span></div>
+      <div style="font-size:24px; color:#1e3c72; margin:0 6px;">→</div>
+      <div style="background:linear-gradient(135deg,#4a90d9,#64b5f6); color:white; padding:10px 16px; border-radius:12px; font-weight:700; font-size:15px; text-align:center;">Phase 4<br><span style="font-size:12px; opacity:0.9;">proposal-reviewer</span></div>
+      <div style="font-size:24px; color:#1e3c72; margin:0 6px;">→</div>
+      <div style="background:#28a745; color:white; padding:10px 16px; border-radius:12px; font-weight:700; font-size:15px; text-align:center;">Phase 5<br><span style="font-size:12px; opacity:0.9;">輸出交付</span></div>
+    </div>
+    <p style="text-align:center; font-size:16px; color:#666; margin-top:4px;">proposal-workflow 是「指揮官」—— 自己不處理，只負責依序呼叫三個 Skill</p>
+  </div>
+  <div class="slide">
+    <h2>🧪 測試完整工作鏈</h2>
+    <h3>在 Antigravity 或 Claude Code 中觸發：</h3>
+    <pre>請幫我走完客戶提案流程。
+
+客戶需求如下：
+「我們是一家物流公司，每天處理 500 張出貨單。
+目前都用 Excel 手動管理，常常出錯。
+想要一套出貨管理系統，能自動產生出貨單、
+追蹤物流狀態、並且每月產生報表。
+預算在 80 萬以內，希望半年內上線。」</pre>
+    <h3>✅ 觀察重點</h3>
+    <ul>
+      <li>AI 是否按照 Phase 1→2→3→4→5 的順序執行？</li>
+      <li>每個階段是否有進度顯示？</li>
+      <li>是否在適當的時候暫停詢問使用者？</li>
+      <li>最終輸出是否包含完整提案書？</li>
+    </ul>
+    <!-- 模擬執行畫面：工作鏈進行中 -->
+    <h3>💬 實際執行時 AI 會這樣回應：</h3>
+    <div style="background:#1e1e1e; border-radius:16px; padding:28px; margin:20px 0; font-family:'Consolas',monospace; color:#d4d4d4; font-size:16px; line-height:2;">
+      <div style="color:#6a9955;">/* Phase 1：需求收集 ✅ 完成 */</div>
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div>📍 目前進度：Phase 1/5 - 需求收集與確認</div>
+      <div style="color:#4ec9b0;">[■■■■■■■■■■] 100% ✅</div>
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div style="margin:8px 0;"></div>
+      <div style="color:#6a9955;">/* Phase 2：需求分析 🔄 進行中... */</div>
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div>📍 目前進度：Phase 2/5 - 需求分析</div>
+      <div style="color:#dcdcaa;">[■■■■■■□□□□] 60%</div>
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div style="margin:8px 0;"></div>
+      <div style="color:#ce9178;">📋 核心需求（已識別 4 項）：</div>
+      <div>┌──────────────┬──────────┬──────────┐</div>
+      <div>│ 需求項目　　　│ 類型　　 │ 優先級　 │</div>
+      <div>├──────────────┼──────────┼──────────┤</div>
+      <div>│ 出貨單自動化　│ <span style="color:#4ec9b0;">核心需求</span> │ <span style="color:#f44747;">🔴 高</span>　　│</div>
+      <div>│ 物流狀態追蹤　│ <span style="color:#4ec9b0;">核心需求</span> │ <span style="color:#f44747;">🔴 高</span>　　│</div>
+      <div>│ 月報表產生　　│ <span style="color:#dcdcaa;">期望需求</span> │ <span style="color:#ff9800;">🟡 中</span>　　│</div>
+      <div>│ 異常自動預警　│ <span style="color:#569cd6;">潛在需求</span> │ <span style="color:#ff9800;">🟡 中</span>　　│</div>
+      <div>└──────────────┴──────────┴──────────┘</div>
+      <div style="margin:8px 0;"></div>
+      <div style="color:#dcdcaa;">⚠️ 風險標記：時程 6 個月（正常範圍），預算 80 萬（需評估）</div>
+      <div style="color:#569cd6;">🤔 請確認以上需求分析是否正確？（Y/N）</div>
+    </div>
+
+    <!-- 模擬完成畫面：最終提案產出 -->
+    <h3>📄 最終產出（Phase 5 完成）：</h3>
+    <div style="background:#1e1e1e; border-radius:16px; padding:28px; margin:20px 0; font-family:'Consolas',monospace; color:#d4d4d4; font-size:16px; line-height:2;">
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div>📍 目前進度：Phase 5/5 - 輸出交付</div>
+      <div style="color:#4ec9b0;">[■■■■■■■■■■] 100% ✅ 全部完成！</div>
+      <div>━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+      <div style="margin:8px 0;"></div>
+      <div style="color:#c586c0; font-size:18px; font-weight:700;"># 智慧出貨管理系統 — 客戶提案書</div>
+      <div style="color:#6a9955;">提案公司：XX 科技｜日期：2026-02-28</div>
+      <div style="margin:8px 0;"></div>
+      <div style="color:#ce9178;">## 1. 執行摘要</div>
+      <div>針對貴司每日 500 張出貨單的管理痛點，</div>
+      <div>我們提出「智慧出貨管理系統」解決方案...</div>
+      <div style="margin:4px 0;"></div>
+      <div style="color:#ce9178;">## 2. 需求回應（4 項核心需求 → 4 個解決方案）</div>
+      <div style="color:#ce9178;">## 3. 時程規劃（3 階段 / 24 週）</div>
+      <div style="color:#ce9178;">## 4. 報價概估（65-78 萬）</div>
+      <div style="margin:8px 0;"></div>
+      <div style="color:#dcdcaa;">📊 審查評分：完整性 9/10 ｜說服力 8/10 ｜可行性 9/10 ｜格式 10/10</div>
+      <div style="color:#4ec9b0;">✅ 提案品質：<strong style="color:#4ec9b0;">通過審查</strong>，建議直接提交客戶</div>
+    </div>
+  </div>
+  <div class="slide cover-slide">
+    <h2>🎯 Part 2 完成！你已建立...</h2>
+    <p class="desc">一組完整的 Skill 工作鏈：3 個功能 Skill + 1 個流程編排 Skill，能自動走完客戶提案的完整流程</p>
+    <div class="tags">
+      <span class="tag" style="background:linear-gradient(135deg,#1e3c72,#2a5298)">✅ need-analyzer</span>
+      <span class="tag" style="background:linear-gradient(135deg,#667eea,#764ba2)">✅ proposal-drafter</span>
+      <span class="tag" style="background:linear-gradient(135deg,#43e97b,#38f9d7); color:#1a1a1a;">✅ proposal-workflow</span>
+      <span class="tag" style="background:linear-gradient(135deg,#f093fb,#f5576c)">➡ Part 3: AI 助理設定檔</span>
+    </div>
+  </div>
+
+</div>
+
+<button class="arrow-btn arrow-left">&#8592;</button>
+<button class="arrow-btn arrow-right">&#8594;</button>
+
+<div class="dots"><div class="dot active"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+
+<script>
+(function(){
+    var slides = document.querySelectorAll('.slide');
+    var dots = document.querySelectorAll('.dot');
+    var cur = 0;
+    function showSlide(n) {
+        slides[cur].classList.remove('active');
+        dots[cur].classList.remove('active');
+        cur = (n + slides.length) % slides.length;
+        slides[cur].classList.add('active');
+        dots[cur].classList.add('active');
+        slides[cur].scrollTop = 0;
+    }
+    document.querySelector('.arrow-left').addEventListener('click', function() { showSlide(cur - 1); });
+    document.querySelector('.arrow-right').addEventListener('click', function() { showSlide(cur + 1); });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); showSlide(cur - 1); }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); showSlide(cur + 1); }
+    });
+    dots.forEach(function(dot, i) { dot.addEventListener('click', function() { showSlide(i); }); });
+    var touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e){
+        var diff = e.changedTouches[0].screenX - touchStartX;
+        if(Math.abs(diff) > 60){ diff < 0 ? showSlide(cur + 1) : showSlide(cur - 1); }
+    });
+    window.changeSlide = function(dir){ showSlide(cur + dir); };
+})();
+function toggleFullscreen(){
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen().catch(function(){}); }
+    else { document.exitFullscreen(); }
+}
+</script>
+<script src="auth.js"></script>
+</body>
+</html>
