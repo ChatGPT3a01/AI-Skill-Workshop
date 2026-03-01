@@ -478,7 +478,7 @@ description: >
 
   <div class="cmd-example" style="font-size:16px;">
     <span style="color:#4285F4; font-weight:bold;">gemini&gt;</span> 幫我建一個 Firebase 專案，名稱叫 self-learning-platform，<br>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;並初始化 Firestore、Authentication 和 Hosting
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;並初始化 Firestore（資料庫）、Authentication（身份驗證）和 Hosting（網站部署）
   </div>
 
   <h3>AI 背後執行了什麼</h3>
@@ -492,16 +492,14 @@ firebase init  # → AI 自動選擇 Firestore、Auth、Hosting
 npm init -y && npm install firebase</pre>
 
   <h3>你應該看到的結果</h3>
-  <div class="arch-box">
-self-learning-platform/
-├── firebase.json         ← Firebase 設定檔
-├── .firebaserc           ← 專案 ID 關聯
-├── firestore.rules       ← 安全規則
+  <pre>self-learning-platform/
+├── firebase.json          ← Firebase 設定檔
+├── .firebaserc            ← 專案 ID 關聯
+├── firestore.rules        ← 安全規則
 ├── firestore.indexes.json ← 索引設定
-├── package.json          ← Node.js 專案設定
-└── public/               ← 前端檔案放這裡
-    └── index.html
-  </div>
+├── package.json           ← Node.js 專案設定
+└── public/                ← 前端檔案放這裡
+    └── index.html</pre>
 
   <div class="box warning">
     ⚠️ 如果 AI 詢問你要選哪個 Firebase 專案，選擇你剛建立的 <code>self-learning-platform</code>。如果跳出瀏覽器要求登入，完成 Google 驗證後回到終端即可。
@@ -665,18 +663,45 @@ function isTeacher() {
   </div>
 
   <h3>三個 AI 功能</h3>
-  <pre>import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+  <pre>// 引入 Firebase AI 模組
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
+
+// 初始化 Gemini AI（使用 Google AI 後端）
 const ai = getAI(app, { backend: new GoogleAIBackend() });
+// 選擇模型：gemini-2.5-flash-lite（輕量快速版）
 const model = getGenerativeModel(ai, { model: "gemini-2.5-flash-lite" });
 
-// 功能 1：學生的 AI 助教 — 檢查反思
-async function aiCheckReflection(reflection) { ... }
+// ========== 功能 1：學生的 AI 助教 ==========
+// 學生貼上自己的反思，AI 檢查寫得好不好、給 3 點建議
+async function aiCheckReflection(reflection) {
+  const result = await model.generateContent(
+    `你是高中自主學習指導老師。請檢查這段反思：「${reflection}」
+     用鼓勵的語氣，給出 3 點具體建議。`
+  );
+  return result.response.text();
+}
 
-// 功能 2：教師的 AI 輔助批閱 — 50 字回饋草稿
-async function aiGenerateFeedback(content, goal) { ... }
+// ========== 功能 2：教師的 AI 輔助批閱 ==========
+// AI 先讀學生週誌，自動產生 50 字以內的回饋建議草稿
+async function aiGenerateFeedback(content, goal) {
+  const result = await model.generateContent(
+    `學習目標：${goal}  本週內容：${content}
+     撰寫 50 字以內的教師回饋草稿。`
+  );
+  return result.response.text();
+}
 
-// 功能 3：學期末自動產生學習歷程摘要
-async function aiGenerateSemesterSummary(allLogs) { ... }</pre>
+// ========== 功能 3：學期末自動摘要 ==========
+// 把 18 週週誌摘要成 200 字學習歷程總結
+async function aiGenerateSemesterSummary(allLogs) {
+  const logsText = allLogs.map(
+    log =&gt; `第${log.week}週：${log.content}`
+  ).join("\n");
+  const result = await model.generateContent(
+    `將以下週誌摘要為 200 字學習歷程總結：\n${logsText}`
+  );
+  return result.response.text();
+}</pre>
 
   <h3>Firebase AI Logic 支援的 AI 能力</h3>
   <table>
