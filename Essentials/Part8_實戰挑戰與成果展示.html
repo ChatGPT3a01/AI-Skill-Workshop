@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 8 - 實戰挑戰與成果展示 | AI Skill 實作課（精華版）</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    height: 100vh;
+    overflow: hidden;
+    color: #333;
+}
+
+/* ===== 導航列 ===== */
+.nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+}
+.nav-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.nav-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-block;
+    font-family: inherit;
+}
+.nav-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-1px);
+}
+
+/* ===== 投影片容器 ===== */
+.slides-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding-top: 60px;
+}
+
+.slide {
+    display: none;
+    width: 95%;
+    max-width: 1400px;
+    max-height: 88vh;
+    background: rgba(255,255,255,0.98);
+    border-radius: 24px;
+    padding: 60px;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: fadeIn 0.4s ease;
+}
+.slide.active { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* scrollbar */
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-track { background: transparent; }
+.slide::-webkit-scrollbar-thumb { background: rgba(91,33,182,0.3); border-radius: 4px; }
+.slide::-webkit-scrollbar-thumb:hover { background: rgba(91,33,182,0.5); }
+
+/* ===== 文字樣式 ===== */
+h1 { color: #5b21b6; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #5b21b6; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #5b21b6; }
+h3 { color: #5b21b6; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #5b21b6; }
+
+/* ===== 表格 ===== */
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f5f3ff; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+
+/* ===== 程式碼 ===== */
+code {
+    background: #f0f2f5;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #d63384;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 25px;
+    border-radius: 12px;
+    font-size: 18px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+}
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* ===== Box 提示 ===== */
+.box {
+    padding: 20px 24px;
+    border-radius: 12px;
+    margin: 20px 0;
+    font-size: 19px;
+    line-height: 1.8;
+}
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.box strong { display: inline; }
+
+/* ===== Concept Grid ===== */
+.concept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin: 24px 0;
+}
+.concept-card {
+    background: #f8f9fa;
+    padding: 28px;
+    border-radius: 15px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.concept-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.concept-card h3 { margin-top: 0; }
+
+/* ===== 截圖 ===== */
+.slide-img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    margin: 24px 0;
+}
+
+/* ===== 左右箭頭 ===== */
+.arrow-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+.arrow-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-50%) scale(1.1);
+}
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+
+/* ===== 底部圓點指示器 ===== */
+.dots {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 9999;
+}
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid rgba(255,255,255,0.5);
+}
+.dot.active {
+    background: white;
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+/* ===== 封面專用 ===== */
+.cover-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 70vh;
+}
+.cover-slide .subtitle {
+    font-size: 22px;
+    color: #5b21b6;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+}
+.cover-slide h1 {
+    font-size: 56px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+}
+.cover-slide .desc {
+    font-size: 24px;
+    color: #666;
+    max-width: 800px;
+    line-height: 1.8;
+    margin-bottom: 40px;
+}
+.tags {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.tag {
+    padding: 10px 28px;
+    border-radius: 50px;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+/* ===== 編號圓點 ===== */
+.num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+/* ===== Next Part 按鈕 ===== */
+.next-part-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 18px 48px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.next-part-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(102,126,234,0.5);
+}
+
+/* ===== 大型 CTA 按鈕 ===== */
+.big-cta-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    color: #1a1a2e;
+    padding: 24px 60px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 26px;
+    font-weight: 800;
+    box-shadow: 0 10px 30px rgba(255,140,0,0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+    letter-spacing: 1px;
+}
+.big-cta-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: 0 16px 40px rgba(255,140,0,0.5);
+}
+
+/* ===== 分享步驟 ===== */
+.share-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+.share-step:last-child { border-bottom: none; }
+.share-num {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.share-content h4 {
+    font-size: 20px;
+    color: #5b21b6;
+    margin-bottom: 4px;
+}
+.share-content p {
+    font-size: 17px;
+    color: #666;
+    margin-bottom: 0;
+}
+
+/* ===== 成績清單 ===== */
+.achievement-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+}
+.achievement-list li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    margin: 8px 0;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border-radius: 12px;
+    font-size: 20px;
+    transition: transform 0.2s;
+}
+.achievement-list li:hover {
+    transform: translateX(6px);
+}
+.achievement-check {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+/* ===== 測驗資訊卡 ===== */
+.quiz-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 24px 0;
+}
+.quiz-info-card {
+    text-align: center;
+    padding: 24px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border: 2px solid #c4b5fd;
+}
+.quiz-info-card .qi-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+.quiz-info-card .qi-label {
+    font-size: 16px;
+    color: #7c3aed;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.quiz-info-card .qi-value {
+    font-size: 24px;
+    color: #5b21b6;
+    font-weight: 800;
+}
+
+/* ===== 社群連結 ===== */
+.social-links {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 24px 0;
+}
+.social-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: 50px;
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 700;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.social-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+/* ===== 資料夾樹狀圖樣式 ===== */
+.folder-tree {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 30px;
+    border-radius: 12px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 18px;
+    line-height: 1.8;
+}
+.folder-tree .folder { color: #dcdcaa; }
+.folder-tree .file { color: #9cdcfe; }
+.folder-tree .comment { color: #6a9955; }
+
+/* ===== 實作步驟卡片 ===== */
+.step-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 20px 24px;
+    margin: 14px 0;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border-radius: 14px;
+    border-left: 5px solid #7c3aed;
+    transition: transform 0.2s;
+}
+.step-card:hover {
+    transform: translateX(6px);
+}
+.step-card-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.step-card-content h4 {
+    font-size: 20px;
+    color: #5b21b6;
+    margin-bottom: 6px;
+}
+.step-card-content p {
+    font-size: 17px;
+    color: #555;
+    margin-bottom: 0;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 導航列 ===== -->
+<nav class="nav-bar">
+    <div class="nav-title">&#127942; Part 8 - 實戰挑戰與成果展示</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="index.html">&#127968; 首頁</a>
+        <a class="nav-btn" href="Part7_進階技巧與流程變現.html">&#11013; 上一單元</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">&#128421;&#65039; 全螢幕</button>
+        <a class="nav-btn" href="https://www.facebook.com/?locale=zh_TW" target="_blank">&#128216; FB</a>
+        <a class="nav-btn" href="https://www.youtube.com/@Liang-yt02" target="_blank">&#127909; YT</a>
+        <a class="nav-btn" href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank">&#128101; 3A社團</a>
+    </div>
+</nav>
+
+<!-- ===== 左右箭頭 ===== -->
+<button class="arrow-btn arrow-left" onclick="changeSlide(-1)">&#9664;</button>
+<button class="arrow-btn arrow-right" onclick="changeSlide(1)">&#9654;</button>
+
+<!-- ===== 投影片容器 ===== -->
+<div class="slides-container">
+
+<!-- ==================== Slide 1: 封面 ==================== -->
+<div class="slide active" id="slide-1">
+    <div class="cover-slide">
+        <div class="subtitle">Part 8 &middot; 實戰挑戰與成果展示</div>
+        <h1>你的 AI Skill 作品</h1>
+        <p class="desc">動手創建你自己的 Skill，展示你的作品，通過認證測驗取得證書</p>
+        <div class="tags">
+            <span class="tag" style="background:linear-gradient(135deg,#667eea,#764ba2);">實戰挑戰</span>
+            <span class="tag" style="background:linear-gradient(135deg,#f093fb,#f5576c);">成果展示</span>
+            <span class="tag" style="background:linear-gradient(135deg,#ffd700,#ff8c00);">認證測驗</span>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Slide 2: 實作範例：會議紀錄產生器 ==================== -->
+<div class="slide" id="slide-2">
+    <h2>&#128203; 實作範例：會議紀錄產生器</h2>
+
+    <p>在進入自由挑戰之前，先看看另一個完整的 Skill 範例——<strong>會議紀錄產生器</strong>。它的結構跟 Email 回覆助手完全一樣，但解決的是不同的工作場景。</p>
+
+    <h3>&#128230; 需求規格</h3>
+    <table>
+        <thead>
+            <tr><th>項目</th><th>內容</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Skill 名稱</strong></td><td><code>meeting-notes-generator</code></td></tr>
+            <tr><td><strong>功能</strong></td><td>將會議逐字稿或口語摘要轉換為結構化會議紀錄</td></tr>
+            <tr><td><strong>輸入</strong></td><td>會議逐字稿、重點摘要、與會人員名單</td></tr>
+            <tr><td><strong>輸出</strong></td><td>標準會議紀錄（含議題、決議、待辦事項表格）</td></tr>
+        </tbody>
+    </table>
+
+    <h3>&#127919; 核心設計：四步驟流程</h3>
+    <div class="concept-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="concept-card" style="border-top: 4px solid #2196f3;">
+            <div style="font-size:32px; margin-bottom:8px;">&#128229;</div>
+            <h3>Step 1：資訊收集</h3>
+            <p><code>Ask user</code> 提供會議日期、與會人員、會議主題。缺少資訊就先問清楚。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #ff9800;">
+            <div style="font-size:32px; margin-bottom:8px;">&#128269;</div>
+            <h3>Step 2：內容分析</h3>
+            <p>識別討論議題、提取決議事項、歸類待辦事項。把口語化的內容結構化。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #28a745;">
+            <div style="font-size:32px; margin-bottom:8px;">&#128221;</div>
+            <h3>Step 3：產生紀錄</h3>
+            <p><code>MUST</code> 包含所有決議、<code>MUST</code> 標註負責人和期限、<code>NEVER</code> 遺漏行動項目。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #9c27b0;">
+            <div style="font-size:32px; margin-bottom:8px;">&#9989;</div>
+            <h3>Step 4：品質檢查</h3>
+            <p>確認完整性、待辦事項有負責人、格式統一、用語正式、內容準確。</p>
+        </div>
+    </div>
+
+    <img src="images/01-44_writing_meeting_skill.png" alt="撰寫會議紀錄 SKILL.md 過程" class="slide-img">
+</div>
+
+<!-- ==================== Slide 3: 會議紀錄測試結果 ==================== -->
+<div class="slide" id="slide-3">
+    <h2>&#129514; 會議紀錄測試結果</h2>
+
+    <h3>&#128172; 測試輸入（口語化的會議摘要）</h3>
+    <div class="box info" style="font-size:18px; line-height:1.9;">
+        &#128172; 「今天早上 10 點在 3 樓會議室開了產品進度會議，<br>
+        參加的人有：陳總、王經理、李工程師、張設計師。<br>
+        主要討論了三件事：<br>
+        1. 新版 App 的上架時間...決定維持 4 月中上架，但先做 Beta 版<br>
+        2. 客戶回饋的 Bug 列表...已修 8 個，剩 3 個下週處理<br>
+        3. 下一季的行銷方案...選了方案 B，張設計師下週五前做完整提案」
+    </div>
+
+    <h3>&#128196; AI 產出的結構化紀錄包含</h3>
+    <div class="concept-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="concept-card" style="text-align:center; border-top: 4px solid #667eea;">
+            <div style="font-size:36px; margin-bottom:8px;">&#128203;</div>
+            <h3>會議基本資訊</h3>
+            <p>日期時間、地點<br>主持人、與會人員<br>全部自動格式化</p>
+        </div>
+        <div class="concept-card" style="text-align:center; border-top: 4px solid #764ba2;">
+            <div style="font-size:36px; margin-bottom:8px;">&#128172;</div>
+            <h3>三個議題</h3>
+            <p>每個議題的<br>討論重點 + 決議內容<br>條理分明</p>
+        </div>
+        <div class="concept-card" style="text-align:center; border-top: 4px solid #28a745;">
+            <div style="font-size:36px; margin-bottom:8px;">&#9989;</div>
+            <h3>待辦事項表格</h3>
+            <p>負責人、截止日期<br>優先級（&#128308;&#128993;&#128994;）<br>一目了然</p>
+        </div>
+    </div>
+
+    <div class="box success" style="font-size:20px;">
+        <strong>&#9989; 測試通過！</strong>AI 完美地將口語化的會議摘要轉換為結構化的正式紀錄——每個決議都有負責人、每個待辦都有截止日期，完全遵守 MUST 規則。
+    </div>
+
+    <img src="images/01-45_meeting_skill_test.png" alt="會議紀錄產生器測試結果" class="slide-img">
+</div>
+
+<!-- ==================== Slide 4: 實戰挑戰任務 ==================== -->
+<div class="slide" id="slide-4">
+    <h2>&#127919; 實戰挑戰任務</h2>
+
+    <p>現在輪到你了！選擇一個挑戰，動手把你的專業知識變成 AI Skill。你可以修改範例，也可以完全從零開始：</p>
+
+    <div class="concept-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="concept-card" style="border-top: 4px solid #667eea;">
+            <div style="font-size:40px; margin-bottom:10px;">&#128231;</div>
+            <h3 style="color:#5b21b6;">Email 回覆助手</h3>
+            <p>改成你的行業版本——教育、醫療、法律、電商、製造業。讓 AI 用你的專業語言和行業規範回信。</p>
+            <p style="font-size:16px; color:#888;"><em>難度：&#11088; 入門（有範例可參考）</em></p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #764ba2;">
+            <div style="font-size:40px; margin-bottom:10px;">&#128221;</div>
+            <h3 style="color:#5b21b6;">會議紀錄產生器</h3>
+            <p>建立你的版本——加入你公司的會議紀錄格式、專屬表頭、自訂待辦追蹤模板。</p>
+            <p style="font-size:16px; color:#888;"><em>難度：&#11088; 入門（有範例可參考）</em></p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #f093fb;">
+            <div style="font-size:40px; margin-bottom:10px;">&#128202;</div>
+            <h3 style="color:#5b21b6;">報告產生器</h3>
+            <p>建立專屬報告格式的 Skill——週報、月報、專案進度報告，一鍵生成符合公司規範的文件。</p>
+            <p style="font-size:16px; color:#888;"><em>難度：&#11088;&#11088; 中等（需要自行設計結構）</em></p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #43e97b;">
+            <div style="font-size:40px; margin-bottom:10px;">&#127919;</div>
+            <h3 style="color:#5b21b6;">自由發揮</h3>
+            <p>把你最常做的工作流程變成 Skill！最有價值的 Skill 來自你的日常經驗。</p>
+            <p style="font-size:16px; color:#888;"><em>難度：&#11088;&#11088;&#11088; 挑戰（完全原創設計）</em></p>
+        </div>
+    </div>
+
+    <div class="box warning">
+        <strong>&#9888;&#65039; 記得包含完整的五大章節：</strong>前置檢查、執行步驟、例外處理、安全規則（MUST/NEVER）、輸出格式。缺一不可！這是一個合格 Skill 的基本要求。
+    </div>
+</div>
+
+<!-- ==================== Slide 5: 動手做！實作時間 ==================== -->
+<div class="slide" id="slide-5">
+    <h2>&#128296; 動手做！實作時間</h2>
+
+    <p>選好挑戰了嗎？按照以下步驟，一步步完成你的 Skill：</p>
+
+    <div class="step-card">
+        <div class="step-card-num">1</div>
+        <div class="step-card-content">
+            <h4>建立資料夾結構</h4>
+            <p>在 Antigravity 的 <code>.agent/skills/</code> 下建立新資料夾，例如 <code>my-skill/</code>，裡面建立 <code>SKILL.md</code> 檔案。</p>
+        </div>
+    </div>
+    <div class="step-card">
+        <div class="step-card-num">2</div>
+        <div class="step-card-content">
+            <h4>撰寫 YAML Frontmatter</h4>
+            <p>在 SKILL.md 最上方加入 <code>---</code> 區塊，填入 <code>name</code> 和 <code>description</code>。描述要精準，讓 AI 知道何時該啟用。</p>
+        </div>
+    </div>
+    <div class="step-card">
+        <div class="step-card-num">3</div>
+        <div class="step-card-content">
+            <h4>撰寫五大章節</h4>
+            <p>依序完成：前置檢查（Ask user 需要什麼資訊）、執行步驟（Step 1, 2, 3...）、例外處理、安全規則（MUST/NEVER）、輸出格式。</p>
+        </div>
+    </div>
+    <div class="step-card">
+        <div class="step-card-num">4</div>
+        <div class="step-card-content">
+            <h4>實際測試</h4>
+            <p>在 Antigravity 或 Claude Code 中實際跑一次，看看 AI 的輸出是否符合預期。特別測試防呆規則是否有效。</p>
+        </div>
+    </div>
+    <div class="step-card">
+        <div class="step-card-num">5</div>
+        <div class="step-card-content">
+            <h4>調整優化</h4>
+            <p>根據測試結果調整 SKILL.md 的內容。常見問題：描述太模糊、步驟不夠具體、缺少邊界條件處理。</p>
+        </div>
+    </div>
+
+    <div class="box info">
+        <strong>&#128161; 遇到問題？</strong>回頭看 Part 2-3 的結構說明，或參考 <code>email-reply-helper</code> 的範例檔案。記得：先求有、再求好，不需要第一次就完美！
+    </div>
+</div>
+
+<!-- ==================== Slide 6: 成果分享指引 ==================== -->
+<div class="slide" id="slide-6">
+    <h2>&#127908; 成果分享指引</h2>
+
+    <p>完成 Skill 後，跟大家分享你的作品！以下四個問題可以幫助你組織分享內容：</p>
+
+    <div style="margin: 24px 0;">
+        <div class="share-step">
+            <div class="share-num">1</div>
+            <div class="share-content">
+                <h4>你的 Skill 解決什麼問題？</h4>
+                <p>針對什麼工作場景？原本這個任務需要多少時間？用了 Skill 之後節省了多少？效果如何？</p>
+            </div>
+        </div>
+        <div class="share-step">
+            <div class="share-num">2</div>
+            <div class="share-content">
+                <h4>你設計了哪些防呆規則？</h4>
+                <p>用了哪些 MUST / NEVER / Check if / Ask user？這些規則防止了什麼問題？有沒有特別有價值的規則可以分享？</p>
+            </div>
+        </div>
+        <div class="share-step">
+            <div class="share-num">3</div>
+            <div class="share-content">
+                <h4>在哪個平台測試成功？</h4>
+                <p>Antigravity、Claude Code、還是 Gemini CLI？測試過程中有遇到什麼問題嗎？怎麼解決的？</p>
+            </div>
+        </div>
+        <div class="share-step">
+            <div class="share-num">4</div>
+            <div class="share-content">
+                <h4>未來想怎麼擴展？</h4>
+                <p>這個 Skill 還可以怎麼改進？能不能跟其他 Skill 串接？能不能做成生成器表單讓更多人使用？</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="box success">
+        <strong>&#127775; 每位學員的 Skill 都是獨一無二的——因為它來自你的專業經驗！</strong>沒有標準答案，你的工作流程就是最好的素材。大膽分享，互相學習！
+    </div>
+</div>
+
+<!-- ==================== Slide 7: Day 1 最終成果結構 ==================== -->
+<div class="slide" id="slide-7">
+    <h2>&#128193; Day 1 最終成果結構</h2>
+
+    <p>經過一天的學習與實作，你的專案資料夾應該長這樣：</p>
+
+    <div class="folder-tree">
+        <span class="folder">my-project/</span><br>
+        ├── <span class="folder">.agent/</span> <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8592; Antigravity Skills 目錄</span><br>
+        │&nbsp;&nbsp;&nbsp;└── <span class="folder">skills/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="folder">email-reply-helper/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="file">SKILL.md</span> <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8592; Email 回覆 Skill</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="folder">assets/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file">email-template.md</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="folder">meeting-notes-generator/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="file">SKILL.md</span> <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8592; 會議紀錄 Skill</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="folder">assets/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="file">meeting-template.md</span><br>
+        ├── <span class="folder">.claude/</span> <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8592; Claude Code Skills 目錄</span><br>
+        │&nbsp;&nbsp;&nbsp;└── <span class="folder">skills/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="folder">email-reply-helper/</span><br>
+        │&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="folder">meeting-notes-generator/</span><br>
+        └── <span class="file">CLAUDE.md</span> <span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#8592; 全域設定檔</span>
+    </div>
+
+    <div class="box info">
+        <strong>&#128161; 同步提示：</strong>用 <code>sync-skills.sh</code> 腳本可以一鍵將 Skills 從 <code>.agent/skills/</code> 同步到 <code>.claude/skills/</code>，確保兩個平台的 Skill 內容完全一致。
+    </div>
+
+    <div class="box success">
+        <strong>&#127881; 恭喜！</strong>你已經擁有了至少兩個可跨平台運行的 AI Skill。這些 Skill 可以分享給團隊，也可以繼續擴展成更完整的 AI 工作系統。
+    </div>
+
+    <img src="images/01-46_day1_final_structure.png" alt="Day 1 最終專案結構" class="slide-img">
+</div>
+
+<!-- ==================== Slide 8: 課程總結 ==================== -->
+<div class="slide" id="slide-8">
+    <h2>&#127891; 課程總結</h2>
+
+    <p>恭喜你完成精華版課程！讓我們回顧今天學到的所有技能：</p>
+
+    <ul class="achievement-list">
+        <li>
+            <span class="achievement-check">&#9989;</span>
+            <span><strong>AI Skill 概念與三大平台</strong>——理解 Skills 是什麼、為什麼重要、在 Antigravity / Claude Code / Gemini CLI 上如何使用</span>
+        </li>
+        <li>
+            <span class="achievement-check">&#9989;</span>
+            <span><strong>SKILL.md 三層架構與五大章節</strong>——掌握 Skill 檔案的完整結構規範（元資料、指令、資源）</span>
+        </li>
+        <li>
+            <span class="achievement-check">&#9989;</span>
+            <span><strong>動手寫出可執行的 Skill</strong>——從 Email 回覆助手範例出發，修改成自己的專業版本</span>
+        </li>
+        <li>
+            <span class="achievement-check">&#9989;</span>
+            <span><strong>在 Antigravity / Claude Code 跑起來</strong>——實際部署到平台，並用真實場景測試 Skill 效果</span>
+        </li>
+        <li>
+            <span class="achievement-check">&#9989;</span>
+            <span><strong>防呆機制 MUST / NEVER</strong>——讓 Skill 更可靠，防止 AI 暴走或做出不該做的事</span>
+        </li>
+        <li>
+            <span class="achievement-check">&#9989;</span>
+            <span><strong>流程變現五層架構</strong>——從核心知識 &#10132; 流程拆解 &#10132; SKILL.md &#10132; 生成器 &#10132; AI 工作系統的完整路線圖</span>
+        </li>
+    </ul>
+
+    <div class="box info" style="text-align:center; font-size:22px;">
+        <strong>&#128273; 關鍵轉變：</strong>從「會用 AI」到「讓 AI 照你的方式做事」——這就是 Agent Skills 的力量！你不再只是 AI 的使用者，而是 AI 的設計者。
+    </div>
+</div>
+
+<!-- ==================== Slide 9: 認證測驗說明 ==================== -->
+<div class="slide" id="slide-9">
+    <h2>&#128203; 認證測驗說明</h2>
+
+    <p>完成課程後，進行認證測驗來驗收學習成果！通過即可獲得「倉勳科技學院」認證證書。</p>
+
+    <div class="quiz-info">
+        <div class="quiz-info-card">
+            <div class="qi-icon">&#127922;</div>
+            <div class="qi-label">題目來源</div>
+            <div class="qi-value">題庫 50 題隨機抽</div>
+        </div>
+        <div class="quiz-info-card">
+            <div class="qi-icon">&#128221;</div>
+            <div class="qi-label">題目數量</div>
+            <div class="qi-value">20 題</div>
+        </div>
+        <div class="quiz-info-card">
+            <div class="qi-icon">&#128256;</div>
+            <div class="qi-label">題目順序</div>
+            <div class="qi-value">每人不同</div>
+        </div>
+        <div class="quiz-info-card">
+            <div class="qi-icon">&#127942;</div>
+            <div class="qi-label">通過門檻</div>
+            <div class="qi-value">80 分以上</div>
+        </div>
+    </div>
+
+    <h3>&#128218; 測驗範圍</h3>
+    <table>
+        <thead>
+            <tr><th>範圍</th><th>重點</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Part 1-2</strong></td><td>AI Skill 概念、三層架構、SKILL.md 五大章節</td></tr>
+            <tr><td><strong>Part 3-4</strong></td><td>YAML Frontmatter、關鍵字（MUST/NEVER）、Antigravity 部署</td></tr>
+            <tr><td><strong>Part 5-6</strong></td><td>Claude Code 設定、跨平台部署、Skill 串接</td></tr>
+            <tr><td><strong>Part 7-8</strong></td><td>防呆機制、AI 生成器、流程變現五層架構</td></tr>
+        </tbody>
+    </table>
+
+    <div class="box success" style="font-size:20px;">
+        <strong>&#127891; 通過即可獲得：</strong>「倉勳科技學院」AI Skill 實作課認證證書！可下載證書圖片永久保存。
+    </div>
+
+    <div style="text-align:center; margin-top:40px;">
+        <a href="quiz.html" class="big-cta-btn">
+            &#127919; 前往認證測驗 &#10132;
+        </a>
+    </div>
+</div>
+
+<!-- ==================== Slide 10: 感謝與社群 ==================== -->
+<div class="slide" id="slide-10">
+    <div style="text-align:center; padding:20px 0;">
+        <div style="font-size:64px; margin-bottom:16px;">&#128591;</div>
+        <h1 style="font-size:48px; margin-bottom:16px;">感謝參與！</h1>
+        <p style="font-size:24px; color:#666; margin-bottom:40px; max-width:700px; display:inline-block;">
+            你已經掌握了 AI Skill 的核心技能。<br>
+            從今天開始，讓 AI 照你的方式做事！
+        </p>
+
+        <div style="margin-top:20px; padding:30px; background:linear-gradient(135deg,#f5f3ff 0%,#ede9fe 100%); border-radius:20px; display:inline-block; max-width:600px;">
+            <div style="font-size:36px; margin-bottom:12px;">&#128104;&#8205;&#127979;</div>
+            <h3 style="margin-top:0; color:#5b21b6; font-size:28px;">講師：曾慶良（阿亮老師）</h3>
+            <p style="font-size:18px; color:#7c3aed; margin-bottom:8px;">AI 技能教學 | 流程變現專家</p>
+            <p style="font-size:16px; color:#999; margin-bottom:0;">&copy; 2026 AI Skill 實作課</p>
+        </div>
+
+        <div class="social-links" style="margin-top:30px;">
+            <a href="https://www.facebook.com/?locale=zh_TW" target="_blank" class="social-link" style="background:linear-gradient(135deg,#1877f2,#0d65d9);">
+                &#128216; Facebook
+            </a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="social-link" style="background:linear-gradient(135deg,#ff0000,#cc0000);">
+                &#127909; YouTube
+            </a>
+            <a href="https://www.facebook.com/groups/2754139931432955?locale=zh_TW" target="_blank" class="social-link" style="background:linear-gradient(135deg,#667eea,#764ba2);">
+                &#128101; 3A科技研究社
+            </a>
+        </div>
+
+        <div style="margin-top:40px;">
+            <a href="quiz.html" class="next-part-btn">
+                前往認證測驗 &#10132;
+            </a>
+        </div>
+    </div>
+</div>
+
+</div><!-- end slides-container -->
+
+<!-- ===== 底部圓點 ===== -->
+<div class="dots" id="dots"></div>
+
+<!-- ===== JavaScript ===== -->
+<script>
+(function(){
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dots');
+    let current = 0;
+    const total = slides.length;
+
+    // 建立圓點
+    for(let i = 0; i < total; i++){
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => goTo(i));
+        dotsContainer.appendChild(dot);
+    }
+
+    function goTo(n){
+        slides[current].classList.remove('active');
+        dotsContainer.children[current].classList.remove('active');
+        current = (n + total) % total;
+        slides[current].classList.add('active');
+        dotsContainer.children[current].classList.add('active');
+        slides[current].scrollTop = 0;
+    }
+
+    window.changeSlide = function(dir){ goTo(current + dir); };
+
+    // 鍵盤控制
+    document.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+        if(e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); changeSlide(1); }
+        if(e.key === 'Home') { e.preventDefault(); goTo(0); }
+        if(e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+    });
+
+    // 觸控滑動
+    let touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e){
+        const diff = e.changedTouches[0].screenX - touchStartX;
+        if(Math.abs(diff) > 60){
+            if(diff < 0) changeSlide(1);
+            else changeSlide(-1);
+        }
+    });
+})();
+
+// 全螢幕
+function toggleFullscreen(){
+    if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen().catch(()=>{});
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
+
+<script src="auth.js"></script>
+</body>
+</html>
