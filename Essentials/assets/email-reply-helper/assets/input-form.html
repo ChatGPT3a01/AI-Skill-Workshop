@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Email 回覆助手 - 輸入表單</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 24px; font-size: 24px; }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #555;
+        }
+        .required::after {
+            content: " *";
+            color: #e74c3c;
+        }
+        textarea, select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        textarea { min-height: 120px; resize: vertical; }
+        textarea:focus, select:focus, input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .output-area {
+            margin-top: 20px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            display: none;
+        }
+        .copy-btn {
+            background: #28a745;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-card">
+        <h1>📧 Email 回覆助手</h1>
+        <p style="color:#888; margin-bottom:24px;">
+            填寫以下表單，自動產生 AI 提示詞
+        </p>
+
+        <div class="form-group">
+            <label class="required">客戶來信原文</label>
+            <textarea id="customerEmail"
+                placeholder="請貼上客戶的完整來信內容..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="required">回覆優先順序</label>
+            <select id="priority">
+                <option value="一般">一般</option>
+                <option value="緊急">緊急</option>
+                <option value="可延後">可延後</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="required">回覆語氣</label>
+            <select id="tone">
+                <option value="正式嚴肅">正式嚴肅</option>
+                <option value="親切友善">親切友善</option>
+                <option value="簡潔明快">簡潔明快</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>特殊指示（選填）</label>
+            <input type="text" id="specialNotes"
+                placeholder="例如：不要提及競品比較">
+        </div>
+
+        <button class="btn" onclick="generatePrompt()">
+            🚀 產生 AI 提示詞
+        </button>
+
+        <div class="output-area" id="outputArea"></div>
+        <button class="btn copy-btn" id="copyBtn"
+            style="display:none" onclick="copyPrompt()">
+            📋 複製提示詞
+        </button>
+    </div>
+
+    <script>
+        function generatePrompt() {
+            const email = document.getElementById('customerEmail').value;
+            const priority = document.getElementById('priority').value;
+            const tone = document.getElementById('tone').value;
+            const notes = document.getElementById('specialNotes').value;
+
+            if (!email.trim()) {
+                alert('請填寫客戶來信原文！');
+                return;
+            }
+
+            const prompt = `請使用「Email 回覆助手」技能，幫我回覆以下客戶來信。
+
+## 客戶來信
+${email}
+
+## 回覆設定
+- 優先順序：${priority}
+- 語氣風格：${tone}
+${notes ? `- 特殊指示：${notes}` : ''}
+
+請依照 Skill 的規範執行，包含分析摘要和完整回覆信件。`;
+
+            const outputArea = document.getElementById('outputArea');
+            outputArea.textContent = prompt;
+            outputArea.style.display = 'block';
+            document.getElementById('copyBtn').style.display = 'block';
+        }
+
+        function copyPrompt() {
+            const text = document.getElementById('outputArea').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = '✅ 已複製！';
+                setTimeout(() => btn.textContent = '📋 複製提示詞', 2000);
+            });
+        }
+    </script>
+</body>
+</html>
