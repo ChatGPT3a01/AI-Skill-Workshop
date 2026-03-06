@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 3 - 動手寫第一個 Skill | AI Skill 實作課（精華版）</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    height: 100vh;
+    overflow: hidden;
+    color: #333;
+}
+
+/* ===== 導航列 ===== */
+.nav-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 30px;
+}
+.nav-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.nav-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.nav-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-block;
+    font-family: inherit;
+}
+.nav-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-1px);
+}
+
+/* ===== 投影片容器 ===== */
+.slides-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding-top: 60px;
+}
+
+.slide {
+    display: none;
+    width: 95%;
+    max-width: 1400px;
+    max-height: 88vh;
+    background: rgba(255,255,255,0.98);
+    border-radius: 24px;
+    padding: 60px;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: fadeIn 0.4s ease;
+}
+.slide.active { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* scrollbar */
+.slide::-webkit-scrollbar { width: 8px; }
+.slide::-webkit-scrollbar-track { background: transparent; }
+.slide::-webkit-scrollbar-thumb { background: rgba(17,153,142,0.3); border-radius: 4px; }
+.slide::-webkit-scrollbar-thumb:hover { background: rgba(17,153,142,0.5); }
+
+/* ===== 文字樣式 ===== */
+h1 { color: #11998e; font-size: 48px; margin-bottom: 20px; }
+h2 { color: #11998e; font-size: 36px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 3px solid #11998e; }
+h3 { color: #11998e; font-size: 24px; margin: 20px 0 12px; }
+p, li { font-size: 20px; line-height: 1.8; color: #444; }
+p { margin-bottom: 16px; }
+ul, ol { margin: 12px 0 20px 30px; }
+li { margin-bottom: 8px; }
+strong { color: #11998e; }
+
+/* ===== 表格 ===== */
+table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+th { background: #11998e; color: white; padding: 14px 18px; text-align: left; font-size: 18px; font-weight: 700; }
+td { padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 18px; line-height: 1.6; }
+tr:hover { background: #f0fdf4; }
+thead th:first-child { border-radius: 10px 0 0 0; }
+thead th:last-child { border-radius: 0 10px 0 0; }
+
+/* ===== 程式碼 ===== */
+code {
+    background: #f0f2f5;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #d63384;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+    font-size: 0.9em;
+}
+pre {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 25px;
+    border-radius: 12px;
+    font-size: 18px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-family: 'Consolas', 'Source Code Pro', monospace;
+    white-space: pre-wrap;
+}
+pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* ===== Box 提示 ===== */
+.box {
+    padding: 20px 24px;
+    border-radius: 12px;
+    margin: 20px 0;
+    font-size: 19px;
+    line-height: 1.8;
+}
+.box.info { background: #e3f2fd; border-left: 6px solid #2196f3; }
+.box.warning { background: #fff3cd; border-left: 6px solid #ffc107; }
+.box.success { background: #d4edda; border-left: 6px solid #28a745; }
+.box strong { display: inline; }
+
+/* ===== Concept Grid ===== */
+.concept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin: 24px 0;
+}
+.concept-card {
+    background: #f8f9fa;
+    padding: 28px;
+    border-radius: 15px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.concept-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+.concept-card h3 { margin-top: 0; }
+
+/* ===== 截圖 ===== */
+.slide-img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    margin: 24px 0;
+}
+
+/* ===== 左右箭頭 ===== */
+.arrow-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+.arrow-btn:hover {
+    background: rgba(255,255,255,0.35);
+    transform: translateY(-50%) scale(1.1);
+}
+.arrow-left { left: 20px; }
+.arrow-right { right: 20px; }
+
+/* ===== 底部圓點指示器 ===== */
+.dots {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 9999;
+}
+.dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid rgba(255,255,255,0.5);
+}
+.dot.active {
+    background: white;
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+/* ===== 封面專用 ===== */
+.cover-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 70vh;
+}
+.cover-slide .subtitle {
+    font-size: 22px;
+    color: #11998e;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+}
+.cover-slide h1 {
+    font-size: 56px;
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 20px;
+}
+.cover-slide .desc {
+    font-size: 24px;
+    color: #666;
+    max-width: 800px;
+    line-height: 1.8;
+    margin-bottom: 40px;
+}
+.tags {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.tag {
+    padding: 10px 28px;
+    border-radius: 50px;
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+/* ===== 編號圓點 ===== */
+.num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+/* ===== Next Part 按鈕 ===== */
+.next-part-btn {
+    display: inline-block;
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+    padding: 18px 48px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: 0 8px 25px rgba(17,153,142,0.4);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.next-part-btn:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 12px 35px rgba(17,153,142,0.5);
+}
+
+/* ===== YAML 高亮 ===== */
+.yaml-comment { color: #7f848e; font-style: italic; }
+.yaml-key { color: #e06c75; }
+.yaml-value { color: #98c379; }
+.md-keyword { color: #c678dd; font-weight: bold; }
+.md-heading { color: #61afef; font-weight: bold; }
+
+/* ===== Checklist ===== */
+.checklist { list-style: none; padding-left: 0; margin: 16px 0; }
+.checklist li {
+    font-size: 20px; padding: 14px 20px;
+    background: #f8f9fa; border-radius: 10px;
+    margin-bottom: 10px; border-left: 4px solid #11998e;
+    transition: all 0.2s;
+    line-height: 1.6;
+}
+.checklist li:hover { background: #e8f5e9; transform: translateX(6px); }
+
+/* ===== 投影片編號 ===== */
+.slide-number {
+    position: fixed; bottom: 70px; right: 30px;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff; padding: 6px 16px;
+    border-radius: 50px; font-size: 14px;
+    font-weight: 600; z-index: 9999;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 導航列 ===== -->
+<nav class="nav-bar">
+    <div class="nav-title">&#x270D;&#xFE0F; Part 3 - 動手寫第一個 Skill</div>
+    <div class="nav-buttons">
+        <a class="nav-btn" href="Part2_SKILL結構拆解.html">&#x2B05;&#xFE0F; 上一章</a>
+        <a class="nav-btn" href="index.html">&#x1F3E0; 首頁</a>
+        <button class="nav-btn" onclick="toggleFullscreen()">&#x1F5A5;&#xFE0F; 全螢幕</button>
+        <a class="nav-btn" href="Part4_Antigravity執行Skill.html">下一章 &#x27A1;&#xFE0F;</a>
+    </div>
+</nav>
+
+<!-- ===== 左右箭頭 ===== -->
+<button class="arrow-btn arrow-left" onclick="changeSlide(-1)">&#9664;</button>
+<button class="arrow-btn arrow-right" onclick="changeSlide(1)">&#9654;</button>
+
+<!-- ===== 投影片編號 ===== -->
+<div class="slide-number" id="slideNumber">1 / 12</div>
+
+<!-- ===== 投影片容器 ===== -->
+<div class="slides-container">
+
+<!-- ==================== Slide 1: 封面 ==================== -->
+<div class="slide active" id="slide-1">
+    <div class="cover-slide">
+        <div class="subtitle">Part 3 &middot; 動手寫第一個 Skill</div>
+        <h1>實作：Email 回覆助手</h1>
+        <p class="desc">從零開始，一步步完成一個可執行的 SKILL.md，讓 AI 按照你的規則回覆商業信件</p>
+        <div class="tags">
+            <span class="tag" style="background:linear-gradient(135deg,#11998e,#38ef7d);">動手實作</span>
+            <span class="tag" style="background:linear-gradient(135deg,#667eea,#764ba2);">SKILL.md</span>
+            <span class="tag" style="background:linear-gradient(135deg,#f093fb,#f5576c);">Email 回覆</span>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== Slide 2: 實作目標 ==================== -->
+<div class="slide" id="slide-2">
+    <h2>&#x1F3AF; 實作目標：你將完成什麼？</h2>
+
+    <p>在接下來的實作中，你將從零開始寫出一個完整的 <code>SKILL.md</code> 檔案——「<strong>Email 回覆助手</strong>」。完成後，這個 Skill 就能部署到 Antigravity、Claude Code 或 Gemini CLI 上實際運作。</p>
+
+    <h3>完成後你會得到</h3>
+    <table>
+        <thead>
+            <tr><th>項目</th><th>內容</th><th>用途</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>SKILL.md</strong></td><td>完整的 Email 回覆助手技能檔案</td><td>AI 的「執行手冊」，定義所有規則</td></tr>
+            <tr><td><strong>assets/ 資料夾</strong></td><td>Email 範本和輸入表單</td><td>輔助資源，讓 Skill 更完整</td></tr>
+            <tr><td><strong>可執行的 Skill</strong></td><td>部署到任一平台即可使用</td><td>一鍵觸發，穩定產出專業回覆</td></tr>
+        </tbody>
+    </table>
+
+    <h3>實作流程預覽</h3>
+    <div class="concept-grid">
+        <div class="concept-card" style="border-top: 4px solid #11998e;">
+            <h3>&#x1F4BB; Step 1-2</h3>
+            <p>開啟終端機，建立 Skill 資料夾結構（<code>skills-source/email-reply-helper/assets/</code>）</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #38ef7d;">
+            <h3>&#x270D;&#xFE0F; Step 3</h3>
+            <p>撰寫 YAML 前言（<code>name</code> + <code>description</code>），讓 AI 知道「這是什麼 Skill」</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #667eea;">
+            <h3>&#x1F4CB; Step 4-5</h3>
+            <p>撰寫前置檢查、執行步驟、安全規則、輸出格式，完成完整 SKILL.md</p>
+        </div>
+    </div>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 預計時間：</strong>整個實作約 15-20 分鐘。不用擔心，我們會一步步帶你完成。先跟著做，完成後再回頭理解每一段的設計邏輯。
+    </div>
+</div>
+
+<!-- ==================== Slide 3: Step 1 開啟終端機 ==================== -->
+<div class="slide" id="slide-3">
+    <h2>&#x1F4BB; Step 1：開啟終端機</h2>
+
+    <p>動手實作的第一步，就是開啟你的終端機（Terminal）。終端機是你和電腦溝通的文字介面，我們會用它來建立資料夾和檔案。</p>
+
+    <h3>方法一：從 VS Code 開啟（推薦）</h3>
+    <ol>
+        <li>開啟 VS Code</li>
+        <li>選單列 &#x2192; <strong>Terminal</strong> &#x2192; <strong>New Terminal</strong></li>
+        <li>底部會出現終端機面板，可以直接輸入指令</li>
+    </ol>
+
+    <h3>方法二：從作業系統開啟</h3>
+    <ul>
+        <li><strong>Windows：</strong>在專案資料夾中按住 Shift + 右鍵 &#x2192;「在此處開啟 PowerShell」</li>
+        <li><strong>Mac / Linux：</strong>在專案資料夾中右鍵 &#x2192;「在終端機中開啟」</li>
+    </ul>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 確認位置：</strong>打開終端機後，先確認你在正確的「<strong>專案根目錄</strong>」。Windows 輸入 <code>cd</code>，Mac/Linux 輸入 <code>pwd</code> 來確認目前位置。所有後續指令都要在專案根目錄下執行。
+    </div>
+
+    <div class="box warning">
+        <strong>&#x26A0;&#xFE0F; 常見問題：</strong>如果終端機開在錯誤的位置（例如桌面或使用者目錄），後續建立的資料夾就會跑到錯的地方。請務必先 <code>cd</code> 到你的專案資料夾。
+    </div>
+
+    <img src="images/01-11_open_terminal.png" alt="開啟終端機" class="slide-img">
+</div>
+
+<!-- ==================== Slide 4: Step 2 建立 Skill 資料夾 ==================== -->
+<div class="slide" id="slide-4">
+    <h2>&#x1F4C1; Step 2：建立 Skill 資料夾</h2>
+
+    <p>在終端機中執行以下指令，一次建好整個 Skill 的資料夾結構：</p>
+
+    <pre><code># 建立 Skill 資料夾（含 assets 子資料夾）
+mkdir -p skills-source/email-reply-helper/assets</code></pre>
+
+    <p><code>mkdir -p</code> 的 <code>-p</code> 參數表示「建立所有不存在的父目錄」，所以一條指令就能把整個結構建好。</p>
+
+    <h3>建好後的資料夾結構</h3>
+    <pre><code>skills-source/                         # Skill 原始檔案根目錄
+&#x2514;&#x2500;&#x2500; email-reply-helper/               # 這個 Skill 的資料夾
+    &#x251C;&#x2500;&#x2500; SKILL.md                      # 核心：技能定義檔（接下來要寫）
+    &#x2514;&#x2500;&#x2500; assets/                       # 輔助資源
+        &#x2514;&#x2500;&#x2500; email-template.md         # Email 回覆範本</code></pre>
+
+    <div class="box success">
+        <strong>&#x2705; 結構說明：</strong>每個 Skill 都是一個<strong>獨立的資料夾</strong>，資料夾名稱就是 Skill 的名稱。裡面放 <code>SKILL.md</code>（技能定義）和 <code>assets/</code>（附屬資源）。這種結構方便管理、分享和版本控制。
+    </div>
+
+    <div class="box warning">
+        <strong>&#x26A0;&#xFE0F; 命名規則：</strong>資料夾名稱必須使用<strong>小寫英文</strong>和<strong>連字號</strong>（<code>-</code>）。不能使用中文、空格、底線或大寫字母。例如 <code>email-reply-helper</code> &#x2705;，<code>Email Reply Helper</code> &#x274C;，<code>email_reply_helper</code> &#x274C;。
+    </div>
+
+    <img src="images/01-12_skill_folder_created.png" alt="Skill 資料夾建立完成" class="slide-img">
+</div>
+
+<!-- ==================== Slide 5: Step 3 撰寫 YAML 前言 ==================== -->
+<div class="slide" id="slide-5">
+    <h2>&#x270D;&#xFE0F; Step 3：撰寫 YAML 前言</h2>
+
+    <p>現在用文字編輯器（VS Code 或任何編輯器）建立 <code>SKILL.md</code> 檔案，在最頂端寫入 YAML Frontmatter：</p>
+
+    <pre><code><span class="yaml-comment">---</span>
+<span class="yaml-key">name:</span> <span class="yaml-value">email-reply-helper</span>
+<span class="yaml-key">description:</span> <span class="yaml-value">&gt;</span>
+  <span class="yaml-value">協助撰寫專業的商業 Email 回覆信件。</span>
+  <span class="yaml-value">當使用者需要回覆客戶來信、處理商業書信、</span>
+  <span class="yaml-value">回應詢價或客訴時，使用此技能。</span>
+  <span class="yaml-value">支援：詢價回覆、客訴回應、合作洽談、一般商業往來。</span>
+<span class="yaml-comment">---</span></code></pre>
+
+    <h3>各欄位說明</h3>
+    <table>
+        <thead>
+            <tr><th>欄位</th><th>規則</th><th>重點</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>---</code></td><td>前後各三個短線</td><td>不能多也不能少，這是 YAML 的固定語法</td></tr>
+            <tr><td><code>name</code></td><td>小寫英文 + 連字號</td><td>必須與<strong>資料夾名稱完全一致</strong></td></tr>
+            <tr><td><code>description: &gt;</code></td><td><code>&gt;</code> 表示多行文字</td><td>下一行要<strong>縮排 2 格</strong>，描述越詳細越好</td></tr>
+        </tbody>
+    </table>
+
+    <div class="box warning">
+        <strong>&#x26A0;&#xFE0F; YAML 格式陷阱：</strong>YAML 對格式<strong>極度敏感</strong>！以下是最常見的三個錯誤：<br>
+        1. 使用<strong>全形冒號</strong>（&#xFF1A;）而非半形冒號（:）<br>
+        2. <code>description: &gt;</code> 後面的內容<strong>沒有縮排</strong><br>
+        3. <code>name</code> 的值和<strong>資料夾名稱不一致</strong>
+    </div>
+
+    <div class="box info">
+        <strong>&#x1F4A1; description 怎麼寫：</strong>想像 AI 只看 description 來決定「要不要啟動這個 Skill」。所以要明確寫出<strong>使用場景</strong>和<strong>支援的類型</strong>。太模糊會導致 AI 錯過，太廣泛則會誤觸發。
+    </div>
+
+    <img src="images/01-13_frontmatter_input.png" alt="撰寫 YAML 前言" class="slide-img">
+</div>
+
+<!-- ==================== Slide 6: Step 4 前置檢查 + 執行步驟 ==================== -->
+<div class="slide" id="slide-6">
+    <h2>&#x1F4CB; Step 4：前置檢查 + 執行步驟</h2>
+
+    <p>在 YAML Frontmatter 之後，接著撰寫 Markdown 正文。前置檢查確保 AI 有足夠的資料開工，執行步驟則規定 AI 的工作流程。</p>
+
+    <h3>前置檢查：確認輸入</h3>
+    <pre><code><span class="md-heading">## 前置檢查</span>
+
+- <span class="md-keyword">Check if</span> 使用者提供了客戶來信原文
+- <span class="md-keyword">Ask user</span> 如果沒有提供，請使用者貼上來信內容
+- <span class="md-keyword">Check if</span> 使用者有指定回覆語氣（正式/友善/簡潔）
+- <span class="md-keyword">Check if</span> 使用者有提供署名資訊（姓名、職稱、公司）</code></pre>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 關鍵字解讀：</strong><code>Check if</code> = 條件判斷（AI 自己檢查輸入）；<code>Ask user</code> = 主動詢問（向使用者要缺少的資料）。這兩個指令讓 AI 在開始工作前先「確認材料齊全」。
+    </div>
+
+    <h3>執行步驟：逐步流程</h3>
+    <pre><code><span class="md-heading">## 執行步驟</span>
+
+<span class="md-heading">### Step 1：分析來信</span>
+- 識別來信類型（詢價 / 客訴 / 合作 / 一般）
+- 提取關鍵資訊（對方需求、時間限制、聯繫方式）
+- 判斷情緒傾向（正面 / 中性 / 負面）
+
+<span class="md-heading">### Step 2：撰寫回覆</span>
+- <span class="md-keyword">MUST</span> 使用專業商業語氣
+- <span class="md-keyword">MUST</span> 針對來信每個問題逐一回覆
+- 根據來信類型套用對應的回覆框架
+
+<span class="md-heading">### Step 3：自我檢查</span>
+- 確認所有問題都已回覆
+- 確認語氣一致、沒有前後矛盾
+- 確認沒有違反安全規則</code></pre>
+
+    <div class="box success">
+        <strong>&#x1F3AF; 設計要點：</strong>每個 Step 都要有<strong>明確的產出物</strong>。Step 1 產出「分析結果」，Step 2 產出「回覆草稿」，Step 3 產出「最終版本」。這樣 AI 才知道每一步該做到什麼程度。
+    </div>
+</div>
+
+<!-- ==================== Slide 7: Step 5 安全規則 + 輸出格式 ==================== -->
+<div class="slide" id="slide-7">
+    <h2>&#x1F6E1;&#xFE0F; Step 5：安全規則 + 輸出格式</h2>
+
+    <p>安全規則是你的「紅線清單」，告訴 AI 什麼事情<strong>絕對要做</strong>和<strong>絕對不能做</strong>。輸出格式則確保每次的結果都長得一樣。</p>
+
+    <h3>安全規則：設定紅線</h3>
+    <pre><code><span class="md-heading">## 安全規則</span>
+
+- <span class="md-keyword">MUST</span> 使用繁體中文撰寫回覆
+- <span class="md-keyword">MUST</span> 保持專業禮貌的語氣
+- <span class="md-keyword">MUST</span> 在回覆中附上署名區塊
+- <span class="md-keyword">NEVER</span> 承諾超出權限的事項（如折扣、退款）
+- <span class="md-keyword">NEVER</span> 透露公司內部定價策略
+- <span class="md-keyword">NEVER</span> 使用非正式的網路用語（如 lol、XD）</code></pre>
+
+    <div class="box warning">
+        <strong>&#x26A0;&#xFE0F; 重要提醒：</strong><code>MUST</code> 和 <code>NEVER</code> 是 Skill 的「絕對規則」關鍵字。AI 會特別注意這兩個詞，所以要用在<strong>真正重要</strong>的地方，不要濫用。一般建議 MUST 3-5 條、NEVER 3-5 條。
+    </div>
+
+    <h3>輸出格式：規範交付物</h3>
+    <pre><code><span class="md-heading">## 輸出格式</span>
+
+信件格式如下：
+
+<span class="yaml-comment">【主旨行】</span>
+Re: [原始主旨]
+
+<span class="yaml-comment">【稱謂】</span>
+[對方稱呼] 您好，
+
+<span class="yaml-comment">【正文】</span>
+- 第一段：感謝來信 / 回應主題
+- 第二段：針對各問題逐一回覆
+- 第三段：後續行動 / 邀請進一步聯繫
+
+<span class="yaml-comment">【結尾敬語】</span>
+順頌商祺
+
+<span class="yaml-comment">【署名】</span>
+[使用者姓名] | [職稱] | [公司名稱]</code></pre>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 格式越具體越好：</strong>不要只寫「輸出一封 Email」，要像上面一樣把每一段的結構、內容方向都規範清楚。格式越明確，AI 產出的結果越穩定一致。
+    </div>
+</div>
+
+<!-- ==================== Slide 8: 完整 SKILL.md 全貌 ==================== -->
+<div class="slide" id="slide-8">
+    <h2>&#x2705; 完成！完整 SKILL.md 全貌</h2>
+
+    <p>恭喜！你已經寫完了所有段落。讓我們回顧一下完整的 <code>SKILL.md</code> 檔案結構，確認每個部分都到位：</p>
+
+    <table>
+        <thead>
+            <tr><th>段落</th><th>行數（約）</th><th>功能</th><th>關鍵字</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>YAML Frontmatter</strong></td><td>~7 行</td><td>AI 辨識這個 Skill 的身分</td><td><code>name</code>、<code>description</code></td></tr>
+            <tr><td><strong>## 前置檢查</strong></td><td>~5 行</td><td>確認輸入資料齊全</td><td><code>Check if</code>、<code>Ask user</code></td></tr>
+            <tr><td><strong>## 執行步驟</strong></td><td>~15 行</td><td>定義 AI 的工作流程</td><td><code>Step 1</code>、<code>Step 2</code>、<code>Step 3</code></td></tr>
+            <tr><td><strong>## 安全規則</strong></td><td>~8 行</td><td>設定紅線和底線</td><td><code>MUST</code>、<code>NEVER</code></td></tr>
+            <tr><td><strong>## 輸出格式</strong></td><td>~12 行</td><td>規範最終交付物的樣子</td><td>格式描述 + 結構範例</td></tr>
+            <tr><td><strong>## 範例</strong></td><td>~15 行</td><td>給 AI 看「正確答案長這樣」</td><td>輸入 &#x2192; 預期輸出</td></tr>
+        </tbody>
+    </table>
+
+    <div class="box success">
+        <strong>&#x1F389; 成就解鎖：</strong>你已經完成了第一個 SKILL.md！總共約 60-80 行 Markdown，就能定義一個完整的 AI 技能。這就是 Skill 的魅力——用最少的文字，讓 AI 做最多的事。
+    </div>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 進階技巧：</strong>如果你的 Skill 需要更多細節，可以在 <code>## 範例</code> 段落中加入多個不同情境的輸入/輸出範例（詢價、客訴、合作邀約），讓 AI 有更多參考依據。
+    </div>
+
+    <img src="images/01-14_complete_skillmd.png" alt="完整的 SKILL.md 檔案" class="slide-img">
+</div>
+
+<!-- ==================== Slide 9: 自我檢查清單 ==================== -->
+<div class="slide" id="slide-9">
+    <h2>&#x2714;&#xFE0F; 自我檢查清單</h2>
+
+    <p>寫完 SKILL.md 後，請逐一核對以下檢查項目。這些是最容易出錯的地方，花 2 分鐘檢查一遍，可以省下之後 20 分鐘的除錯時間：</p>
+
+    <ul class="checklist">
+        <li>&#x2705; <strong>YAML 前言格式正確？</strong>三個短線 <code>---</code> 開頭結尾，<code>name:</code> 和 <code>description:</code> 後面有空格</li>
+        <li>&#x2705; <strong>name 與資料夾名稱一致？</strong>如 <code>email-reply-helper</code>，大小寫、連字號都要完全相同</li>
+        <li>&#x2705; <strong>description 描述觸發條件？</strong>明確寫出「當使用者 _____ 時，使用此技能」</li>
+        <li>&#x2705; <strong>五大章節都有？</strong>前置檢查、執行步驟、安全規則、輸出格式、範例</li>
+        <li>&#x2705; <strong>MUST / NEVER 規則清楚？</strong>用在真正重要的地方，各 3-5 條</li>
+        <li>&#x2705; <strong>輸出格式有具體範例？</strong>AI 看了知道「做出來要長怎樣」</li>
+    </ul>
+
+    <div class="box warning">
+        <strong>&#x26A0;&#xFE0F; 三大常見錯誤：</strong><br>
+        1. <strong>name 不一致</strong> -- 資料夾叫 <code>email-reply-helper</code> 但 YAML 中寫成 <code>email_reply_helper</code>，AI 就找不到<br>
+        2. <strong>YAML 縮排用 Tab</strong> -- YAML 只接受空格！混用 Tab 會導致解析失敗<br>
+        3. <strong>description 太簡短</strong> -- 只寫「Email 工具」，AI 根本不知道何時該觸發
+    </div>
+
+    <div class="box success">
+        <strong>&#x1F3AF; 通過所有檢查？</strong>恭喜！你的 SKILL.md 已經準備好部署了。如果有任何項目不確定，現在就是修改的好時機。
+    </div>
+
+    <img src="images/01-15_checklist.png" alt="自我檢查清單" class="slide-img">
+</div>
+
+<!-- ==================== Slide 10: assets 資料夾 ==================== -->
+<div class="slide" id="slide-10">
+    <h2>&#x1F4C2; assets 資料夾：放入範本和參考文件</h2>
+
+    <p>除了核心的 <code>SKILL.md</code>，你還可以在 <code>assets/</code> 資料夾中放入輔助資源，讓 Skill 更完整、更實用。</p>
+
+    <h3>Email 回覆助手的 assets 內容</h3>
+    <table>
+        <thead>
+            <tr><th>檔案名稱</th><th>用途</th><th>內容說明</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>email-template.md</code></td>
+                <td>回覆範本</td>
+                <td>預先定義好的 Email 回覆格式範本，包含各種情境（詢價、客訴、合作）的回覆框架，AI 可以參考這些範本來產出更精準的回覆</td>
+            </tr>
+            <tr>
+                <td><code>tone-guide.md</code>（選用）</td>
+                <td>語氣指南</td>
+                <td>定義公司的「說話風格」，例如用語規範、禁用詞彙、品牌調性等，確保所有回覆都符合公司形象</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>在 SKILL.md 中引用 assets</h3>
+    <pre><code><span class="md-heading">## 執行步驟</span>
+
+<span class="md-heading">### Step 2：撰寫回覆</span>
+- 參考 <span class="md-keyword">@assets/email-template.md</span> 中的範本格式
+- 根據來信類型選擇對應的回覆框架
+- <span class="md-keyword">MUST</span> 遵循範本的段落結構</code></pre>
+
+    <div class="box info">
+        <strong>&#x1F4A1; @assets/ 語法：</strong>在 SKILL.md 中使用 <code>@assets/filename.md</code> 來引用 assets 資料夾中的檔案。AI 在執行 Skill 時會自動讀取這些引用的資源。這就是三層架構中「第三層：資源」的實際應用。
+    </div>
+
+    <div class="box success">
+        <strong>&#x1F3AF; assets 的好處：</strong>把範本和參考資料獨立出來，而非全部塞進 SKILL.md，有兩個好處：(1) SKILL.md 保持精簡，AI 載入更快；(2) 範本可以獨立更新，不影響 Skill 的核心邏輯。
+    </div>
+</div>
+
+<!-- ==================== Slide 11: 動手改成你的版本 ==================== -->
+<div class="slide" id="slide-11">
+    <h2>&#x1F527; 動手改成你的版本</h2>
+
+    <p>你已經看完了完整的 Email 回覆助手範例，現在是最重要的步驟——<strong>把它改成你自己的 Skill</strong>！不管你是什麼行業，都可以用同樣的結構來打造專屬的 AI 技能。</p>
+
+    <div class="concept-grid">
+        <div class="concept-card" style="border-top: 4px solid #11998e;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">1</span>
+                <h3 style="margin:0;">改主題</h3>
+            </div>
+            <p>把 Email 回覆改成你的工作場景。例如：<strong>會議紀錄整理</strong>、<strong>客戶報告撰寫</strong>、<strong>社群貼文生成</strong>、<strong>教案設計</strong>。修改 <code>name</code> 和 <code>description</code> 欄位。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #38ef7d;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">2</span>
+                <h3 style="margin:0;">改流程</h3>
+            </div>
+            <p>根據你的實際工作步驟，重新設計執行步驟。想想你平常怎麼做這件事，把步驟一個一個列出來，每一步都要有明確的產出物。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #667eea;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">3</span>
+                <h3 style="margin:0;">改規則</h3>
+            </div>
+            <p>加入你的行業限制和紅線。例如醫療 <code>NEVER 提供診斷建議</code>，金融 <code>NEVER 預測股價走勢</code>，教育 <code>MUST 適合學生年齡層</code>。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #f093fb;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">4</span>
+                <h3 style="margin:0;">改格式</h3>
+            </div>
+            <p>指定你要的輸出樣式。要表格？要清單？要分段落？要 JSON？根據你的下游需求來決定輸出格式，越具體越好。</p>
+        </div>
+    </div>
+
+    <div class="box info">
+        <strong>&#x1F4A1; 改造訣竅：</strong>先從小改動開始，確認能跑再加複雜度。第一版不用完美，先求「能用」，再慢慢迭代成「好用」。一個能跑的 60 分 Skill，比一個寫不完的 100 分 Skill 有用得多。
+    </div>
+
+    <div class="box success">
+        <strong>&#x1F3AF; 實作時間（5 分鐘）：</strong>打開你的文字編輯器，複製 Email 回覆助手的結構，把 <code>name</code> 和 <code>description</code> 改成你自己的主題。完成後舉手讓老師看一下！
+    </div>
+</div>
+
+<!-- ==================== Slide 12: Part 3 小結 ==================== -->
+<div class="slide" id="slide-12">
+    <h2>&#x1F4DD; Part 3 重點回顧</h2>
+
+    <p>恭喜你完成了第一個 Skill 的撰寫！讓我們確認一下你現在應該具備的能力：</p>
+
+    <div class="concept-grid">
+        <div class="concept-card" style="border-top: 4px solid #11998e;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">1</span>
+                <h3 style="margin:0;">能建立 Skill 資料夾</h3>
+            </div>
+            <p>用終端機建立 <code>skills-source/skill-name/assets/</code> 結構，知道命名規則（小寫英文 + 連字號），能正確放置 SKILL.md 和 assets 檔案。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #38ef7d;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">2</span>
+                <h3 style="margin:0;">能撰寫完整 SKILL.md</h3>
+            </div>
+            <p>YAML Frontmatter（name + description）+ 五大章節（前置檢查、執行步驟、安全規則、輸出格式、範例）。掌握 <code>MUST</code>、<code>NEVER</code>、<code>Check if</code>、<code>Ask user</code> 四大關鍵字。</p>
+        </div>
+        <div class="concept-card" style="border-top: 4px solid #667eea;">
+            <div style="display:flex; align-items:center; margin-bottom:12px;">
+                <span class="num-badge">3</span>
+                <h3 style="margin:0;">能改造成自己的版本</h3>
+            </div>
+            <p>從範例出發，修改主題、流程、規則、格式四個維度，打造屬於你工作場景的專屬 AI Skill。先求能用，再求好用。</p>
+        </div>
+    </div>
+
+    <div class="box success">
+        <strong>&#x1F3AF; 接下來的 Part 4：</strong>我們要把你剛寫好的 SKILL.md 部署到 Antigravity 平台上，實際跑跑看！讓你的 Skill 從「紙上談兵」變成「真正能用」。準備好了嗎？
+    </div>
+
+    <div style="text-align:center; margin-top:40px;">
+        <a href="Part4_Antigravity執行Skill.html" class="next-part-btn">
+            Part 4：在 Antigravity 執行 Skill &#x2192;
+        </a>
+    </div>
+</div>
+
+</div><!-- end slides-container -->
+
+<!-- ===== 底部圓點 ===== -->
+<div class="dots" id="dots"></div>
+
+<!-- ===== JavaScript ===== -->
+<script>
+(function(){
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dots');
+    let current = 0;
+    const total = slides.length;
+
+    // 建立圓點
+    for(let i = 0; i < total; i++){
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 0 ? ' active' : '');
+        dot.addEventListener('click', () => goTo(i));
+        dotsContainer.appendChild(dot);
+    }
+
+    function goTo(n){
+        if(n < 0 || n >= total) return;
+        slides[current].classList.remove('active');
+        dotsContainer.children[current].classList.remove('active');
+        current = n;
+        slides[current].classList.add('active');
+        dotsContainer.children[current].classList.add('active');
+        slides[current].scrollTop = 0;
+        document.getElementById('slideNumber').textContent = (current + 1) + ' / ' + total;
+    }
+
+    window.changeSlide = function(dir){ goTo(current + dir); };
+
+    // 鍵盤控制
+    document.addEventListener('keydown', function(e){
+        if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); changeSlide(-1); }
+        if(e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+        if(e.key === 'Home') { e.preventDefault(); goTo(0); }
+        if(e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+    });
+
+    // 觸控滑動
+    let touchStartX = 0;
+    document.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; });
+    document.addEventListener('touchend', function(e){
+        const diff = e.changedTouches[0].screenX - touchStartX;
+        if(Math.abs(diff) > 60){
+            if(diff < 0) changeSlide(1);
+            else changeSlide(-1);
+        }
+    });
+})();
+
+// 全螢幕
+function toggleFullscreen(){
+    if(!document.fullscreenElement){
+        document.documentElement.requestFullscreen().catch(()=>{});
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
+
+<script src="auth.js"></script>
+</body>
+</html>
