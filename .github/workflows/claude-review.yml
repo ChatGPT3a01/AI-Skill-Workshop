@@ -1,0 +1,72 @@
+# .github/workflows/claude-review.yml
+name: Claude AI 程式碼審查
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**.py"
+      - "**.js"
+      - "**.ts"
+      - "**.go"
+      - "**.java"
+
+jobs:
+  claude-review:
+    name: Claude Code 自動審查
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: 取得倉庫程式碼
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 設定 Node.js 環境
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 安裝 Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: 設定 Python 環境
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 執行 Claude AI 審查
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/review_pr.py
+
+      - name: 把審查貼到 PR 評論
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+            let reviewContent = '';
+            try {
+              reviewContent = fs.readFileSync(summaryFile, 'utf8');
+            } catch (e) {
+              reviewContent = '⚠️ 無法讀取審查結果';
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: reviewContent || '🤖 Claude 審查完成，請查看 Actions Summary'
+            });
